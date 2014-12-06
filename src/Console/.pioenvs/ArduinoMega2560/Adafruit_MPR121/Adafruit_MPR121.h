@@ -1,21 +1,22 @@
-/***************************************************
+/*************************************************** 
   This is a library for the MPR121 12-Channel Capacitive Sensor
 
   Designed specifically to work with the MPR121 breakout from Adafruit
   ----> https://www.adafruit.com/products/1982
 
-  These sensors use I2C to communicate, 2+ pins are required to
+  These sensors use I2C to communicate, 2+ pins are required to  
   interface
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit and open-source hardware by purchasing
+  Adafruit invests time and resources providing this open source code, 
+  please support Adafruit and open-source hardware by purchasing 
   products from Adafruit!
 
-  Written by Limor Fried/Ladyada for Adafruit Industries.
+  Written by Limor Fried/Ladyada for Adafruit Industries.  
   BSD license, all text above must be included in any redistribution
  ****************************************************/
 
-#ifndef ADAFRUIT_MPR121_H
-#define ADAFRUIT_MPR121_H
+#ifndef MPR121_h
+#define MPR121_h
+
 #if (ARDUINO >= 100)
  #include "Arduino.h"
 #else
@@ -73,7 +74,7 @@ class Adafruit_MPR121 {
   // Hardware I2C
   Adafruit_MPR121(void);
 
-  boolean begin(uint8_t i2caddr = MPR121_I2CADDR_DEFAULT,
+  boolean begin(uint8_t i2caddr = MPR121_I2CADDR_DEFAULT, 
 				uint8_t touchThresh=12, uint8_t releaseThresh=6,
 				uint8_t touchDebounce=0, uint8_t releaseDebounce=0,
 				uint8_t chargeTime=0x10);
