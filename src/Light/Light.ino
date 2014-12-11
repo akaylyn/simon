@@ -5,8 +5,8 @@
 // RIM of LEDs
 #define RIM_PIN 6 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
 #define RIM_N 85 // best if divisible by 4
-#define RIM_DECAY_RATE -1 // reduce intensity at each update
-#define RIM_UPDATE 1000UL // update the automata on the rim at this interval
+#define RIM_DECAY_RATE 1 // reduce intensity at each update
+#define RIM_UPDATE 100UL // update the automata on the rim at this interval
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -24,9 +24,6 @@ const uint32_t Blu = rim.Color(0, 0, 255);
 const uint32_t Yel = rim.Color(128, 128, 0);
 const uint32_t Dead = rim.Color(0, 0, 0);
 
-// each button press controls a segment of the rim
-uint16_t segLength = floor(RIM_N/4);
- 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
 // and minimize distance between Arduino and first pixel.  Avoid connecting
@@ -37,24 +34,19 @@ void setup() {
 
   randomSeed(analogRead(0));
 
-  rim.begin();
-  rim.show(); // Initialize all pixels to 'off'
-  test(rim); // run through some tests
+  rim.begin(); // Initialize all pixels to 'off'
+  simulateButtonPress();
+  rim.show();
+  //  test(rim); // run through some tests
+  Serial << "Light: startup complete." << endl;
 }
 
 void loop() {
-  const uint16_t rimSegLength = floor((float)RIM_N / 4);
-
+  // simulate a button press
   // simulate button presses.  replace this with Button library to 4x GPIO pins.
-  static Metro buttonUpdate(10000UL);
+  static Metro buttonUpdate(1000UL);
   if ( buttonUpdate.check() ) {
-    uint8_t button = random(0,4); // pick a button
-    switch(button) {
-      case 0: buttonPressToRim(Red, 0, rimSegLength); break;
-      case 2: buttonPressToRim(Blu, segLength, rimSegLength); break;
-      case 3: buttonPressToRim(Yel, segLength*2, rimSegLength); break;
-      case 1: buttonPressToRim(Grn, segLength*3, rimSegLength); break;
-    }
+    simulateButtonPress();
     rim.show();
     buttonUpdate.reset();
   }
@@ -62,6 +54,7 @@ void loop() {
   // update the rim
   static Metro rimUpdate(RIM_UPDATE);
   if ( rimUpdate.check() ) {
+    Serial << ".";
     updateRule90(rim, RIM_DECAY_RATE);
     rim.show();
     rimUpdate.reset();
@@ -69,24 +62,72 @@ void loop() {
 
 }
 
+void simulateButtonPress() {
+  const uint16_t rimSegLength = floor((float)RIM_N / 4);
+
+  uint8_t button = random(0, 4); // pick a button
+  switch (button) {
+      delay(1000);
+    case 0: buttonPressToRim(Red, 0, rimSegLength); break;
+    case 2: buttonPressToRim(Blu, rimSegLength, rimSegLength); break;
+    case 3: buttonPressToRim(Yel, rimSegLength * 2, rimSegLength); break;
+    case 1: buttonPressToRim(Grn, rimSegLength * 3, rimSegLength); break;
+  }
+
+}
+
 void buttonPressToRim(const uint32_t color, uint16_t segStart, uint16_t segLength) {
+  Serial << F("Button.  Adding pixels from ") << segStart << F(" to ") << segStart + segLength - 1;
+  printColor(color);
+  Serial << endl;
+
+  // clear the segment
+  for ( uint16_t i = segStart + 1; i < segLength; i++ ) {
+    rim.setPixelColor(segStart + i, Dead);
+  }
   // put down the color every other pixel
-  for( uint16_t i=segStart; i<(segStart+segLength-1); i+2 ) {
-    rim.setPixelColor(i, color);
+  for ( uint16_t i = 0; i < segLength; i += 3 ) {
+    rim.setPixelColor(segStart + i, color);
   }
-  // interlace Dead
-  for( uint16_t i=segStart+1; i<(segStart+segLength-1); i+2 ) {
-    rim.setPixelColor(i, Dead);
-  }
+
+}
+
+// unpack and pack functions
+void extractColor(uint32_t c, uint8_t * cv) {
+  cv[0] = (c << 8 ) >> 24;
+  cv[1] = (c << 16) >> 24;
+  cv[2] = (c << 24) >> 24;
+}
+uint32_t packColor(uint8_t * cv) {
+  return ( rim.Color(cv[0], cv[1], cv[2]) );
+}
+void printColor(uint32_t c) {
+  // pull out RGB elements
+  uint8_t cv[3];
+  extractColor(c, cv);
+  Serial << " R: " << cv[0] << " G: " << cv[1] << " B: " << cv[2] << endl;
 }
 
 // adjust color with a decrement
-uint32_t adjustColor(uint32_t c, uint8_t adj) {
-  uint8_t red = constrain(((c << 8 ) >> 24) + adj, 0, 255);
-  uint8_t grn = constrain(((c << 16) >> 24) + adj, 0, 255);
-  uint8_t blu = constrain(((c << 24) >> 24) + adj, 0, 255);
+uint32_t adjustColor(uint32_t c, int adj) {
+  // pull out RGB elements
+  uint8_t cv[3];
+  signed int cvl[3];
+  extractColor(c, cv);
+
+  // for each color
+  for ( uint8_t i = 0; i < 3; i++ ) {
+    if( cv[i]>= adj ) { // unsiged stuff.  take care.
+      cv[i] = cv[i] - adj;
+    } else {
+      cv[i] = 0;
+    }
+//    Serial << cv[i] << endl;
+  }
   
-  return( rim.Color(red, grn, blu) );
+//  while(1);
+  // repack and return
+  return ( packColor(cv) );
 }
 
 // merge colors with some kind of XOR
@@ -94,24 +135,24 @@ uint32_t mergeColor(uint32_t c1, uint32_t c2) {
   // use bitwise operations to get at packed color vector contents
   const uint8_t bitIndex[3] = {8, 16, 24};
   // store the color vector result
-  uint8_t cv[3];
-  
-  // for each color
-  for( uint8_t i=0; i<3; i++ ) {
-    // extract the color elements.
-    uint8_t chanc1 = (c1 << bitIndex[i] ) >> 24;
-    uint8_t chanc2 = (c2 << bitIndex[i] ) >> 24;
+  uint8_t c1v[3], c2v[3], cv[3];
 
+  // get the RGB components.
+  extractColor(c1, c1v);
+  extractColor(c2, c2v);
+
+  // for each color
+  for ( uint8_t i = 0; i < 3; i++ ) {
     // xor by color channel
-    if( chanc1>0 && chanc2>0 ) {
+    if ( c1v[i] > 0 && c2v[i] > 0 ) {
       // alive in both cells, so drop this channel.
-      cv[i]=0;
+      cv[i] = 0;
     } else {
       // dead in one, so sum them.
-      cv[i]=chanc1 + chanc2;
+      cv[i] = c1v[i] + c2v[i];
     }
   }
-  return( rim.Color(cv[0], cv[1], cv[2]) );
+  return ( packColor(cv) );
 }
 
 // updates the automata using a modified Rule 90
@@ -119,8 +160,10 @@ void updateRule90(Adafruit_NeoPixel &strip, uint8_t decay) {
   // intialize first cell
   uint32_t cs = strip.getPixelColor(0);
   uint32_t ps = strip.getPixelColor(strip.numPixels() - 1);
-  uint32_t ns;
-  
+  uint32_t ns, color;
+  // store the color vector result
+  uint8_t cv[3];
+
   // loop to update
   for (uint16_t i = 0; i < strip.numPixels(); i++) {
     // get next state
@@ -130,19 +173,20 @@ void updateRule90(Adafruit_NeoPixel &strip, uint8_t decay) {
     else { // wrapping back around
       ns = strip.getPixelColor(0);
     }
-    
+
     // apply Rule 90
-    if( ps == Dead ) {
-      cs = adjustColor(ns, decay);
-    } else if( ns == Dead ) {
-      cs = adjustColor(ps, decay);
+    if ( ps == Dead ) {
+      color = adjustColor(ns, decay);
+    } else if ( ns == Dead ) {
+      color = adjustColor(ps, decay);
     } else {
-      cs = mergeColor(ps, ns);
+      color = adjustColor(mergeColor(ps, ns), decay);
     }
-    
+
+
     // set the pixel
-    strip.setPixelColor(i, cs);
-    
+    strip.setPixelColor(i, color);
+
     // next iteration setting
     ps = cs;
     cs = ns;
