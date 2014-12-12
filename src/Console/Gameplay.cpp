@@ -42,27 +42,31 @@ void play(char color, boolean correctTone) {
   // lights and sound
   switch ( color ) {
     case 'G':
-      manualLightSet(I_GRN, LED_ON);
       inst.lightLevel[I_GRN] = LED_ON;
       towerSend();
+      manualLightSet(I_GRN, LED_ON);
+      digitalWrite(PIXELS_GRN, LOW);
       playTone(correctTone ? GRN_TONE : WRONG_TONE);
       break;
     case 'R':
-      manualLightSet(I_RED, LED_ON);
       inst.lightLevel[I_RED] = LED_ON;
       towerSend();
+      manualLightSet(I_RED, LED_ON);
+      digitalWrite(PIXELS_RED, LOW);
       playTone(correctTone ? RED_TONE : WRONG_TONE);
       break;
     case 'B':
-      manualLightSet(I_BLU, LED_ON);
       inst.lightLevel[I_BLU] = LED_ON;
       towerSend();
+      manualLightSet(I_BLU, LED_ON);
+      digitalWrite(PIXELS_BLU, LOW);
       playTone(correctTone ? BLU_TONE : WRONG_TONE);
       break;
     case 'Y':
-      manualLightSet(I_YEL, LED_ON);
       inst.lightLevel[I_YEL] = LED_ON;
       towerSend();
+      manualLightSet(I_YEL, LED_ON);
+      digitalWrite(PIXELS_YEL, LOW);
       playTone(correctTone ? YEL_TONE : WRONG_TONE);
       break;
   }
@@ -74,6 +78,10 @@ void quiet() {
 
   noTone(SPEAKER_WIRE);
   manualLightSet(I_ALL, LED_OFF);
+  digitalWrite(PIXELS_RED, HIGH);
+  digitalWrite(PIXELS_YEL, HIGH);
+  digitalWrite(PIXELS_BLU, HIGH);
+  digitalWrite(PIXELS_GRN, HIGH);
 
   towerSend();
   towerComms();

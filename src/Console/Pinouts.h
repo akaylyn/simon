@@ -36,6 +36,12 @@
 #define LED_OFF 0  // analogWrite
 #define LED_ON 255 // analogWrite
 
+// Light module IO.  Pull LOW to active touch buttons and rim lighting.
+#define PIXELS_RED 31
+#define PIXELS_YEL 33
+#define PIXELS_GRN 35 
+#define PIXELS_BLU 37
+
 /* damned inconvenient.  will need a bus for these lines:
  +5VDC
  GND

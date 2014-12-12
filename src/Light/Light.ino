@@ -1,3 +1,5 @@
+// Compile for Arduino Pro or Pro Mini
+
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
 // and minimize distance between Arduino and first pixel.  Avoid connecting
@@ -6,13 +8,28 @@
 #include <Adafruit_NeoPixel.h>
 #include <Streaming.h>
 #include <Metro.h>
+#include <Bounce.h>
 
 // RIM of LEDs
-#define RIM_PIN 6 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
+#define RIM_PIN A3 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
 #define RIM_N 85 // best if divisible by 4
 #define RIM_LED_TTL 3000UL // reduce intensity at each update, so this is the amount of time we can expect a pixel to last
 #define RIM_UPDATE 100UL // update the automata on the rim at this interval
+#define RIM_ADD_PIXEL RIM_LED_TTL/3 // since the pixels have a TTL, we need to add some when there's nothing going on.
 #define RED_SEG_OFFSET floor((float)RIM_N / 4) // sort out where the LEDs are that match the button locations, in software.  You're welcome.
+// LED indicator to ack button presses
+#define LED_PIN 13
+
+// button pins.  wire to Mega GPIO, bring LOW to indicate pressed.
+#define RED_BUTTON 4
+#define YEL_BUTTON 5
+#define GRN_BUTTON 6
+#define BLU_BUTTON 7
+#define DEBOUNCE_TIME 3UL
+Bounce redButton = Bounce( RED_BUTTON, DEBOUNCE_TIME );
+Bounce grnButton = Bounce( GRN_BUTTON, DEBOUNCE_TIME );
+Bounce bluButton = Bounce( BLU_BUTTON, DEBOUNCE_TIME );
+Bounce yelButton = Bounce( YEL_BUTTON, DEBOUNCE_TIME );
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -39,7 +56,14 @@ void setup() {
   Serial.begin(115200);
 
   randomSeed(analogRead(0));
-
+  
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+  pinMode(RED_BUTTON, INPUT_PULLUP);
+  pinMode(GRN_BUTTON, INPUT_PULLUP);
+  pinMode(YEL_BUTTON, INPUT_PULLUP);
+  pinMode(BLU_BUTTON, INPUT_PULLUP);
+  
   // Initialize all pixels to 'sweet love makin'
   rimJob.begin();
   for ( uint16_t i = 0; i < rimJob.numPixels(); i++ ) {
@@ -49,31 +73,10 @@ void setup() {
   delay(1000);
 
   //  test(rimJob); // run through some tests
-  Serial << "Light: startup complete." << endl;
+  Serial << F("Light: startup complete.") << endl;
 }
 
 void loop() {
-
-  // simulate button presses.  replace this with Button library to 4x GPIO pins wired to Mega.
-  static Metro buttonTimer(500UL);
-  static boolean buttonHeld = true;
-  static uint8_t buttonPressed = 0; // pick a button
-
-  // flip-flop between pressed and not pressed.
-  if ( buttonTimer.check() ) {
-    if ( buttonHeld ) { // stop holding it.
-      buttonTimer.interval(random(420UL, 420UL * 2UL));
-      buttonTimer.reset();
-      buttonPressed = 4;
-      Serial << "Release." << endl;
-    } else { // press it
-      buttonTimer.interval(random(420UL / 2UL, 420UL));
-      buttonTimer.reset();
-      buttonPressed = random(0, 4); // pick button
-      Serial << "Press." << endl;
-    }
-    buttonHeld = !buttonHeld;
-  }
 
   // update the rimJob
   static Metro rimJobUpdate(RIM_UPDATE);
@@ -81,12 +84,52 @@ void loop() {
     // compute the next step
     updateRule90(rimJob, RIM_LED_TTL);
 
-    // check for buttons
-    if ( buttonHeld ) buttonPressPattern(buttonPressed);
-
     // go to press
-    rimJob.show();
+    if( rimJob.canShow() ) rimJob.show();
     rimJobUpdate.reset();
+  }
+  
+  // when it's quiet, add some pixels
+  static Metro quietHeartBeat(RIM_ADD_PIXEL);
+  if ( quietHeartBeat.check() ) {
+    quietHeartBeat.reset();
+    uint32_t color;
+    switch(random(0,4)) {
+      case 0: color=Red; break;
+      case 1: color=Grn; break;
+      case 2: color=Blu; break;
+      case 3: color=Yel; break;
+    }
+    rimJob.setPixelColor(random(0, RIM_N), color);
+  }
+  
+  // check for button pressed
+  redButton.update();
+  grnButton.update();
+  bluButton.update();
+  yelButton.update();
+  if ( redButton.read() == LOW ) {
+    buttonPressPattern(0);
+    if( rimJob.canShow()) rimJob.show();
+    quietHeartBeat.reset();
+    digitalWrite(LED_PIN, HIGH);
+  } else if ( grnButton.read() == LOW ) {
+    buttonPressPattern(1);
+    if( rimJob.canShow()) rimJob.show();
+    quietHeartBeat.reset();
+    digitalWrite(LED_PIN, HIGH);
+  } else if ( bluButton.read() == LOW ) {
+    buttonPressPattern(2);
+    if( rimJob.canShow()) rimJob.show();
+    quietHeartBeat.reset();
+    digitalWrite(LED_PIN, HIGH);
+  } else if ( yelButton.read() == LOW ) {
+    buttonPressPattern(3);
+    if( rimJob.canShow()) rimJob.show();
+    quietHeartBeat.reset();
+    digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(LED_PIN, LOW);
   }
 
 }
@@ -104,7 +147,7 @@ void buttonPressPattern(uint8_t button) {
 }
 
 void buttonPressToRim(const uint32_t color, uint16_t segStart, uint16_t segLength) {
-  Serial << F("Button.  Adding pixels from ") << segStart << F(" to ") << segStart + segLength - 1 << ". Color: ";
+  Serial << F("Button.  Adding pixels from ") << segStart << F(" to ") << segStart + segLength - 1 << F(". Color: ");
   printColor(color);
 
   // clear the segment and lay down this color
@@ -127,7 +170,7 @@ void printColor(uint32_t c) {
   // pull out RGB elements
   uint8_t cv[3];
   extractColor(c, cv);
-  Serial << " R: " << cv[0] << " G: " << cv[1] << " B: " << cv[2] << endl;
+  Serial << F(" R: ") << cv[0] << F(" G: ") << cv[1] << F(" B: ") << cv[2] << endl;
 }
 
 // adjust color with a decrement

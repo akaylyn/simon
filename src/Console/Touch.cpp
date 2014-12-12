@@ -90,6 +90,7 @@ void configureManualButtons() {
   pinMode(GRN_BUTTON, INPUT_PULLUP);
   pinMode(BLU_BUTTON, INPUT_PULLUP);
   pinMode(YEL_BUTTON, INPUT_PULLUP);
+  
 }
 
 // configures lights for buttons at startup

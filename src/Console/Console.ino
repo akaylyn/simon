@@ -11,6 +11,7 @@
 #include <LED.h> // manual lights as well
 #include "Touch.h"
 #include "Music.h"
+#include "Light.h"
 // communications: RFM12b
 // sizes, indexing and comms between Towers and Console
 #include <EEPROM.h> // saving and loading radio settings
@@ -43,6 +44,9 @@ void setup() {
   // and tone sounds from Mega
   configureManualSound();
 
+  // LED lighting around rim and button
+  configureLights();
+  
   // start MPR121 touch
   //  touchStart();
   //  touchUnitTest(false); // no details
