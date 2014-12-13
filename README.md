@@ -2,7 +2,7 @@
 
 The general relationship between the four **micro-controllers** is:
 
-**Light** <- **Console** <-> **Tower**, **Music**
+**Light** <= **Console** <=> **Tower**, **Music**
 
 That is, **Console** has a unidirectional relationship with **Light** (I/O pins), and bidirectional 
 relationships with **Tower** (radio) and **Music** (serial). 
