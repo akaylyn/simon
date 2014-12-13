@@ -5,34 +5,58 @@
 
 Adafruit_MPR121 cap = Adafruit_MPR121();
 
-// buttons
-Bounce redButton = Bounce(RED_BUTTON, BUTTON_DEBOUNCE_TIME);
-Bounce grnButton = Bounce(GRN_BUTTON, BUTTON_DEBOUNCE_TIME);
-Bounce bluButton = Bounce(BLU_BUTTON, BUTTON_DEBOUNCE_TIME);
-Bounce yelButton = Bounce(YEL_BUTTON, BUTTON_DEBOUNCE_TIME);
-
-// system outputs
-// lights
-LED redLight(RED_LIGHT);
-LED grnLight(GRN_LIGHT);
-LED bluLight(BLU_LIGHT);
-LED yelLight(YEL_LIGHT);
-
-void touchStart(uint8_t touchCount, uint8_t releaseCount) {
-  Serial << F("Startup Adafruit MPR121 Capacitive Touch sensor.") << endl;
-
-  // Default address is 0x5A, if tied to 3.3V its 0x5B
-  // If tied to SDA its 0x5C and if SCL then 0x5D
-  if (!cap.begin(0x5A)) {
-    Serial << F("MPR121 not found, check wiring?") << endl;
-    while (1);
-  }
-  Serial << F("MPR121 found!") << endl;
-  Serial << F("Touch count threshold set: ") << touchCount << F(". Release count threshold set: ") << releaseCount << F(".") << endl;
-  cap.setThreshholds(touchCount, releaseCount);
-}
+// restarts the Touch interface
 void touchStart() {
-  touchStart(12, 6); // take defaults from AdaFruit example
+   // some reasonable defaults are set.
+   // expect this to be called after startup
+   // and again between games.
+}
+
+// calibrates the Touch interface
+void touchCalibrate() {
+   // when this is called, assume that nothing is touching the
+   // sensors, and you've got time to restart the capsense hardware,
+   // take some readings, and assure that the sensors are set up 
+   // correctly.
+}
+
+// returns true if any of the buttons have switched states.
+boolean touchAnyChanged() {
+   // avoid short-circuit eval so that each button gets an update
+   // for the debounce code.
+   boolean redC = touchChanged(I_RED);
+   boolean grnC = touchChanged(I_GRN);
+   boolean bluC = touchChanged(I_BLU);
+   boolean yelC = touchChanged(I_YEL);
+   return( redC || grnC || bluC || yelC ); 
+}
+
+// returns true if any of the buttons are pressed.
+boolean touchAnyPressed() {
+   return( 
+      touchPressed(I_RED) || 
+      touchPressed(I_GRN) || 
+      touchPressed(I_BLU) || 
+      touchPressed(I_YEL) 
+   );
+}
+
+// returns true if a specific button has changed
+boolean touchChanged(byte buttonIndex) {
+   /* this function will be called very frequently, so this is where the capsense
+      calls should be made and the debouncing routines should reside
+   */
+   
+   // for now
+   return( false );
+}
+
+// returns true if a specific button is pressed
+boolean touchPressed(byte buttonIndex) {
+   // this function will be called after touchChanged() asserts a change.
+   
+   // for now
+   return( false );
 }
 
 void touchUnitTest(boolean details, unsigned long timeout) {
@@ -81,105 +105,6 @@ void touchUnitTest(boolean details, unsigned long timeout) {
 
     // put a delay so it isn't overwhelming
     delay(100);
-  }
-}
-
-// configures buttons at startup
-void configureManualButtons() {
-  pinMode(RED_BUTTON, INPUT_PULLUP);
-  pinMode(GRN_BUTTON, INPUT_PULLUP);
-  pinMode(BLU_BUTTON, INPUT_PULLUP);
-  pinMode(YEL_BUTTON, INPUT_PULLUP);
-  
-}
-
-// configures lights for buttons at startup
-void configureManualLights() {
-  // no setup.  LED does that for you.
-  const unsigned long lightDuration = 250;
-  manualLightSet(I_ALL, LED_ON);
-  delay(lightDuration);
-  manualLightSet(I_ALL, LED_OFF);
-}
-
-// set manual light (or I_ALL lights) to a value
-void manualLightSet(byte lightIndex, byte lightLevel) {
-  switch ( lightIndex ) {
-    case I_RED:
-      redLight.setValue(lightLevel);
-      break;
-    case I_GRN:
-      grnLight.setValue(lightLevel);
-      break;
-    case I_BLU:
-      bluLight.setValue(lightLevel);
-      break;
-    case I_YEL:
-      yelLight.setValue(lightLevel);
-      break;
-    case I_ALL:
-      redLight.setValue(lightLevel);
-      grnLight.setValue(lightLevel);
-      bluLight.setValue(lightLevel);
-      yelLight.setValue(lightLevel);
-      break;
-  }
-}
-
-// check for a specific (or I_ALL) button change
-boolean buttonChanged(byte lightIndex) {
-
-  switch ( lightIndex ) {
-    case I_RED:
-      return (redButton.update());
-      break;
-    case I_GRN:
-      return (grnButton.update());
-      break;
-    case I_BLU:
-      return (yelButton.update());
-      break;
-    case I_YEL:
-      return (yelButton.update());
-      break;
-    case I_ALL:
-      // update the buttons and return a state change as true.
-      boolean redC = redButton.update();
-      boolean grnC = grnButton.update();
-      boolean bluC = bluButton.update();
-      boolean yelC = yelButton.update();
-      // actively avoiding short-circuit evaluation so that we get an .update() to all.
-      return ( redC || grnC || bluC || yelC );
-      break;
-  }
-}
-
-// check for a specific (or I_ALL) button being pressed
-boolean buttonPressed(byte lightIndex) {
-  
-  // get an update while we're here.  not strictly neccessary, but guarantees an update while reading.
-  boolean toss = buttonChanged(lightIndex);
-      
-  switch ( lightIndex ) {
-    case I_RED:
-      return (redButton.read() == PRESSED_BUTTON);
-      break;
-    case I_GRN:
-      return (grnButton.read() == PRESSED_BUTTON);
-      break;
-    case I_BLU:
-      return (bluButton.read() == PRESSED_BUTTON);
-      break;
-    case I_YEL:
-      return (yelButton.read() == PRESSED_BUTTON);
-      break;
-    case I_ALL:
-      return ( redButton.read() == PRESSED_BUTTON ||
-               grnButton.read() == PRESSED_BUTTON ||
-               bluButton.read() == PRESSED_BUTTON ||
-               yelButton.read() == PRESSED_BUTTON
-               );
-      break;
   }
 }
 

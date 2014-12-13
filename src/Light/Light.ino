@@ -5,6 +5,15 @@
 // and minimize distance between Arduino and first pixel.  Avoid connecting
 // on a live circuit...if you must, connect GND first.
 
+// have: 2K memory, 3 bytes memory per LED, 60 LEDs per meter.
+// so, we can support 2000/3/60=11.1 meters, other memory usage notwithstanding.
+
+// count the number of LEDs used:
+#define RIM_N 85 // best if divisible by 4
+#define BUTTON_N 45 // wrapped around each button
+#define TOTAL_LED_N RIM_N + BUTTON_N*4
+#define TOTAL_LED_MEM TOTAL_LED_N*3
+
 #include <Adafruit_NeoPixel.h>
 #include <Streaming.h>
 #include <Metro.h>
@@ -17,6 +26,7 @@
 #define RIM_UPDATE 100UL // update the automata on the rim at this interval
 #define RIM_ADD_PIXEL RIM_LED_TTL/3 // since the pixels have a TTL, we need to add some when there's nothing going on.
 #define RED_SEG_OFFSET floor((float)RIM_N / 4) // sort out where the LEDs are that match the button locations, in software.  You're welcome.
+
 // LED indicator to ack button presses
 #define LED_PIN 13
 
@@ -55,6 +65,11 @@ const uint32_t Dead = rimJob.Color(LED_OFF, LED_OFF, LED_OFF);
 void setup() {
   Serial.begin(115200);
 
+  Serial << F("Light startup.") << endl;
+  
+  Serial << F("Total strip memory usage: ") << TOTAL_LED_MEM << F(" bytes of 2000.") << endl; 
+  
+  // random seed from analog noise.
   randomSeed(analogRead(0));
   
   pinMode(LED_PIN, OUTPUT);

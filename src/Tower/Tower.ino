@@ -24,7 +24,7 @@ RFM12B radio;
 // store my NODEID
 byte myNodeID;
 // keep track of activity to note network drop out
-#define D_NETWORK_TIMOUT 10000UL
+#define D_NETWORK_TIMOUT 35000UL
 Metro networkTimeout(D_NETWORK_TIMOUT);
 // let the console know we're here to join the party.
 boolean notConfigured = true; // ask for config once after startup.
@@ -34,6 +34,12 @@ Metro joinInterval(0); // but don't spam the channel
 Metro flameOnTime(100UL);
 // but only fire this often.
 Metro flameCoolDownTime(2000UL);
+
+// when we're out of the network, update the lights on this interval (approx)
+#define SOLO_TEST_PATTERN_UPDATE 3000UL // ms
+
+// when we're in the network and idle, update the lights on this interval
+#define NETWORK_TEST_PATTERN_UPDATE 20UL // ms
 
 // pin locations for outputs
 #define LED_R 6 // the PWM pin which drives the red LED
@@ -66,7 +72,7 @@ void setup() {
 
   // once, at hardware initialization, we need to bootstrap some settings to the EEPROM
   //  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
-  //  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
+  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
   //  commsSave(towerNodeID[1]); // write to EEPROM. Select towerNodeID[0..3].
   //  commsSave(towerNodeID[2]); // write to EEPROM. Select towerNodeID[0..3].
   //  commsSave(towerNodeID[3]); // write to EEPROM. Select towerNodeID[0..3].
@@ -104,7 +110,7 @@ void loop() {
 
   // check for comms traffic
   if ( radio.ReceiveComplete() && radio.CRCPass() ) {
-    // we have radio comms
+    // process it.
     if ( radio.GetDataLen() == sizeof(inst) ) {
       // save instruction for lights/flame
       inst = *(towerInstruction*)radio.Data;
@@ -141,26 +147,43 @@ void loop() {
     if ( radio.ACKRequested() )
       radio.SendACK();
 
-    // note activity
+    // we have radio comms, so note that activity 
     networkTimeout.reset();
-
+    
   } else if ( networkTimeout.check() ) { // otherwise we're on our own... lonely!
 
-    updateTestPattern(); // if we need to update the test pattern, do so.
+    updateSoloTestPattern(); // if we need to update the test pattern, do so.
 
+  } else { // we're still part of the network.
+  
+    updateNetworkTestPattern(); // if we need to update the test pattern, do so.
   }
 
   // check to see if we need to request configuration information from Console
   if ( notConfigured && joinInterval.check() ) {
     Serial << F("Join request.") << endl;
     boolean toss = commsSend(config, consoleNodeID, 0); // ask for a configuration, no ACK request
-    joinInterval.interval(random(250, 500)); // important that each tower has its own.
+    joinInterval.interval(random(250, 500)); // important that each tower has its own timing to prevent Tx collision.
     joinInterval.reset();
   }
 
 }
 
-void updateTestPattern() {
+// generate a random number on the interval [a, b] with mode c.
+unsigned long trandom(int a, int c, int b) {
+  // using a triangular pdf
+  // http://en.wikipedia.org/wiki/Triangular_distribution#Generating_Triangular-distributed_random_variates
+
+  float cut = (c - a) / (b - a);
+
+  float u = random(0, 101) / 100;
+
+  if ( u < cut ) return ( a + sqrt( u * (b - a) * (c - a) ) );
+  else return ( b - sqrt( (1 - u) * (b - a) * (b - c) ) );
+
+}
+
+void updateSoloTestPattern() {
 
   // pin locations
   static int pins[3] = {LED_R, LED_G, LED_B};
@@ -168,7 +191,7 @@ void updateTestPattern() {
   // gotta start somewhere
   static byte currInd = N_COLORS;
   // track the time
-  static Metro onTime(5000);
+  static Metro onTime(SOLO_TEST_PATTERN_UPDATE);
 
   if ( onTime.check() ) { // enter a new cycle
     lightSet(pins[currInd], 0); // off
@@ -177,9 +200,35 @@ void updateTestPattern() {
     Serial << F("Tower Test Pattern.  Color: ") << currInd << endl;;
 
     lightSet(pins[currInd], 255);
+    
+    // reset the interval update to add some randomness.
+    onTime.interval(trandom(SOLO_TEST_PATTERN_UPDATE/2, SOLO_TEST_PATTERN_UPDATE, SOLO_TEST_PATTERN_UPDATE*2));
     onTime.reset();
   }
 
+}
+
+// update lighting on an interval when there's nobody playing
+void updateNetworkTestPattern() {
+
+  // only update on an interval, or we're spamming the comms and using up a lot of CPU power with float operations
+  static Metro boredUpdateInterval(NETWORK_TEST_PATTERN_UPDATE);
+  if ( !boredUpdateInterval.check() ) return;
+  boredUpdateInterval.reset(); // for next loop
+
+  // set to zero.
+  commsDefault(inst);
+
+  // use a breathing function.
+  float ts = millis() / 1000.0 / 2.0 * PI ;
+  // put the colors out of phase, and turn off fire.
+  inst.lightLevel[I_RED] = (exp(sin(ts + 0.00 * 2.0 * PI)) - 0.36787944) * 108.0;
+  inst.lightLevel[I_GRN] = (exp(sin(ts + 0.25 * 2.0 * PI)) - 0.36787944) * 108.0;
+  inst.lightLevel[I_BLU] = (exp(sin(ts + 0.50 * 2.0 * PI)) - 0.36787944) * 108.0;
+  inst.lightLevel[I_YEL] = (exp(sin(ts + 0.75 * 2.0 * PI)) - 0.36787944) * 108.0;
+
+  // do the instructions
+  performInstruction();
 }
 
 void performInstruction() {
@@ -261,14 +310,13 @@ void flameOn(int fireLevel) {
     // To put a Fine Point on it: this simple line will unleash 100,000 BTU.  Better take care.
 
     digitalWrite(FLAME, HIGH); // This line should appear exactly once in a sketch, and be swaddled in all manner of caution.
-    Serial << F("Flame on!") << endl;
-
     flameOnTime.interval(flameTime);
     flameOnTime.reset();
+    
+    Serial << F("Flame on!") << endl;
 
     // start cooldown counter
     flameCoolDownTime.reset();
-
   }
 }
 

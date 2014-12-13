@@ -1,145 +1,86 @@
+// Compile for Arduino Mega.
+
 // The IDE requires all libraries to be #include’d in the main (.ino) file.  Clutter.
 // included in several places.
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
-// wiring connections
-#include "Pinouts.h"
-// capsense touch: MPR121 include I2C, MPR121 libraries.
-#include <Wire.h>
-#include <Adafruit_MPR121.h>
-#include <Bounce.h> // manual buttons as well
-#include <LED.h> // manual lights as well
-#include "Touch.h"
-#include "Music.h"
-#include "Light.h"
-// communications: RFM12b
-// sizes, indexing and comms between Towers and Console
-#include <EEPROM.h> // saving and loading radio settings
-#include <SPI.h>
-#include <RFM12B.h> // RFM12b radio transmitter module
-#include <Simon_Comms.h>
-#include "Comms.h"
-// game play
-#include <FiniteStateMachine.h>
-#include "Gameplay.h"
 
-// this is where the lights and fire instructions to Towers are placed
-towerInstruction inst;
-// from Simon_Comms.h:
-// typedef struct {
-//	byte lightLevel[N_COLORS]; // 0..255.  maps to analogWrite->light level
-//	byte fireLevel[N_COLORS]; // 0..255.  maps to timer->fire duration
-// } towerInstruction;
+//----- Wiring connections.  
+// Could be pulled out to individual subunit .h files, which would add clarity
+// to the subunit sections, at the cost of not having a concise list of pins in one place.  
+#include "Pinouts.h"
+
+//------ Input units.
+
+// Touch subunit. Responsible for UX input.
+#include "Touch.h"
+// capsense touch: soft capsense buttons
+#include <Adafruit_MPR121.h> // MPR121 capsense board
+#include <Wire.h> // capsense is an I2C device
+
+// Button subunit.  Responsible for hard buttons on a PCB. 
+#include "Button.h"
+#include <Bounce.h> // with debounce routine.
+
+//------ "This" units.
+
+// Game Play subunit.  Responsible for Simon game.
+#include "Gameplay.h"
+#include <FiniteStateMachine.h> // using a FSM to run the game
+
+// Extern subunit.  Responsible for interfacing with other projects via RFM12b.
+#include "Extern.h"
+
+//------ Output units.
+
+// Light subunit.  Responsible for UX (light) output local to the console.
+#include "Light.h" 
+// Three sets of lights:
+// WS2812 lights: lights wrapping the console rim and capsense touch buttons
+// manual lights: hard LEDs on a PCB
+#include <LED.h> // with LED abstraction
+
+// Tower subunit.  Responsible for UX (light/fire) output at the Tower.
+#include "Tower.h"
+#include <Simon_Comms.h> // sizes, indexing and comms between Towers and Console
+#include <RFM12B.h> // RFM12b radio transmitter module
+#include <SPI.h> // radio transmitter is a SPI device
+#include <EEPROM.h> // saving and loading radio settings
+
+// Music subunit.  Responsible for UX (sound) output.
+#include "Music.h" 
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
 
-  // random seed.
+  // random seed set from electrical noise on an analog pin.
   randomSeed(analogRead(0));
 
-  // switches
-  configureManualButtons();
-  configureManualLights();
-  // and tone sounds from Mega
-  configureManualSound();
-
-  // LED lighting around rim and button
-  configureLights();
-  
-  // start MPR121 touch
-  //  touchStart();
-  //  touchUnitTest(false); // no details
-
-  // shouldn't need to run this once the memory is saved.
-  //  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
-  // start RFM12b radio
-  if ( commsStart() != consoleNodeID  ) {
-    Serial << F("Unable to start RFM as consoleNodeID.  Halting!") << endl;
-    while (1);
-  }
-  // ping the network
-  pingNetwork();
-  // configure network
-  configureNetwork();
-  // update network
-  sendConfiguration();
-
+  // start each unit
+  //------ Input units.
+  touchStart();
+  buttonStart();
+  //------ Output units.
+  lightStart();
+  towerStart();
+  musicStart();
+  //------ "This" units.
+  gameplayStart();
+  externStart();
 
 }
 
 // main loop for the core.
 void loop() {
-  // update the FSM
-  updateSimonFSM();
-
-  // call to poll the radio module for traffic, check in with the network
-  towerComms();
-  
-}
-
-// replace with gameplay
-boolean towerUpdate( ) {
-  return ( updateTestPattern() );
-}
-
-// simple test pattern.
-boolean updateTestPattern() {
-
-  // total cycle time
-  const unsigned long cycleLength = 5000; // ms.  2.5 second cycle
-
-  // only send an update on this interval
-  static Metro updateInterval(10); // ms updates, maximum.  could be longer than this.
-
-  // return true if we need to update
-  boolean needUpdate = false;
-  // gotta start somewhere
-  static byte currInd = N_COLORS - 1;
-  // track the last position in a cycle
-  static unsigned long ltc = 1;
-  // track the last value setting
-  static byte lastval = 0;
-  // track the number of updates per cycle
-  static int trackCount = 0;
-
-  if ( updateInterval.check() ) {
-
-    // we'll use the commsInstruction instrument to simulate received instructions
-    // use a breathing function.
-
-    // calculate where we are
-    unsigned long tc = millis() % cycleLength; // 0..cycleLength
-
-    // compare to the last tc
-    if ( tc < ltc ) { // enter a new cycle
-      commsDefault(inst, 0, 0); // reset instructions, making sure fire is off.
-      manualLightSet(I_ALL, LED_OFF); // manual lights udpate
-      currInd = ++currInd % N_COLORS; // select the next color
-      needUpdate = true;
-      Serial << F("Track count: ") << trackCount << endl;
-      trackCount = 0;
-      Serial << F("Console Test Pattern.  Color: ") << currInd << endl;;
+  // play the Simon game; returns true if we're playing
+  if( ! gameplayUpdate() ) {
+    // we're not playing, so check for Extern traffic; returns true if we have traffic.
+    if( ! externUpdate() ) {
+      // no Extern traffic, so perform Tower maintenance and idle displays.
+      towerUpdate();  
     }
-
-    // compute exp sine, cast to byte as that's what we're capable of
-    byte val = (exp(sin(float(tc) / float(cycleLength) * 2.0 * PI + 0.75 * 2.0 * PI)) - 0.36787944) * 108.0;
-
-    if ( val != lastval || needUpdate ) { // if the value changed, or if we've flipped to a new color
-//      Serial << tc - ltc << F(",") << val << endl;
-      lastval = val; // save current val
-      inst.lightLevel[currInd] = val;
-      trackCount++;
-      needUpdate = true;
-      manualLightSet(currInd, val); // manual lights udpate
-      updateInterval.reset(); // reset for next loop
-    }
-
-    ltc = tc; // save current position
-  }
-
-  return ( needUpdate );
-
+  } 
 }
 
 

@@ -22,33 +22,22 @@
 
 // Manual Buttons
 // button switches.  wire to Arduino (INPUT_PULLUP) and GND.
-#define RED_BUTTON 22 // can move, digital
-#define GRN_BUTTON 23 // can move, digital
-#define BLU_BUTTON 24 // can move, digital
-#define YEL_BUTTON 25 // can move, digital
+#define BUTTON_RED 22 // can move, digital
+#define BUTTON_GRN 23 // can move, digital
+#define BUTTON_BLU 24 // can move, digital
+#define BUTTON_YEL 25 // can move, digital
 
 // Manual button lights, panels, under console.  wire to N-channel MOSFET + and any GND.
-#define RED_LIGHT 8 // can move, PWM
-#define GRN_LIGHT 9 // can move, PWM
-#define BLU_LIGHT 10 // can move, PWM
-#define YEL_LIGHT 11 // can move, PWM
-// LED mins and max
-#define LED_OFF 0  // analogWrite
-#define LED_ON 255 // analogWrite
+#define LED_RED 8 // can move, PWM
+#define LED_GRN 9 // can move, PWM
+#define LED_BLU 10 // can move, PWM
+#define LED_YEL 11 // can move, PWM
 
 // Light module IO.  Pull LOW to active touch buttons and rim lighting.
 #define PIXELS_RED 31
 #define PIXELS_YEL 33
 #define PIXELS_GRN 35 
 #define PIXELS_BLU 37
-
-/* damned inconvenient.  will need a bus for these lines:
- +5VDC
- GND
- SPI MOSI 51 
- SPI MISO 50
- SPI SCK 52
-*/
 
 // Device list:
 
@@ -63,24 +52,6 @@
   SPI select (SEL) –> Uno digital 10
   IRQ –> Uno digital 2
   +3.3V -> (unused, but a regulated 3.3 source if we need it)
-*/
-
-/* AdaFruit VS1053 mp3 player:
-  See: https://learn.adafruit.com/adafruit-vs1053-mp3-aac-ogg-midi-wav-play-and-record-codec-tutorial/simple-audio-player-wiring
-  
-  VCC -> 5v
-  GND -> GND
-  CLK -> Uno #13 (Mega 52)
-  MISO -> Uno #12 (Mega 50)
-  MOSI -> Uno #11 (Mega 51)
-  CS -> Uno #10
-  RST -> Uno #9
-  XDCS-> Uno #8  
-  SDCS -> Uno #4
-  DREQ -> Uno #3
-  AGND -> lineout Center 'ground' Pin
-  LOUT -> lineout Left Pin
-  ROUT -> lineout Right Pin
 */
 
 /* AdaFruit MPR121 capsense touch:
