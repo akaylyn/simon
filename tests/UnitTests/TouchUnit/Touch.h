@@ -6,6 +6,8 @@
 #include "Pinouts.h"
 #include <Arduino.h>
 
+#include <Simon_Comms.h>
+
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
 #include <Bounce.h> // button debounce
@@ -13,15 +15,15 @@
 #include <Wire.h>
 #include <Adafruit_MPR121.h>
 
-#include <Simon_Comms.h>
+#include "Sensors.h"
 
 // debounce the hardware buttons on the console (NOT the touch sensors)
 #define BUTTON_DEBOUNCE_TIME 10UL // ms
 
 // note that the buttons are wired to ground with a pullup resistor.
-#define PRESSED_BUTTON LOW 
+#define PRESSED_BUTTON LOW
 
-// 
+//
 void touchStart(uint8_t touchCount, uint8_t releaseCount);
 void touchStart();
 

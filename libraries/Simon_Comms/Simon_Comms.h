@@ -43,9 +43,9 @@ const byte towerNodeID[N_TOWERS] = {11, 12, 13, 14};
 // start rfm12b communications
 
 // uses EEPROM values for configuration; returns NODEID after configuration or zero if failed.
-byte commsStart(); 
+byte commsStart();
 // sets configuration by argument; returns NODEID after configuration or zero if failed.
-byte commsStart(byte setNodeID, byte groupID=D_GROUP_ID, byte band=RF12_915MHZ, byte csPin=D_CS_PIN); 
+byte commsStart(byte setNodeID, byte groupID=D_GROUP_ID, byte band=RF12_915MHZ, byte csPin=D_CS_PIN);
 // saves configuration to EEPROM for later commsStart() use.
 void commsSave(byte nodeID, byte groupID=D_GROUP_ID, byte band=RF12_915MHZ, byte csPin=D_CS_PIN);
 // ping functions with ACK used to establish network after comms are initialized
@@ -68,7 +68,7 @@ typedef struct {
 void commsPrint(towerConfiguration &config, byte NodeID);
 // sets defaults for instruction
 void commsDefault(towerConfiguration &config, byte colorIndex=I_ALL, byte fireIndex=I_NONE, // no fire by default, SAFETY.
-					unsigned long minFireTime=D_MIN_FLAME, unsigned long maxFireTime=D_MAX_FLAME, 
+					unsigned long minFireTime=D_MIN_FLAME, unsigned long maxFireTime=D_MAX_FLAME,
 					unsigned long flameCoolDownTime=D_FLAME_COOLDOWN);
 // send configuration from Console to Tower nodeID.
 boolean commsSend(towerConfiguration &config, byte nodeID, int waitACK=D_WAIT_ACK);
@@ -77,7 +77,7 @@ void commsSave(towerConfiguration &config);
 // reads configuration from EEPROM.  Towers use this to save last configuration state.
 void commsLoad(towerConfiguration &config);
 
-// GAMEPLAY 
+// GAMEPLAY
 
 // during gameplay, this is the information passed from Console to Towers:
 typedef struct {
@@ -91,5 +91,5 @@ void commsPrint(towerInstruction &inst);
 // send instruction from Console.  Broadcast mode, so every tower receives.
 void commsSend(towerInstruction &inst);
 
-	
+
 #endif

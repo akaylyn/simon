@@ -1,5 +1,4 @@
 #include "Touch.h"
-
 // Walkthrough: https://learn.adafruit.com/adafruit-mpr121-12-key-capacitive-touch-sensor-breakout-tutorial/wiring
 // MPR121 Datasheet: http://www.adafruit.com/datasheets/MPR121.pdf
 
