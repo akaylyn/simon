@@ -2,7 +2,7 @@
 
 // sets up external interface
 void externStart() {
-  Serial << F("Extern startup.") << endl;
+  Serial << F("Extern: startup.") << endl;
   
   // nothing to do, yet.
 }

@@ -26,7 +26,7 @@ FSM simon = FSM(idle); //initialize state machine, start in state: idle
 
 // startup
 void gameplayStart() {
-  Serial << F("Gameplay startup.") << endl;
+  Serial << F("Gameplay: startup.") << endl;
 }
 
 // call this from loop()
@@ -50,11 +50,12 @@ void idleState() {
   correctLength = 0;
   currentLength = 0;
   correctSequence[0] = '\0';
-
-  if ( buttonPressed(I_ALL) ) {
-    Serial << F("Idle.  going to Game.") << endl;
+  
+  // check buttons for game play start
+  if ( buttonAnyPressed() ) {
+    Serial << F("Gameplay: Idle->Game") << endl;
     quiet();
-    while ( ! buttonChanged(I_ALL) );
+    while ( ! buttonAnyChanged() );
     // let's play a game
     simon.transitionTo(game);
   } else if ( kioskTimer.check() ) {
@@ -71,7 +72,7 @@ void gameState() {
   // increment
   currentLength++;
   // play back sequence
-  Serial << F("Game: currentLength=") << currentLength << F(". sequence=") << correctSequence << F(". Back to Player.") << endl;
+  Serial << F("Gameplay: Game currentLength=") << currentLength << F(". sequence=") << correctSequence << endl;
   playSequence();
   // debug
 
@@ -80,6 +81,7 @@ void gameState() {
   // reset correct length
   correctLength = 0;
   // give it back to the player
+  Serial << F("Gameplay: Game->Player") << endl;
   simon.transitionTo(player);
 }
 
@@ -87,7 +89,7 @@ void gameState() {
 void playerState() {
   // check if they waited too long
   if ( playerTimeout.check() ) {
-    Serial << F("Player: timeout.  currentLength = ") << currentLength << F(".  Back to Idle.") << endl;
+    Serial << F("Gameplay: Player timeout.  currentLength = ") << currentLength << endl;
     // if so, show the correct next button
     play(correctSequence[correctLength], false);
     // wait
@@ -97,6 +99,7 @@ void playerState() {
     }
     quiet();
     // and exit game play
+    Serial << F("Gameplay: Player->Idle") << endl;
     simon.transitionTo(idle);
   }
 
@@ -126,7 +129,7 @@ void playerState() {
       playerTimeout.reset();
       // keep going
     } else {
-      Serial << F("Player: incorrect.  currentLength = ") << currentLength << F(".  Back to Idle.") << endl;
+      Serial << F("Gameplay: Player incorrect.  currentLength = ") << currentLength << endl;
       // if so, show the correct next button
       play(correctSequence[correctLength], false);
       // wait
@@ -135,8 +138,8 @@ void playerState() {
         towerUpdate();
       }
       quiet();
-      // and exit game play
       // exit game play
+      Serial << F("Gameplay: Player->Idle") << endl;
       simon.transitionTo(idle);
     }
   }
@@ -144,7 +147,8 @@ void playerState() {
   // check if they've got the sequence complete, or if there's just awesome
   if ( correctLength == currentLength || correctLength == (MAX_SEQUENCE_LENGTH - 1) ) {
     // nice.  pass it back to game
-    Serial << F("Player: correct.  currentLength = ") << currentLength << F(".  Back to Game.") << endl;
+    Serial << F("Gameplay: Player correct.  currentLength = ") << currentLength << endl;
+    Serial << F("Gameplay: Player->Game") << endl;
     simon.transitionTo(game);
   }
 }
@@ -199,7 +203,7 @@ void quiet() {
   towerQuiet();
   
   // Sound on Console and Tower
-  musicQuiet();
+  musicStop();
   
   // Lights on Console
   lightSet(I_ALL, LIGHT_OFF);
@@ -278,7 +282,7 @@ void towerPoof(int poofCount) {
 }
 
 void idleFanfare() {
-  Serial << F("! Kiosk Fanfare") << endl;
+  Serial << F("Gameplay: Idle Fanfare !!") << endl;
 
   // pick a song
   int minSong = 22;
@@ -287,30 +291,28 @@ void idleFanfare() {
   Serial << F(" song: ") << song << endl;
   //  musicPlayer.play_P(song_table[song], 0);  // tunez and fire.  yeah.
 
+  Serial << F("Gameplay: Idle fanfare ended") << endl;
+
   // reset the timer
   delay(300); // be still, my electrical heart
   unsigned long kioskTimerInterval = random(KIOSK_FANFARE_MIN, KIOSK_FANFARE_MAX);
   kioskTimer.interval(kioskTimerInterval);
-  Serial << F("Kiosk timer reset: ") << kioskTimerInterval << endl;
+  Serial << F("Gameplay: idle Fanfare interval reset to ") << kioskTimerInterval << endl;
   kioskTimer.reset();
 }
 
 void playerFanfare() {
-  Serial << F("Gameplay: Winner fanfare, duration: ") << FANFARE_DURATION_PER_CORRECT * currentLength << endl;
+  Serial << F("Gameplay: Player fanfare, duration: ") << FANFARE_DURATION_PER_CORRECT * currentLength << endl;
 
   Metro fanfareDuration(FANFARE_DURATION_PER_CORRECT * currentLength);
 
   // turn up the music
   byte volume = MUSIC_DEFAULT_VOL;
-  musicVolume(volume);
+  musicVolumeSet(volume);
   
   // make sweet fire/light/music.
+  musicWins();
   while( ! fanfareDuration.check() ) {
-    // startup the music and throw some fire
-    if( ! musicIsPlaying() ) {
-      musicWins();
-    }
-
     // should calculate Light and Fire on Towers here.
     
     // resend tower commands
@@ -323,7 +325,7 @@ void playerFanfare() {
     if( volumeRampTime.check() ) {
       volumeRampTime.reset();
       volume--;
-      musicVolume(volume);
+      musicVolumeDown();
     }
 
     // resend tower commands
@@ -332,6 +334,8 @@ void playerFanfare() {
   
   // end display
   quiet();
+
+  Serial << F("Gameplay: Player fanfare ended") << endl;
 }
 
 

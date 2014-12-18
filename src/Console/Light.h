@@ -3,9 +3,20 @@
 #ifndef Light_h
 #define Light_h
 
-#include "Pinouts.h"
+// Light module IO.  Pull LOW to active touch buttons and rim lighting.
+#define PIXELS_RED 31
+#define PIXELS_YEL 33
+#define PIXELS_GRN 35 
+#define PIXELS_BLU 37
+
+// Manual button lights, panels, under console.  wire to N-channel MOSFET + and any GND.
+#define LED_YEL 8 // can move, PWM
+#define LED_GRN 9 // can move, PWM
+#define LED_BLU 10 // can move, PWM
+#define LED_RED 11 // can move, PWM
+
 #include <Arduino.h>
-#include <Simon_Comms.h> // sizes, indexing defines.
+#include <Simon_Indexes.h> // sizes, indexing defines.
 
 #include <LED.h> // with LED abstraction
 

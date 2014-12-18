@@ -5,11 +5,6 @@
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
 
-//----- Wiring connections.  
-// Could be pulled out to individual subunit .h files, which would add clarity
-// to the subunit sections, at the cost of not having a concise list of pins in one place.  
-#include "Pinouts.h"
-
 //------ Input units.
 
 // Touch subunit. Responsible for UX input.
@@ -42,13 +37,17 @@
 
 // Tower subunit.  Responsible for UX (light/fire) output at the Tower.
 #include "Tower.h"
-#include <Simon_Comms.h> // sizes, indexing and comms between Towers and Console
+#include <Simon_Indexes.h> // sizes, indexing and 
+#include <Simon_Comms.h> // comms between Towers and Console
 #include <RFM12B.h> // RFM12b radio transmitter module
 #include <SPI.h> // radio transmitter is a SPI device
 #include <EEPROM.h> // saving and loading radio settings
 
 // Music subunit.  Responsible for UX (sound) output.
 #include "Music.h" 
+
+// should Unit Tests be run if the startup routines return an error?
+#define RUN_UNIT_ON_ERROR false
 
 void setup() {
   // put your setup code here, to run once:
@@ -60,11 +59,11 @@ void setup() {
   // start each unit
   //------ Input units.
   touchStart();
-  buttonStart();
+  if( !buttonStart() && RUN_UNIT_ON_ERROR || 0) buttonUnitTest();
   //------ Output units.
   lightStart();
   towerStart();
-  musicStart();
+  if( !musicStart() && RUN_UNIT_ON_ERROR || 1) musicUnitTest();
   //------ "This" units.
   gameplayStart();
   externStart();
@@ -83,4 +82,12 @@ void loop() {
   } 
 }
 
+/* possible IRQ pins (for attachInterrupt):
+  pin 2 (IRQ 0) taken by RFM12b
+  pin 3 (IRQ 1) taken by VS1023
+  pin 21 (IRQ 2) taken by MPR121 (Wire library!)
+  pin 20 (IRQ 3) taken by MPR121 (Wire library!)
+  pin 19 (IRQ 4) reserved for MPR121
+  pin 18 (IRQ 5)
+*/
 

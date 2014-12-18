@@ -8,7 +8,28 @@
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
 
-#include <Simon_Comms.h> // sizes, indexing and comms between Towers and Console
+// RFM12b radio:
+/* JeeLibs RFM12b radio comms:
+  See: http://jeelabs.org/2011/02/02/meet-the-rfm12b-board/
+  
+  +5V -> 5V
+  Ground -> GND
+  SPI clock (SCK) –> Uno digital 13 (Mega 52)
+  SPI data out (SDO) –> Uno digital 12 (Mega 50)
+  SPI data in (SDI) –> Uno digital 11 (Mega 51)
+  SPI select (SEL) –> Uno digital 10
+  IRQ –> Uno digital 2
+  +3.3V -> (unused, but a regulated 3.3 source if we need it)
+*/
+// SPI library requirements: http://arduino.cc/en/Reference/SPI
+#define RADIO_SCK 52 // SPI CLK
+#define RADIO_SDO 50 // SPI MISO
+#define RADIO_SDI 51 // SPI MOSI
+#define RADIO_SEL 53 // SPI SS
+#define RADIO_IRQ 2 // IRQ 0
+
+#include <Simon_Indexes.h> // sizes, indexing
+#include <Simon_Comms.h> // comms between Towers and Console
 #include <RFM12B.h> // RFM12b radio transmitter module
 #include <SPI.h> // radio transmitter is a SPI device
 #include <EEPROM.h> // saving and loading radio settings

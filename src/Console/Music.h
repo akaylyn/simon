@@ -3,7 +3,9 @@
 #ifndef Music_h
 #define Music_h
 
-#include "Pinouts.h"
+// Speaker
+#define SPEAKER_WIRE 3 // can move, PWM needed
+
 #include <Arduino.h>
 #include <Simon_Comms.h> // sizes, indexing defines.
 
@@ -21,8 +23,8 @@
 #define WRONG_TONE 42       // a losing tone of 42 Hz 
 
 // communications with Music module via Serial port
-#define Music Serial1
-#define MUSIC_COMMS_RATE 115200
+#define Music Serial2
+#define MUSIC_COMMS_RATE 38400
 
 // default sound level on Music module [0,9]
 #define MUSIC_MAX_VOL 9
@@ -30,27 +32,29 @@
 #define MUSIC_MIN_VOL 0
 
 // sets up sound at startup
-void musicStart();
+boolean musicStart();
 
 // plays a tone
 void musicTone(byte colorIndex, unsigned long duration=0);
 
-// stop sound on speaker and Music module
-void musicQuiet();
+// stop sound on speaker and Music module immediately
+void musicStop();
 
 // set the volume on the Music module.  We don't have any in-software control over speaker.
-void musicVolume(byte level);
+void musicVolumeSet(byte level);
+void musicVolumeUp(); // current level tracked internally.
+void musicVolumeDown(); // current level tracked internally.
 
-// return true if the Music module is playing a track
-boolean musicIsPlaying();
-
-// play a random track from "WINS" subdirectory on Music module
+// play random tracks from "WINS" subdirectory on Music module
 void musicWins();
-// play a random track from "LOSE" subdirectory on Music module
+// play random tracks from "LOSE" subdirectory on Music module
 void musicLose();
-// play a random track from "BAFF" subdirectory on Music module
+// play random tracks from "BAFF" subdirectory on Music module
 void musicBaff();
-// play a random track from "ROCK" subdirectory on Music module
+// play random tracks from "ROCK" subdirectory on Music module
 void musicRock();
+
+// unit test for Music
+void musicUnitTest();
 
 #endif

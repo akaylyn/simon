@@ -10,6 +10,7 @@ void touchStart() {
    // some reasonable defaults are set.
    // expect this to be called after startup
    // and again between games.
+   Serial << F("Touch: startup.") << endl;
 }
 
 // calibrates the Touch interface

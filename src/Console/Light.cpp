@@ -9,7 +9,7 @@ LED yelLight(LED_YEL);
 
 // configures lights at startup
 void lightStart() {
-  Serial << F("Light startup.") << endl;
+  Serial << F("Light: startup.") << endl;
   
   ledStart();
   pixelsStart();

@@ -4,6 +4,7 @@
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
 // sizes, indexing and comms common to Towers and Console
+#include <Simon_Indexes.h>
 #include <EEPROM.h> // saving and loading radio settings
 #include <RFM12B.h> // RFM12b radio transmitter module
 #include <Simon_Comms.h> 

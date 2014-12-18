@@ -7,17 +7,13 @@
 #include <Metro.h> // timers
 
 // Serial speed.  match on the other side.
-#define SERIAL_SPEED 115200 // baud
-
-// length of time waiting for command before doing stuff.
-#define SERIAL_WAIT 5UL // ms.
-
-// character length for commands
-#define SERIAL_COMMAND_LENGTH 4 // characters
-String command = String(SERIAL_COMMAND_LENGTH);
+#define SERIAL_SPEED 38400 // baud
 
 // minimum volume to set [0-255].  0 is loudest
 #define MIN_MP3_VOL 100
+
+// track playing status
+byte playingWhat = 0;
 
 // See: https://learn.adafruit.com/adafruit-vs1053-mp3-aac-ogg-midi-wav-play-and-record-codec-tutorial/simple-audio-player-wiring
 // and player_interrupts example
@@ -27,11 +23,11 @@ String command = String(SERIAL_COMMAND_LENGTH);
 #define MP3_CLK 13 // SPI CLK
 #define MP3_MISO 12 // SPI MISO
 #define MP3_MOSI 11 // SPI MOSI
-#define MP3_CS 10 // can move; set to 10 in example; VS1053 chip select pin (output); called BREAKOUT_CS in the example
-#define MP3_RST 9 // can move; set to 9 in the example; VS1053 reset pin (output); called BREAKOUT_RESET in the example
-#define MP3_XDCS 8 // can move; set to 8 in the example; VS1053 Data/command select pin (output); called BREAKOUT_DCS in the example
-#define MP3_SDCS 4 // can move; set to 4 in the example;  Card chip select pin; called CARDCS in the example
 #define MP3_DREQ 2 // IRQ 1; set to 3 in the example; VS1053 Data request, ideally an Interrupt pin; called DREQ in the example
+#define MP3_XDCS 3 // can move; set to 8 in the example; VS1053 Data/command select pin (output); called BREAKOUT_DCS in the example
+#define MP3_SDCS 4 // can move; set to 4 in the example;  Card chip select pin; called CARDCS in the example
+#define MP3_CS 5 // can move; set to 10 in example; VS1053 chip select pin (output); called BREAKOUT_CS in the example
+#define MP3_RST 6 // can move; set to 9 in the example; VS1053 reset pin (output); called BREAKOUT_RESET in the example
 
 // instantiate
 Adafruit_VS1053_FilePlayer musicPlayer =
@@ -54,83 +50,55 @@ const char dirRock[] = "ROCK";
 void setup() {
   Serial.begin(SERIAL_SPEED);
 
-  // set timeout
-  Serial.setTimeout(SERIAL_WAIT);
-
   // put your setup code here, to run once:
   musicStart();
 
   // set random seed from analog noise
   randomSeed(analogRead(A0));
+}
 
+// called when a serial message is received.
+void serialEvent() {
+  //  if ( musicPlayer.playingMusic )
+  //    musicPlayer.pausePlaying(true); // hang on.  the music playback has enough interrupt calls that it disrupts serial.
+
+  char command = Serial.read();
+
+  //  if ( musicPlayer.paused )
+  //    musicPlayer.pausePlaying(false); // restart if needed.
+
+  if ( command < '0' || command > 'z' ) return; // spurious characters like line feed.
+  else Serial << command << endl;
+
+  if ( command >= '0' && command <= '9' ) {
+    byte vol = constrain(map(vol - '0', 0, 9, MIN_MP3_VOL, 0), 0, MIN_MP3_VOL); // 0 is the loudest.  map 1-9 to 0-255.
+    // Set volume for left, right channels. lower numbers == louder volume!
+    musicPlayer.setVolume(vol, vol);
+    Serial << F("Volume set: ") << vol << endl;
+  } else {
+    switch ( command ) {
+      case 'u': musicUnitTest(); break;
+      case 'p': musicPlayer.pausePlaying(!musicPlayer.paused()); break;
+      case 's': playingWhat = 0; break;
+      case 'r': playingWhat = 1; break;
+      case 'w': playingWhat = 2; break;
+      case 'l': playingWhat = 3; break;
+      case 'b': playingWhat = 4; break;
+      default: Serial << F("Unknown Command(") << command << F(") Try: u,p,s,0-9,r,w,l,b.") << endl;
+    }
+  }
 }
 
 void loop() {
-
-  // check Serial for commands.
-  while ( Serial.available() ) {
-    musicPlayer.pausePlaying(true); // hang on.
-    command = "";
-
-    while ( command.length() < 4 ) {
-      command += Serial.readString(); // beholden to SERIAL_WAIT
-    }
-    command.trim();
-
-    musicPlayer.pausePlaying(false); // keep going, if apropos.
-  }
-
-  if ( command.length() >= 4 )  {
-    if ( command.equals(F("UNIT")) ) {
-      // unit test
-      musicUnitTest();
-      Serial << F("Unit test.") << endl;
-    } else if ( command.equals(F("PLAY")) || command.equals(F("PAUS")) ) {
-      // toggle play/pause
-      musicPlayer.pausePlaying(!musicPlayer.paused());
-      Serial << F("Toggling play/pause.") << endl;
-    } else if ( command.equals(F("STOP")) ) {
-      // stop playing
-      musicPlayer.stopPlaying();
-      Serial << F("Stopping playback.") << endl;
-      sendStopSequence(); // and terminate with the stop sequence
-    } else if ( command.startsWith(F("VOL")) ) {
-      // set volume
-      byte vol = command.charAt(SERIAL_COMMAND_LENGTH - 1);
-      vol = constrain(map(vol - '0', 1, 9, MIN_MP3_VOL, 0), 0, MIN_MP3_VOL); // 0 is the loudest.  map 1-9 to 0-255.
-      // Set volume for left, right channels. lower numbers == louder volume!
-      musicPlayer.setVolume(vol, vol);
-      Serial << F("Volume set: ") << vol << endl;
-    } else if ( command.equals(F("ROCK")) ) {
-      playRandomTrack(dirRock, tracksRock);
-    } else if ( command.equals(F("WINS")) ) {
-      playRandomTrack(dirWins, tracksWins);
-    } else if ( command.equals(F("LOSE")) ) {
-      playRandomTrack(dirLose, tracksLose);
-    } else if ( command.equals(F("BAFF")) ) {
-      playRandomTrack(dirBaff, tracksBaff);
-    } else {
-      Serial << F("Unknown Command(") << command << F(") Try: UNIT, PLAY, PAUS, STOP, VOL[1-9], ROCK, WINS, LOSE, BAFF.") << endl;
-    }
-  } else if ( command.length() > 0 ) {
-    Serial << F("Partial command? :") << command << endl;
-    delay(20);
-    while ( Serial.read() >= 0 ); // dump buffer.
-  }
-
-  // clear
-  command = "";
-
-  // store the playing state
-  static boolean isPlaying = false;
-  // check it, and report if we've stopped
-  if ( isPlaying && !musicPlayer.playingMusic) {
+  // check playing state, and report if we've stopped
+  if ( playingWhat > 0 && !musicPlayer.playingMusic) {
     // we've just stopped
     Serial << endl;
-    sendStopSequence();
+    playAnotherRandomTrack();
+  } else if( playingWhat == 0 && musicPlayer.playingMusic ) {
+    // we should stop
+    musicPlayer.stopPlaying();
   }
-  // store current state
-  isPlaying = musicPlayer.playingMusic;
 
   // put your main code here, to run repeatedly:
   // check if music is running.
@@ -144,9 +112,13 @@ void loop() {
 
 }
 
-void sendStopSequence() {
-  // mustn't be null terminated.  234=uppercase omega
-  Serial.write(234);
+void playAnotherRandomTrack() {
+  switch (playingWhat) {
+    case 1: playRandomTrack(dirRock, tracksRock); break;
+    case 2: playRandomTrack(dirWins, tracksWins); break;
+    case 3: playRandomTrack(dirLose, tracksLose); break;
+    case 4: playRandomTrack(dirBaff, tracksBaff); break;
+  }
 }
 
 void playRandomTrack(const char *dirName, int totalTracks) {
@@ -179,7 +151,7 @@ void playRandomTrack(const char *dirName, int totalTracks) {
   // close up
   dir.close();
 
-  Serial << F(" -> ") << dir.name() << F("/") << entry.name() << F(" [") << track + 1 << F("/") << totalTracks << F("]") << endl;
+  Serial << endl << F(" -> ") << dir.name() << F("/") << entry.name() << F(" [") << track + 1 << F("/") << totalTracks << F("]") << endl;
 
   // make sure we've stopped.
   while (! musicPlayer.stopped() );
@@ -227,10 +199,9 @@ void musicStart() {
 
   // Set volume for left, right channels. lower numbers == louder volume!
   musicPlayer.setVolume(MIN_MP3_VOL / 2, MIN_MP3_VOL / 2);
-  
-  // let the Console know we're not playing.
-  sendStopSequence();
 
+  // wait for it.
+  Serial.flush();
 }
 
 void musicUnitTest() {
@@ -244,16 +215,6 @@ void musicUnitTest() {
     while (1);
   }
   Serial.println(F("Started playing"));
-
-  /*
-  while (musicPlayer.playingMusic) {
-     // file is now playing in the 'background' so now's a good time
-     // to do something else like handling LEDs or buttons :)
-     Serial.print(F("."));
-     delay(1000);
-   }
-   Serial.println(F("Done playing music"));
-  */
 }
 
 // File listing helper

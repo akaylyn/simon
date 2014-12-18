@@ -30,13 +30,13 @@ towerInstruction inst;
 towerConfiguration config[N_TOWERS];
 
 void towerStart() {
-  Serial << F("Tower startup.") << endl;
+  Serial << F("Tower: startup.") << endl;
 
   // shouldn't need to run this once the memory is saved.
-  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
+//  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
   // start RFM12b radio
   if ( commsStart() != consoleNodeID  ) {
-    Serial << F("Unable to start RFM as consoleNodeID.  Halting!") << endl;
+    Serial << F("Tower: unable to start RFM as consoleNodeID.  Halting!") << endl;
     while (1);
   }
   // ping the network
@@ -93,7 +93,7 @@ void towerUpdate() {
     if ( radio.GetDataLen() == sizeof(towerConfiguration) ) {
 
       byte senderNodeID = radio.GetSender();
-      Serial << F("Join request from node ") << senderNodeID << endl;
+      Serial << F("Tower: join request from node ") << senderNodeID << endl;
       sendConfiguration();  // send network configuration settings
     }
 
@@ -114,12 +114,12 @@ void towerUpdate() {
 
 // ping network for quality
 void pingNetwork(int waitACK) {
-  Serial << F("Ping network....") << endl;
+  Serial << F("Tower: ping network....") << endl;
 
   // check ping quality and use that to figure out how many Towers can be used.
   for ( byte ni = 0; ni < N_TOWERS; ni ++ ) {
     if ( towerColor[ni] != I_NONE || towerFire[ni] != I_NONE ) {
-      Serial << F("Ping node: ") << towerNodeID[ni] << endl;
+      Serial << F("Tower: ping node: ") << towerNodeID[ni] << endl;
 
       // store the number of ACKs we get back
       int ACKcount = 0;
@@ -134,14 +134,14 @@ void pingNetwork(int waitACK) {
       }
       Serial << endl;
 
-      Serial << F("Quality = ") << ACKcount << F("%.") << endl;
+      Serial << F("Tower: quality = ") << ACKcount << F("%. to node: ") << towerNodeID[ni] << endl;
     }
   }
 }
 
 // configure network
 void configureNetwork() {
-  Serial << F("Configuring network....") << endl;
+  Serial << F("Tower: configuring network....") << endl;
 
   // check ping quality and use that to figure out how many Towers can be used.
   for ( byte ni = 0; ni < N_TOWERS; ni ++ ) {
@@ -152,12 +152,12 @@ void configureNetwork() {
 
 // send configuration to Towers
 void sendConfiguration() {
-  Serial << F("Updating network....") << endl;
+  Serial << F("Tower: updating network....") << endl;
 
   // send the configuration to the network.
   // will be saved in EEPROM if new.
   for ( byte ni = 0; ni < N_TOWERS; ni ++ ) {
-    Serial << "Sending configuration: ";
+    Serial << F("Tower: sending configuration: ");
     commsPrint(config[ni], towerNodeID[ni]);
     commsSend(config[ni], towerNodeID[ni]);
   }

@@ -1,26 +1,22 @@
 #include "Music.h"
 
-// at the end of music playback, this character will be sent.
-char stopCharacter;
+// track volume setting.
+byte volumeSetting = MUSIC_DEFAULT_VOL;
 
 // sets up sound at startup
-void musicStart() {
-  Serial << F("Sound: startup.") << endl;
+boolean musicStart() {
+  Serial << F("Music: startup.") << endl;
 
   // setup speaker
   pinMode(SPEAKER_WIRE, OUTPUT);
   
   // setup comms to Music
   Music.begin(MUSIC_COMMS_RATE);
-  
-  // turn off music, should return a Serial stream terminated with the stop character
-  musicQuiet(); 
-  while( Music.available() ) stopCharacter = Music.read();
-  
-  Serial << F("Sound: stop character is: ") << stopCharacter << endl;
-  
+
   // set the default volume
-  musicVolume(MUSIC_DEFAULT_VOL);
+  musicVolumeSet(volumeSetting);
+  
+  return( Music ); // if there was an error with Serial connection to Music, return false.
 }
   
 // plays a tone
@@ -53,57 +49,84 @@ void musicTone(byte colorIndex, unsigned long duration) {
   }
 }
 
-// stop music on speaker and Music module
-void musicQuiet() {
-  // turn off the speaker
-  noTone(SPEAKER_WIRE);
-  // stop Music
-  const char send[5] = "STOP";
+void musicSend(char send) {
   Music.write(send);
+  Serial << F("Music: sending ") << send << endl;
 }
 
-// return true if the Music module is playing a track
-boolean musicIsPlaying() {
-  // track what we get from Music, as it only sends on an interval.
-  static char recvFromMusic = stopCharacter;
+// stop music on speaker and Music module
+void musicStop() {
+  // turn off the speaker
+  noTone(SPEAKER_WIRE);
 
-  // fast-forward through Serial stream to the last byte.
-  while( Music.available() ) recvFromMusic = Music.read();
-
-  // check against stop character
-  if( recvFromMusic == stopCharacter ) return(false);
-  return(true);
+  // stop Music
+  musicSend('s');
 }
 
 // set the volume on the Music module.  We don't have any in-software control over speaker.
-void musicVolume(byte level) {
-  char send[5] = "VOL9";
-  if( level > 9 ) {
-    send[3] = '9';
-  } else {
-    send[3] = '0' + level;
-  }
-  Music.write(send);
+void musicVolumeSet(byte level) {
+  // constrain
+  char send = '0' + constrain(level, MUSIC_MIN_VOL, MUSIC_MAX_VOL);
+  // send
+  musicSend(send);
+  // track volume setting
+  volumeSetting = send - '0';  
+}
+void musicVolumeUp() {
+  musicVolumeSet(volumeSetting++);
+}
+void musicVolumeDown() {
+  musicVolumeSet(volumeSetting--);
 }
 
 // play a random track from "WINS" subdirectory on Music module
 void musicWins() {
-  const char send[5] = "WINS";
-  Music.write(send);
+  musicSend('w');
 }
 // play a random track from "LOSE" subdirectory on Music module
 void musicLose() {
-  const char send[5] = "LOSE";
-  Music.write(send);
+  musicSend('l');
 }
 // play a random track from "BAFF" subdirectory on Music module
 void musicBaff() {
-  const char send[5] = "BAFF";
-  Music.write(send);
+  musicSend('b');
 }
 // play a random track from "ROCK" subdirectory on Music module
 void musicRock() {
-  const char send[5] = "ROCK";
-  Music.write(send);
+  musicSend('r');
+}
+
+// unit test for Music
+void musicUnitTest() {
+  Serial << F("Music: tone test...") << endl;
+  
+  musicTone(I_RED);
+  delay(500);
+  
+  musicTone(I_GRN);
+  delay(500);
+
+  musicTone(I_BLU);
+  delay(500);
+
+  musicTone(I_YEL);
+  delay(500);
+  
+  // send STOP
+  musicStop();
+  
+  // up volume
+  musicVolumeSet(MUSIC_MAX_VOL);
+
+  // start a unit test.  
+  musicSend('u');
+  
+  while( volumeSetting > 0 ) {
+    delay(1000);
+    musicVolumeDown();
+  }
+  musicStop();
+  
+  Serial << F("Music: unit test stopped playback.") << endl;
 }
 
