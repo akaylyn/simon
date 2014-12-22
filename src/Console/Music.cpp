@@ -16,6 +16,9 @@ boolean musicStart() {
   // set the default volume
   musicVolumeSet(volumeSetting);
   
+  // stop it
+  musicStop();
+  
   return( Music ); // if there was an error with Serial connection to Music, return false.
 }
   
@@ -73,10 +76,10 @@ void musicVolumeSet(byte level) {
   volumeSetting = send - '0';  
 }
 void musicVolumeUp() {
-  musicVolumeSet(volumeSetting++);
+  musicVolumeSet(++volumeSetting);
 }
 void musicVolumeDown() {
-  musicVolumeSet(volumeSetting--);
+  musicVolumeSet(--volumeSetting);
 }
 
 // play a random track from "WINS" subdirectory on Music module
@@ -119,7 +122,7 @@ void musicUnitTest() {
   musicVolumeSet(MUSIC_MAX_VOL);
 
   // start a unit test.  
-  musicSend('u');
+  musicSend('b');
   
   while( volumeSetting > 0 ) {
     delay(1000);

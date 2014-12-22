@@ -34,6 +34,9 @@ boolean gameplayUpdate() {
 
   // update FSM
   simon.update();
+  
+  // return true if playing
+  return( !simon.isInState( idle ) );
 
 }
 

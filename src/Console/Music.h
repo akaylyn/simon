@@ -24,7 +24,7 @@
 
 // communications with Music module via Serial port
 #define Music Serial2
-#define MUSIC_COMMS_RATE 38400
+#define MUSIC_COMMS_RATE 19200
 
 // default sound level on Music module [0,9]
 #define MUSIC_MAX_VOL 9

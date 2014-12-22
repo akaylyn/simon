@@ -63,11 +63,12 @@ void setup() {
   //------ Output units.
   lightStart();
   towerStart();
-  if( !musicStart() && RUN_UNIT_ON_ERROR || 1) musicUnitTest();
+  if( !musicStart() && RUN_UNIT_ON_ERROR || 0) musicUnitTest();
   //------ "This" units.
   gameplayStart();
   externStart();
 
+  Serial << F("STARTUP: complete.") << endl;
 }
 
 // main loop for the core.

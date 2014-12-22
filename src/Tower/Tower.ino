@@ -3,11 +3,10 @@
 // The IDE requires all libraries to be #include’d in the main (.ino) file.  Clutter.
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
-// sizes, indexing and comms common to Towers and Console
-#include <Simon_Indexes.h>
+#include <Simon_Indexes.h> // sizes, indexing and comms common to Towers and Console
 #include <EEPROM.h> // saving and loading radio settings
 #include <RFM12B.h> // RFM12b radio transmitter module
-#include <Simon_Comms.h> 
+#include <Simon_Comms.h>  // Tower<=>Console
 
 // this is where the lights and fire instructions from Console are placed
 towerInstruction inst;
@@ -25,11 +24,11 @@ RFM12B radio;
 // store my NODEID
 byte myNodeID;
 // keep track of activity to note network drop out
-#define D_NETWORK_TIMOUT 35000UL
-Metro networkTimeout(D_NETWORK_TIMOUT);
-// let the console know we're here to join the party.
-boolean notConfigured = true; // ask for config once after startup.
-Metro joinInterval(0); // but don't spam the channel
+#define D_NETWORK_TIMOUT 10000UL
+Metro networkTimeout(D_NETWORK_TIMOUT, 0); 
+
+boolean amConfigured = false; // ask for config once after startup.
+boolean doTestPatterns = true; // switch to test patterns
 
 // track how long we need to have the flame on for.
 Metro flameOnTime(100UL);
@@ -54,6 +53,11 @@ Metro flameCoolDownTime(2000UL);
 // minimum value on the LEDs that don't flicker
 #define MIN_PWM 3
 
+// luminosity is not equal among LEDs
+#define RED_MAX 255
+#define GRN_MAX 220
+#define BLU_MAX 210
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -73,10 +77,10 @@ void setup() {
 
   // once, at hardware initialization, we need to bootstrap some settings to the EEPROM
   //  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
-  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
-  //  commsSave(towerNodeID[1]); // write to EEPROM. Select towerNodeID[0..3].
-  //  commsSave(towerNodeID[2]); // write to EEPROM. Select towerNodeID[0..3].
-  //  commsSave(towerNodeID[3]); // write to EEPROM. Select towerNodeID[0..3].
+//  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
+//  commsSave(towerNodeID[1]); // write to EEPROM. Select towerNodeID[0..3].
+//  commsSave(towerNodeID[2]); // write to EEPROM. Select towerNodeID[0..3].
+//  commsSave(towerNodeID[3]); // write to EEPROM. Select towerNodeID[0..3].
   //  commsDefault(config, I_ALL, I_NONE); // get a default configuration.
   //  commsSave(config); // write to EEPROM.
   // end boostrap
@@ -117,13 +121,13 @@ void loop() {
       inst = *(towerInstruction*)radio.Data;
       // do it.
       performInstruction();
+      // note network activity
+      networkTimeout.reset();
+      doTestPatterns = false;
     }
     else if ( radio.GetDataLen() == sizeof(config) ) {
       // configuration for tower
       Serial << F("Configuration from Console.") << endl;
-
-      // note that
-      notConfigured = false;
 
       // check to see if the instructions have changed?
       if ( memcmp((void*)(&config), (void*)radio.Data, sizeof(config)) != 0 ) {
@@ -138,6 +142,9 @@ void loop() {
 
       // set flame cooldown from config
       flameCoolDownTime.interval(config.flameCoolDownTime);
+
+      // note we're configured
+      amConfigured = true;
     }
     else if ( radio.GetDataLen() == sizeof(inst) + 1 ) {
       // ping received.
@@ -148,25 +155,24 @@ void loop() {
     if ( radio.ACKRequested() )
       radio.SendACK();
 
-    // we have radio comms, so note that activity 
-    networkTimeout.reset();
-    
-  } else if ( networkTimeout.check() ) { // otherwise we're on our own... lonely!
-
-    updateSoloTestPattern(); // if we need to update the test pattern, do so.
-
-  } else { // we're still part of the network.
+  } 
   
-    updateNetworkTestPattern(); // if we need to update the test pattern, do so.
+  if ( networkTimeout.check() ) { // comms are quiet
+    doTestPatterns = true;
+  }
+
+  if( doTestPatterns ) {
+    if( amConfigured ) updateNetworkTestPattern(); // if we need to update the test pattern, do so.
+    else updateSoloTestPattern(); // if we need to update the test pattern, do so.
   }
 
   // check to see if we need to request configuration information from Console
-  if ( notConfigured && joinInterval.check() ) {
-    Serial << F("Join request.") << endl;
-    boolean toss = commsSend(config, consoleNodeID, 0); // ask for a configuration, no ACK request
-    joinInterval.interval(random(250, 500)); // important that each tower has its own timing to prevent Tx collision.
-    joinInterval.reset();
-  }
+//  if ( notConfigured && joinInterval.check() ) {
+//    Serial << F("Join request.") << endl;
+//    boolean toss = commsSend(config, consoleNodeID, 0); // ask for a configuration, no ACK request
+//    joinInterval.interval(random(250, 500)); // important that each tower has its own timing to prevent Tx collision.
+//    joinInterval.reset();
+//  }
 
 }
 
@@ -195,12 +201,14 @@ void updateSoloTestPattern() {
   static Metro onTime(SOLO_TEST_PATTERN_UPDATE);
 
   if ( onTime.check() ) { // enter a new cycle
-    lightSet(pins[currInd], 0); // off
+    // set to zero.
+    commsDefault(inst);
 
-    currInd = ++currInd % 3; // select the next color
+    currInd = ++currInd % 4; // select the next color
     Serial << F("Tower Test Pattern.  Color: ") << currInd << endl;;
 
-    lightSet(pins[currInd], 255);
+    inst.lightLevel[currInd] = 255;
+    performInstruction();
     
     // reset the interval update to add some randomness.
     onTime.interval(trandom(SOLO_TEST_PATTERN_UPDATE/2, SOLO_TEST_PATTERN_UPDATE, SOLO_TEST_PATTERN_UPDATE*2));
@@ -211,7 +219,6 @@ void updateSoloTestPattern() {
 
 // update lighting on an interval when there's nobody playing
 void updateNetworkTestPattern() {
-
   // only update on an interval, or we're spamming the comms and using up a lot of CPU power with float operations
   static Metro boredUpdateInterval(NETWORK_TEST_PATTERN_UPDATE);
   if ( !boredUpdateInterval.check() ) return;
@@ -255,10 +262,10 @@ void performInstruction() {
     maxRed = max(maxRed, inst.lightLevel[I_YEL]);
     maxGrn = max(maxGrn, (inst.lightLevel[I_YEL] * greenYellowFraction) / 100);
   }
-  // set them
-  lightSet(LED_R, maxRed);
-  lightSet(LED_G, maxGrn);
-  lightSet(LED_B, maxBlu);
+  // set them, apping a final scaling to keep brightness roughly equivalent.
+  lightSet(LED_R, map(maxRed, 0, 255, 0, RED_MAX));
+  lightSet(LED_G, map(maxGrn, 0, 255, 0, GRN_MAX));
+  lightSet(LED_B, map(maxBlu, 0, 255, 0, BLU_MAX));
 
   // fire is a little different, if we're "listening" to multiple fire channels.
   // assume we're not going to shoot fire.

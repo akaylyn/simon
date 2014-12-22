@@ -7,7 +7,7 @@
 #include <Metro.h> // timers
 
 // Serial speed.  match on the other side.
-#define SERIAL_SPEED 38400 // baud
+#define SERIAL_SPEED 19200 // baud
 
 // minimum volume to set [0-255].  0 is loudest
 #define MIN_MP3_VOL 100
@@ -71,13 +71,13 @@ void serialEvent() {
   else Serial << command << endl;
 
   if ( command >= '0' && command <= '9' ) {
-    byte vol = constrain(map(vol - '0', 0, 9, MIN_MP3_VOL, 0), 0, MIN_MP3_VOL); // 0 is the loudest.  map 1-9 to 0-255.
+    byte vol = constrain(map(command - '0', 0, 9, MIN_MP3_VOL, 0), 0, MIN_MP3_VOL); // 0 is the loudest.  map 1-9 to 0-255.
     // Set volume for left, right channels. lower numbers == louder volume!
     musicPlayer.setVolume(vol, vol);
     Serial << F("Volume set: ") << vol << endl;
   } else {
     switch ( command ) {
-      case 'u': musicUnitTest(); break;
+      case 'u': playingWhat = 5; break;
       case 'p': musicPlayer.pausePlaying(!musicPlayer.paused()); break;
       case 's': playingWhat = 0; break;
       case 'r': playingWhat = 1; break;
@@ -118,6 +118,7 @@ void playAnotherRandomTrack() {
     case 2: playRandomTrack(dirWins, tracksWins); break;
     case 3: playRandomTrack(dirLose, tracksLose); break;
     case 4: playRandomTrack(dirBaff, tracksBaff); break;
+    case 5: musicUnitTest(); break;
   }
 }
 
@@ -209,12 +210,15 @@ void musicUnitTest() {
   musicPlayer.stopPlaying();
   musicPlayer.sciWrite(VS1053_REG_MODE, VS1053_MODE_SM_SDINEW | VS1053_MODE_SM_RESET);
 
+  // make sure we've stopped.
+  while (! musicPlayer.stopped() );
+
   // Start playing a file, then we can do stuff while waiting for it to finish
   if (! musicPlayer.startPlayingFile("UnitTest.mp3")) {
     Serial.println(F("Could not open file UnitTest.mp3"));
     while (1);
   }
-  Serial.println(F("Started playing"));
+  Serial.println(F("Started playing UnitTest.mp3"));
 }
 
 // File listing helper
