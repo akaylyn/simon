@@ -1,7 +1,5 @@
 // Touch subunit. Responsible for UX input.
 
-// This file should match src/Console/Touch.h
-
 #ifndef Touch_h
 #define Touch_h
 
@@ -32,14 +30,14 @@
 
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
-#include <Simon_Indexes.h> // sizes, indexing  
+#include <Simon_Indexes.h> // sizes, indexing and 
 
 //----- capsense touch: soft capsense buttons
 #include <Adafruit_MPR121.h> // MPR121 capsense board
 #include <Wire.h> // capsense is an I2C device
 
-// starts the Touch interface; returns true if all good.
-boolean touchStart(uint8_t touchCount=30, uint8_t releaseCount=6);
+// restarts the Touch interface
+void touchStart();
 
 // calibrates the Touch interface
 void touchCalibrate();
@@ -51,13 +49,12 @@ boolean touchAnyChanged();
 boolean touchAnyPressed();
 
 // returns true if a specific button has changed
-boolean touchChanged(byte touchIndex);
+boolean touchChanged(byte buttonIndex);
 
 // returns true if a specific button is pressed
-boolean touchPressed(byte touchIndex);
+boolean touchPressed(byte buttonIndex);
   
 // unit test for touch sensor
 void touchUnitTest(boolean details, unsigned long timeout=10000);
 
 #endif
-
