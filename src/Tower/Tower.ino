@@ -118,7 +118,7 @@ void loop() {
     // process it.
     if ( radio.GetDataLen() == sizeof(inst) ) {
       // save instruction for lights/flame
-      inst = *(towerInstruction*)radio.Data;
+      inst = *(towerInstruction*)radio.GetData();
       // do it.
       performInstruction();
       // note network activity
@@ -130,9 +130,9 @@ void loop() {
       Serial << F("Configuration from Console.") << endl;
 
       // check to see if the instructions have changed?
-      if ( memcmp((void*)(&config), (void*)radio.Data, sizeof(config)) != 0 ) {
+      if ( memcmp((void*)(&config), (void*)radio.GetData(), sizeof(config)) != 0 ) {
         // yes, so grab it.
-        config = *(towerConfiguration*)radio.Data;
+        config = *(towerConfiguration*)radio.GetData();
         // save it
         commsSave(config);
       }
