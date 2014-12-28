@@ -34,12 +34,23 @@
 #include <Metro.h> // timers
 #include <Simon_Indexes.h> // sizes, indexing  
 
+#define SENSORS       13
+#define TOU_THRESH    0x1F
+#define REL_THRESH    0x1A
+#define PROX_THRESH   0x3f
+#define PREL_THRESH   0x3c
+
 //----- capsense touch: soft capsense buttons
-#include <Adafruit_MPR121.h> // MPR121 capsense board
+#include <Rockwell_MPR121.h> // MPR121 capsense board interface from Rockwell
 #include <Wire.h> // capsense is an I2C device
 
 // starts the Touch interface; returns true if all good.
 boolean touchStart(uint8_t touchCount=30, uint8_t releaseCount=6);
+
+void dataAvailable();
+void readCapacitiveSensor();
+void setupCapacitiveRegisters();
+void set_register(int address, unsigned char r, unsigned char v);
 
 // calibrates the Touch interface
 void touchCalibrate();

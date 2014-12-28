@@ -1,15 +1,7 @@
 #ifndef Simon_Comms_h
 #define Simon_Comms_h
 
-// how many colors
-#define N_COLORS 4
-// specific color indices to arrays
-#define I_RED 0
-#define I_GRN 1
-#define I_BLU 2
-#define I_YEL 3
-#define I_ALL N_COLORS // special case: react to requests on all channels
-#define I_NONE N_COLORS+1 // special case: react to NO requests of any kind.
+#include "Simon_Indexes.h"
 
 // default minimum and maximum solenoid opening time
 #define D_MIN_FLAME 50UL // ms
@@ -20,7 +12,7 @@
 #include <Arduino.h>
 #include <Streaming.h> // <<-style printing
 
-#define D_GROUP_ID 69 // default RFM group
+#define D_GROUP_ID 188// default RFM group
 #define D_CS_PIN 10 // default SS pin for RFM module
 #define D_WAIT_ACK 50 // default wait time for ACK receipt, ms
 
@@ -32,11 +24,17 @@ const byte radioConfigLocation = 42;
 // EEPROM location for towerConfiguration settings.
 const byte towerConfigLocation = 69;
 
+// RFM12b comms
+// Group ID = 188
+// Simon 1:10
+// Giles 11-20
+// Clouds 21-210
+
 // defined nodes in the network.  should be used to test results of commsStart().
 const byte consoleNodeID = 1;
 // how many towers
 #define N_TOWERS 4
-const byte towerNodeID[N_TOWERS] = {11, 12, 13, 14};
+const byte towerNodeID[N_TOWERS] = {2,3,4,5};
 
 // STARTUP
 
@@ -90,6 +88,5 @@ void commsDefault(towerInstruction &inst, byte lightLevel=0, byte fireLevel=0);
 void commsPrint(towerInstruction &inst);
 // send instruction from Console.  Broadcast mode, so every tower receives.
 void commsSend(towerInstruction &inst);
-
 
 #endif

@@ -5,25 +5,53 @@
 // Walkthrough: https://learn.adafruit.com/adafruit-mpr121-12-key-capacitive-touch-sensor-breakout-tutorial/wiring
 // MPR121 Datasheet: http://www.adafruit.com/datasheets/MPR121.pdf
 
-Adafruit_MPR121 cap = Adafruit_MPR121();
-
-boolean touchStart(uint8_t touchCount, uint8_t releaseCount) {
+boolean touchStart() {
   // some reasonable defaults are set.
   // expect this to be called after startup
   // and again between games.
   Serial << F("Touch: startup.") << endl;
 
-  // Default address is 0x5A, if tied to 3.3V its 0x5B
-  // If tied to SDA its 0x5C and if SCL then 0x5D
-  if (!cap.begin(0x5A)) {
-    Serial << F("Touch: MPR121 not found, check wiring?") << endl;
-    return( false );
+  // following Examples->BareConductive_MPR->SimpleTouch
+
+  // 0x5C is the MPR121 I2C address on the Bare Touch Board
+  if (!MPR121.begin(0x5C)) {
+    Serial << F("Touch: error setting up MPR121");
+    switch (MPR121.getError()) {
+      case NO_ERROR:
+        Serial << F("Touch: no error") << endl;
+        // set the interrupt handler.
+        MPR121.setInterruptPin(TOUCH_IRQ);
+        // initial data update
+        MPR121.updateTouchData();
+        return (true);
+        break;
+      case ADDRESS_UNKNOWN:
+        Serial << F("Touch: incorrect address") << endl;
+        return ( false );
+        break;
+      case READBACK_FAIL:
+        Serial << F("readback failure") << endl;
+        return ( false );
+        break;
+      case OVERCURRENT_FLAG:
+        Serial << F("overcurrent on REXT pin") << endl;
+        return ( false );
+        break;
+      case OUT_OF_RANGE:
+        Serial << F("electrode out of range") << endl;
+        return ( false );
+        break;
+      case NOT_INITED:
+        Serial << F("not initialised") << endl;
+        return ( false );
+        break;
+      default:
+        Serial << F("unknown error") << endl;
+        return ( false );
+        break;
+    }
   }
-  Serial << F("Touch:MPR121 found!") << endl;
-  Serial << F("Touch: count threshold set: ") << touchCount << F(". Release count threshold set: ") << releaseCount << F(".") << endl;
-  cap.setThreshholds(touchCount, releaseCount);
-  
-  return( true );
+
 }
 
 // calibrates the Touch interface
@@ -32,6 +60,18 @@ void touchCalibrate() {
   // sensors, and you've got time to restart the capsense hardware,
   // take some readings, and assure that the sensors are set up
   // correctly.
+  
+  /* MPR121.h exposese autocalibration, but doesn't use them.  :(
+    ACCR0(0x00),
+    ACCR1(0x00),
+    USL(0x00),
+    LSL(0x00),
+    TL(0x00) 
+    
+    MPR121.applySettings() is probably what we want to call to set these correctly.  setRegister would do
+    the trick, too.
+*/
+
 }
 
 // returns true if any of the buttons have switched states.
@@ -99,51 +139,24 @@ boolean touchPressed(byte touchIndex) {
 }
 
 
-void touchUnitTest(boolean details, unsigned long timeout) {
+void touchUnitTest(unsigned long timeout) {
 
   Metro unitTestTimeout(timeout);
-
-  // Keeps track of the last pins touched
-  // so we know when buttons are 'released'
-  uint16_t lasttouched = 0;
-  uint16_t currtouched = 0;
-
   while (! unitTestTimeout.check() ) {
 
-    // Get the currently touched pads
-    currtouched = cap.touched();
-
-    for (uint8_t i = 0; i < 12; i++) {
-      // it if *is* touched and *wasnt* touched before, alert!
-      if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
-        Serial.print(i); Serial.println(F(" touched"));
+    if (MPR121.touchStatusChanged()) {
+      MPR121.updateTouchData();
+      for (int i = 0; i < numElectrodes; i++) {
+        if (MPR121.isNewTouch(i)) {
+          Serial.print("electrode ");
+          Serial.print(i, DEC);
+          Serial.println(" was just touched");
+        } else if (MPR121.isNewRelease(i)) {
+          Serial.print("electrode ");
+          Serial.print(i, DEC);
+          Serial.println(" was just released");
+        }
       }
-      // if it *was* touched and now *isnt*, alert!
-      if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
-        Serial.print(i); Serial.println(F(" released"));
-      }
     }
-
-    // reset our state
-    lasttouched = currtouched;
-
-    // comment out this line for detailed data from the sensor!
-    if ( !details) break;
-
-    // debugging info, what
-    Serial.print(F("\t\t\t\t\t\t\t\t\t\t\t\t\t 0x")); Serial.println(cap.touched(), HEX);
-    Serial.print(F("Filt: "));
-    for (uint8_t i = 0; i < 12; i++) {
-      Serial.print(cap.filteredData(i)); Serial.print(F("\t"));
-    }
-    Serial.println();
-    Serial.print(F("Base: "));
-    for (uint8_t i = 0; i < 12; i++) {
-      Serial.print(cap.baselineData(i)); Serial.print(F("\t"));
-    }
-    Serial.println();
-
-    // put a delay so it isn't overwhelming
-    delay(100);
   }
 }
