@@ -14,16 +14,22 @@
 #include <Bounce.h>
 
 // RIM of LEDs
-#define RIM_PIN 10 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
-#define RIM_N 85 // best if divisible by 4
-#define RED_SEG_OFFSET floor((float)RIM_N / 4.0) // sort out where the LEDs are that match the button locations, in software.  You're welcome.
+#define RIM_PIN 12 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
+// geometry
+#define RIM_N 109 // best if divisible by 4
+#define RIM_SEG_LENGTH 27 // floor(RIM_N/4)=27
+#define YEL_SEG_START 12 // start yellow at this pixel
+#define BLU_SEG_START YEL_SEG_START+RIM_SEG_LENGTH
+#define RED_SEG_START BLU_SEG_START+RIM_SEG_LENGTH
+#define GRN_SEG_START RED_SEG_START+RIM_SEG_LENGTH
 
 // 4x touch lighting strips
+#define RED_PIN A0 // wire to button DI pin.  Include a 330 Ohm resistor in series.
+#define GRN_PIN A1 // wire to button DI pin.  Include a 330 Ohm resistor in series.
+#define BLU_PIN A2 // wire to button DI pin.  Include a 330 Ohm resistor in series.
+#define YEL_PIN A3 // wire to button DI pin.  Include a 330 Ohm resistor in series.
+// geometry
 #define BUTTON_N 45 // wrapped around each button
-#define RED_PIN A0
-#define GRN_PIN A1
-#define BLU_PIN A2
-#define YEL_PIN A3
 
 // LED indicator to ack button presses
 #define LED_PIN 13
@@ -108,19 +114,31 @@ void setup() {
   pinMode(YEL_BUTTON, INPUT_PULLUP);
   pinMode(BLU_BUTTON, INPUT_PULLUP);
 
-  // Initialize all pixels to 'sweet love makin'
-  setupStrip(rimJob, SweetLoveMakin);
-  setupStrip(redL, SweetLoveMakin);
-  setupStrip(grnL, SweetLoveMakin);
-  setupStrip(bluL, SweetLoveMakin);
-  setupStrip(yelL, SweetLoveMakin);
-  delay(1000);
+  Serial << F("RimJob: ") << RIM_N << F(" pixels in 4 segments of length ") << RIM_SEG_LENGTH << endl;
+  Serial << F("RimJob: YEL starts at: ") << YEL_SEG_START << endl;
+  Serial << F("RimJob: BLU starts at: ") << BLU_SEG_START << endl;
+  Serial << F("RimJob: RED starts at: ") << RED_SEG_START << endl;
+  Serial << F("RimJob: GRN starts at: ") << GRN_SEG_START << endl;
 
-  //  test(rimJob); // run through some tests
+  // Initialize all pixels to 'sweet love makin'
+  setupStrip(rimJob, Dead);
+  theaterChase(rimJob, SweetLoveMakin, 10); 
+  
+  setupStrip(redL, Dead);
+  theaterChase(redL, Red, 10); 
+  setupStrip(grnL, Dead);
+  theaterChase(grnL, Grn, 10); 
+  setupStrip(bluL, Dead);
+  theaterChase(bluL, Blu, 10); 
+  setupStrip(yelL, Dead);
+  theaterChase(yelL, Yel, 10); 
+  
   Serial << F("Light: startup complete.") << endl;
 }
 
 void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
+  Serial << F("Initializing strip with pixel count: ") << strip.numPixels() << endl;
+
   strip.begin();
 
   for ( uint16_t i = 0; i < strip.numPixels(); i++ ) {
@@ -234,32 +252,31 @@ boolean buttonCheck() {
 }
 
 void buttonPressPattern(uint8_t button) {
-  const uint16_t rimJobSegLength = floor((float)RIM_N / 4);
 
   switch (button) {
     case 0:  // red
       buttonPressToButton(redL, Red);
       redUpdated = true;
 
-      buttonPressToRim(Red, RED_SEG_OFFSET, rimJobSegLength);
+      buttonPressToRim(Red, RED_SEG_START, RIM_SEG_LENGTH);
       break;
     case 2:  // blue
       buttonPressToButton(bluL, Blu);
       bluUpdated = true;
 
-      buttonPressToRim(Blu, RED_SEG_OFFSET + rimJobSegLength, rimJobSegLength);
+      buttonPressToRim(Blu, BLU_SEG_START, RIM_SEG_LENGTH);
       break;
     case 3:  // yellow
       buttonPressToButton(yelL, Yel);
       yelUpdated = true;
 
-      buttonPressToRim(Yel, RED_SEG_OFFSET + rimJobSegLength * 2, rimJobSegLength);
+      buttonPressToRim(Yel, YEL_SEG_START, RIM_SEG_LENGTH);
       break;
     case 1:  // green
       buttonPressToButton(grnL, Grn);
       grnUpdated = true;
 
-      buttonPressToRim(Grn, RED_SEG_OFFSET + rimJobSegLength * 3, rimJobSegLength);
+      buttonPressToRim(Grn, GRN_SEG_START, RIM_SEG_LENGTH);
       break;
   }
 
@@ -279,7 +296,7 @@ void buttonPressToButton(Adafruit_NeoPixel &strip, const uint32_t color) {
 }
 
 void buttonPressToRim(const uint32_t color, uint16_t segStart, uint16_t segLength) {
-  Serial << F("Button.  Adding pixels to Rim from ") << segStart << F(" to ") << segStart + segLength - 1 << F(". Color: ");
+  Serial << F("Button.  Adding pixels to Rim from ") << segStart << F(" to ") << (segStart + segLength - 1) % RIM_N << F(". Color: ");
   printColor(color);
 
   // clear the segment and lay down this color
@@ -562,5 +579,5 @@ void twinkleRand(Adafruit_NeoPixel &strip, int num, uint32_t c, uint32_t bg) {
   }
 }
 
-// other options for effects at: http://funkboxing.com/wordpress/wp-content/_postfiles/sk_qLEDFX_POST.ino 
+// other options for effects at: http://funkboxing.com/wordpress/wp-content/_postfiles/sk_qLEDFX_POST.ino
 
