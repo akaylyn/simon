@@ -9,6 +9,9 @@
 // Serial speed.  match on the other side.
 #define SERIAL_SPEED 19200 // baud
 
+// LED pin to show we're playing
+#define LED_PIN 13
+
 // minimum volume to set [0-255].  0 is loudest
 #define MIN_MP3_VOL 100
 
@@ -55,6 +58,17 @@ void setup() {
 
   // set random seed from analog noise
   randomSeed(analogRead(A0));
+  
+  // setup LED pin
+  pinMode(LED_PIN, OUTPUT);
+}
+
+void toggleLED() {
+  static boolean state=false;
+  
+  state=!state;
+  
+  digitalWrite(LED_PIN, state);
 }
 
 // called when a serial message is received.
@@ -107,6 +121,7 @@ void loop() {
     // file is now playing in the 'background' so now's a good time
     // to do something else like handling LEDs or buttons :)
     Serial << F(".");
+    toggleLED();
     isPlayingTick.reset();
   }
 

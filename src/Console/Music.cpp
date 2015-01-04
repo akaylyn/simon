@@ -122,12 +122,18 @@ void musicUnitTest() {
   musicVolumeSet(MUSIC_MAX_VOL);
 
   // start a unit test.  
-  musicSend('b');
+  musicSend('w');
   
+  Serial << F("from Music: ");
   while( volumeSetting > 0 ) {
+    while( Music.available() > 0) {
+      Serial.print( char(Music.read()) );
+    }
     delay(1000);
     musicVolumeDown();
   }
+  Serial << endl;
+  
   musicStop();
   
   Serial << F("Music: unit test stopped playback.") << endl;

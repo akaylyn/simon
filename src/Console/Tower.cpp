@@ -40,7 +40,7 @@ void towerStart() {
     while (1);
   }
   // ping the network
-  pingNetwork();
+  pingNetwork(5UL);
   // configure network
   configureNetwork();
   // update network
