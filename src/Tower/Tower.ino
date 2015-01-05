@@ -77,10 +77,10 @@ void setup() {
 
   // once, at hardware initialization, we need to bootstrap some settings to the EEPROM
   //  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
-//  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
-//  commsSave(towerNodeID[1]); // write to EEPROM. Select towerNodeID[0..3].
-//  commsSave(towerNodeID[2]); // write to EEPROM. Select towerNodeID[0..3].
-//  commsSave(towerNodeID[3]); // write to EEPROM. Select towerNodeID[0..3].
+//done  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
+//done  commsSave(towerNodeID[1]); // write to EEPROM. Select towerNodeID[0..3].
+//done  commsSave(towerNodeID[2]); // write to EEPROM. Select towerNodeID[0..3].
+//done  commsSave(towerNodeID[3]); // write to EEPROM. Select towerNodeID[0..3].
   //  commsDefault(config, I_ALL, I_NONE); // get a default configuration.
   //  commsSave(config); // write to EEPROM.
   // end boostrap
