@@ -2,17 +2,17 @@
 
  Bare Conductive MPR121 library
  ------------------------------
- 
+
  MPR121.h - MPR121 class header file
- 
- Based on code by Jim Lindblom and plenty of inspiration from the Freescale 
+
+ Based on code by Jim Lindblom and plenty of inspiration from the Freescale
  Semiconductor datasheets and application notes.
- 
+
  Bare Conductive code written by Stefan Dzisiewski-Smith and Peter Krige.
- 
- This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 
+
+ This work is licensed under a Creative Commons Attribution-ShareAlike 3.0
  Unported License (CC BY-SA 3.0) http://creativecommons.org/licenses/by-sa/3.0/
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,9 +29,9 @@
 #include "MPR121_defs.h"
 #include <Wire.h>
 
-// idea behind this is to create a settings structure that we can use to store 
-// all the setup variables for a particular setup - comes pre-instantiated with 
-// defaults and can be easily tweaked - we pass by reference (as a pointer) to 
+// idea behind this is to create a settings structure that we can use to store
+// all the setup variables for a particular setup - comes pre-instantiated with
+// defaults and can be easily tweaked - we pass by reference (as a pointer) to
 // save RAM
 
 struct MPR121_settings_t
@@ -39,7 +39,7 @@ struct MPR121_settings_t
 	// touch and release thresholds
 	unsigned char TTHRESH;
 	unsigned char RTHRESH;
-	
+
 	unsigned char INTERRUPT;
 
 	// general electrode touch sense baseline filters
@@ -89,14 +89,14 @@ struct MPR121_settings_t
 	// auto-configuration registers
 	unsigned char ACCR0;
 	unsigned char ACCR1;
-	unsigned char USL; 
-	unsigned char LSL; 
-	unsigned char TL; 
-	
+	unsigned char USL;
+	unsigned char LSL;
+	unsigned char TL;
+
 	// default values in initialisation list
 	MPR121_settings_t():
 		TTHRESH(40),
-		RTHRESH(20),
+		RTHRESH(19),
 		INTERRUPT(4), 	// note that this is not a hardware interrupt, just the digital
 						// pin that the MPR121 ~INT pin is connected to
 		MHDR(0x3F),
@@ -124,20 +124,56 @@ struct MPR121_settings_t
 		DTR(0x11),
 		AFE1(0xFF),
 		AFE2(0x38),
-		ECR(0x8C), // default to fast baseline startup and 12 electrodes enabled, no prox
+		//ECR(0x8C), // default to fast baseline startup and 12 electrodes enabled, no prox
+        ECR(0x84), // only enable pins 0-3
+
+
+        /**********************************************************************
+         * Auto Calibration Configuration
+         *
+         * does enabling only the pins in use make the autoconfig better/faster?
+         * it may or may not more accurately read touches through plastic
+         * it seems like it is better.
+         *
+         * adding copper tape to the ends of the pins provides enough sensitivity
+         * for detecting touches onto the foil (and through plastic)
+         *********************************************************************/
+        /* ACCR0 - Auto Configure Control Register
+         *  see the data sheet, page 17
+         *  FFI = 11 (same as AFE1.FFI, 0x5C)
+         *  BVA = 10 (same as ECR.CL, 0x5E)
+         */
+		ACCR0(0xFA),
+		ACCR1(0x00),
+		USL(0xC9),
+		LSL(0x82),
+		TL(0xB5) {}
+
+        // disabled mode
+        /*
 		ACCR0(0x00),
 		ACCR1(0x00),
-		USL(0x00), 
-		LSL(0x00), 
+		USL(0x00),
+		LSL(0x00),
 		TL(0x00) {}
-	
+        */
+
+        /*
+        // Auto config options calibrated for 3.3V
+        // Section G - Set Auto Config and Auto Reconfig for prox sensing
+        set_register(0x5A, ATO_CFGU, 0xC9);  // USL = (Vdd-0.7)/vdd*256 = 0xC9 @3.3V
+        set_register(0x5A, ATO_CFGL, 0x82);  // LSL = 0.65*USL = 0x82 @3.3V
+        set_register(0x5A, ATO_CFGT, 0xB5);  // Target = 0.9*USL = 0xB5 @3.3V
+        set_register(0x5A, ATO_CFG0, 0x0B);
+        */
+
 };
 
 // GPIO pin function constants
 enum mpr121_pinf_t
 {
 	// INPUT and OUTPUT are already defined by Arduino, use its definitions
-	
+
 	//INPUT,		// digital input
 	INPUT_PU,		// digital input with pullup
 	INPUT_PD,		// digital input with pulldown
@@ -154,7 +190,7 @@ enum mpr121_proxmode_t
 	DISABLED,		// proximity mode disabled
 	PROX0_1,		// proximity mode for ELE0..ELE1
 	PROX0_3,		// proximity mode for ELE0..ELE3
-	PROX0_11		// proximity mode for ELE0..ELE11		
+	PROX0_11		// proximity mode for ELE0..ELE11
 };
 
 // error codes
@@ -181,13 +217,13 @@ class MPR121_t
 		unsigned char error;
 		bool running;
 		int interruptPin;
-		
+
 		int filteredData[13];
 		int baselineData[13];
-		unsigned int touchData;		  
-		unsigned int lastTouchData;	  
-		bool getLastTouchData(unsigned char electrode);			
-		
+		unsigned int touchData;
+		unsigned int lastTouchData;
+		bool getLastTouchData(unsigned char electrode);
+
 	public:
 		MPR121_t();
 
@@ -198,7 +234,7 @@ class MPR121_t
 		bool begin(unsigned char address);
 		bool begin();
 
-		// getError() returns an mpr121_error_t indicating the current 
+		// getError() returns an mpr121_error_t indicating the current
 		// error on the MPR121 - clearError() clears this
 		mpr121_error_t getError();
 		void clearError();
@@ -206,8 +242,8 @@ class MPR121_t
 		// returns status of the MPR121 INT pin as read via digitalRead() on the
 		// Arduino board - this tells us if there has been a change in touch status
 		// on any active electrode since we last read any data
-		bool touchStatusChanged();		
-		
+		bool touchStatusChanged();
+
 		// updates the data from the MPR121 into our internal buffer
 		// updateTouchData() does this only for touch on / off status
 		// updateBaseLineData() does this for background baseline
@@ -221,9 +257,9 @@ class MPR121_t
 		bool updateBaselineData();
 		bool updateFilteredData();
 		void updateAll();
-		
+
 		// returns a boolean indicating the touch status of a given electrode
-		bool getTouchData(unsigned char electrode);	
+		bool getTouchData(unsigned char electrode);
 
 		// returns the number of touches currently detected
 		unsigned char getNumTouches();
@@ -235,10 +271,10 @@ class MPR121_t
 		// returns boolean indicating whether a new touch or release has been
 		// detected since the last time updateTouchData() was called
 		bool isNewTouch(unsigned char electrode);
-		bool isNewRelease(unsigned char electrode);		
-		
-		// sets touch and release thresholds either for all electrodes, or 
-		// for a specfic electrode - higher values = less sensitive and 
+		bool isNewRelease(unsigned char electrode);
+
+		// sets touch and release thresholds either for all electrodes, or
+		// for a specfic electrode - higher values = less sensitive and
 		// release threshold must ALWAYS be lower than touch threshold
 		void setTouchThreshold(unsigned char val);
 		void setTouchThreshold(unsigned char electrode, unsigned char val);
@@ -247,8 +283,8 @@ class MPR121_t
 
 		// returns the current touch or release threshold for a specified electrode
 		unsigned char getTouchThreshold(unsigned char electrode);
-		unsigned char getReleaseThreshold(unsigned char electrode);	
-		
+		unsigned char getReleaseThreshold(unsigned char electrode);
+
 		// ------------------ ADVANCED FUNCTIONS ------------------
 
 		// applies a complete array of settings from an
@@ -273,19 +309,19 @@ class MPR121_t
 		// tells us if we are in run mode, and if we have inited the
 		// MPR121
 		bool isRunning();
-		bool isInited();		
+		bool isInited();
 
-		// sets the pin that the MPR121 INT output is connected to on the 
+		// sets the pin that the MPR121 INT output is connected to on the
 		// Arduino board - does not have to be a hardware interrupt pin
 		void setInterruptPin(unsigned char pin);
 
 		// set number of electrodes to use to generate virtual "13th"
-		// proximity electrode 
+		// proximity electrode
 		// see http://cache.freescale.com/files/sensors/doc/app_note/AN3893.pdf
 		//
 		// N.B. - this is not related to general proximity detection or
 		// reading back continuous proximity data
-		void setProxMode(mpr121_proxmode_t mode);	
+		void setProxMode(mpr121_proxmode_t mode);
 
 		// Enables GPIO mode for up to 8 of the MPR121 electrodes
 		// starts with electrode 11 - i.e. setNumDigPins(1) sets just
@@ -300,8 +336,8 @@ class MPR121_t
 		// Sets pin mode for an electrode already set as GPIO by
 		// setNumDigPins() - see section "GPIO pin function constants"
 		// for details
-		void pinMode(unsigned char electrode, mpr121_pinf_t mode); 
-		void pinMode(unsigned char electrode, int mode); 				
+		void pinMode(unsigned char electrode, mpr121_pinf_t mode);
+		void pinMode(unsigned char electrode, int mode);
 
 		// Similar to digitalWrite in Arduino for GPIO electrode
 		void digitalWrite(unsigned char electrode, unsigned char val);
@@ -317,7 +353,7 @@ class MPR121_t
 		// internally reduced to 4 bit) and broken on ELE9 and ELE10
 		// see https://community.freescale.com/thread/305474
 		void analogWrite(unsigned char electrode, unsigned char val);
-		
+
 };
 
 extern MPR121_t MPR121;

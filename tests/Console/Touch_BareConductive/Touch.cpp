@@ -14,17 +14,9 @@ boolean touchStart() {
   // following Examples->BareConductive_MPR->SimpleTouch
 
   // 0x5C is the MPR121 I2C address on the Bare Touch Board
-  if (!MPR121.begin(0x5C)) {
+  if (!MPR121.begin(0x5A)) {
     Serial << F("Touch: error setting up MPR121");
     switch (MPR121.getError()) {
-      case NO_ERROR:
-        Serial << F("Touch: no error") << endl;
-        // set the interrupt handler.
-        MPR121.setInterruptPin(TOUCH_IRQ);
-        // initial data update
-        MPR121.updateTouchData();
-        return (true);
-        break;
       case ADDRESS_UNKNOWN:
         Serial << F("Touch: incorrect address") << endl;
         return ( false );
@@ -51,6 +43,15 @@ boolean touchStart() {
         break;
     }
   }
+  else {
+    Serial << F("Touch: no error") << endl;
+    // set the interrupt handler.
+    MPR121.setInterruptPin(TOUCH_IRQ);
+    // initial data update
+    touchCalibrate();
+    MPR121.updateTouchData();
+    return (true);
+  }
 
 }
 
@@ -60,14 +61,20 @@ void touchCalibrate() {
   // sensors, and you've got time to restart the capsense hardware,
   // take some readings, and assure that the sensors are set up
   // correctly.
-  
+  /*
+  // debug code to make sure auto calibration was finishing successfully
+  // the error detection code catches this
+  Serial.println(MPR121.getRegister(OORS1), BIN);
+  Serial.println(MPR121.getRegister(OORS2), BIN);
+  */
+
   /* MPR121.h exposese autocalibration, but doesn't use them.  :(
     ACCR0(0x00),
     ACCR1(0x00),
     USL(0x00),
     LSL(0x00),
-    TL(0x00) 
-    
+    TL(0x00)
+
     MPR121.applySettings() is probably what we want to call to set these correctly.  setRegister would do
     the trick, too.
 */

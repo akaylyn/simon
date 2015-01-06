@@ -2,17 +2,17 @@
 
  Bare Conductive MPR121 library
  ------------------------------
- 
+
  MPR121_defs.h - MPR121 register definitions
- 
- Based on code by Jim Lindblom and plenty of inspiration from the Freescale 
+
+ Based on code by Jim Lindblom and plenty of inspiration from the Freescale
  Semiconductor datasheets and application notes.
- 
+
  Bare Conductive code written by Stefan Dzisiewski-Smith and Peter Krige.
- 
- This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 
+
+ This work is licensed under a Creative Commons Attribution-ShareAlike 3.0
  Unported License (CC BY-SA 3.0) http://creativecommons.org/licenses/by-sa/3.0/
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -183,7 +183,7 @@ static unsigned char const SET = 0x78;
 static unsigned char const CLR = 0x79;
 static unsigned char const TOG = 0x7A;
 
-// auto-config 
+// auto-config
 static unsigned char const ACCR0 = 0x7B;
 static unsigned char const ACCR1 = 0x7C;
 static unsigned char const USL = 0x7D;

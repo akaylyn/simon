@@ -46,12 +46,13 @@ void dataAvailable() {
  *   the first 13 bits of the 16-bit response msg.
  */
 void readCapacitiveSensor() {
-  if (newData) {
+  if (true) {
     //read the touch state from the MPR121
     Wire.requestFrom(0x5A, 2);
     byte tLSB = Wire.read();
     byte tMSB = Wire.read();
     uint16_t touched = ((tMSB << 8) | tLSB); //16bits that make up the touch states
+    Serial.println(touched);
 
     for (int i = 0; i < SENSORS; i++) { // Check what electrodes were pressed
       if (activeSensors[i] == 0) continue;
