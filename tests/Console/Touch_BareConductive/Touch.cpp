@@ -130,12 +130,16 @@ boolean touchPressed(byte touchIndex) {
 
     switch ( touchIndex ) {
         case I_RED:
+            Serial.println("RED!");
             break;
         case I_GRN:
+            Serial.println("GREEN!");
             break;
         case I_BLU:
+            Serial.println("BLUE!");
             break;
         case I_YEL:
+            Serial.println("YELLOW!");
             break;
         case I_ALL:
             return ( touchAnyPressed() );
@@ -156,14 +160,18 @@ void touchUnitTest(unsigned long timeout) {
             MPR121.updateTouchData();
             for (int i = 0; i < numElectrodes; i++) {
                 if (MPR121.isNewTouch(i)) {
-                    Serial.print("electrode ");
-                    Serial.print(i, DEC);
-                    Serial.println(" was just touched");
+                    if (DEBUG) {
+                        Serial.print("electrode ");
+                        Serial.print(i, DEC);
+                        Serial.println(" was just touched");
+                    }
                     touchPressed(i);
                 } else if (MPR121.isNewRelease(i)) {
-                    Serial.print("electrode ");
-                    Serial.print(i, DEC);
-                    Serial.println(" was just released");
+                    if (DEBUG) {
+                        Serial.print("electrode ");
+                        Serial.print(i, DEC);
+                        Serial.println(" was just released");
+                    }
                     touchChanged(i);
                 }
             }
