@@ -1,21 +1,21 @@
-#include <RFM12B.h>
+#include <RFM69.h>
 #include <SPI.h>
 #include <SPIFlash.h>
 
 #define NODEID      99
 #define NETWORKID   100
 #define GATEWAYID   1
-#define FREQUENCY   RF12_915MHZ //Match this with the version of your Moteino! (others: RF69_433MHZ, RF69_868MHZ)
+#define FREQUENCY   RF69_433MHZ //Match this with the version of your Moteino! (others: RF69_433MHZ, RF69_868MHZ)
 #define KEY         "thisIsEncryptKey" //has to be same 16 characters/bytes on all nodes, not more not less!
 #define LED         9
 #define SERIAL_BAUD 115200
 #define ACK_TIME    30  // # of ms to wait for an ack
 
-int TRANSMITPERIOD = 600; //transmit a packet to gateway so often (in ms)
+int TRANSMITPERIOD = 300; //transmit a packet to gateway so often (in ms)
 byte sendSize=0;
 boolean requestACK = false;
 SPIFlash flash(8, 0xEF30); //EF40 for 16mbit windbond chip
-RFM12B radio;
+RFM69 radio;
 
 typedef struct {		
   int           nodeId; //store this nodeId
@@ -26,11 +26,11 @@ Payload theData;
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
-  radio.Initialize(NODEID, FREQUENCY, NETWORKID, 0);
-  radio.Encrypt((byte*)KEY);
-  
+  radio.initialize(FREQUENCY,NODEID,NETWORKID);
+  //radio.setHighPower(); //uncomment only for RFM69HW!
+  radio.encrypt(KEY);
   char buff[50];
-  sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY==RF12_433MHZ ? 433 : FREQUENCY==RF12_868MHZ ? 868 : 915);
+  sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY==RF69_433MHZ ? 433 : FREQUENCY==RF69_868MHZ ? 868 : 915);
   Serial.println(buff);
   
   if (flash.initialize())
@@ -53,6 +53,13 @@ void loop() {
       Serial.print(TRANSMITPERIOD);
       Serial.println("ms\n");
     }
+    
+    if (input == 'r') //d=dump register values
+      radio.readAllRegs();
+    //if (input == 'E') //E=enable encryption
+    //  radio.encrypt(KEY);
+    //if (input == 'e') //e=disable encryption
+    //  radio.encrypt(null);
     
     if (input == 'd') //d=dump flash area
     {
@@ -82,21 +89,21 @@ void loop() {
   }
 
   //check for any received packets
-  if (radio.ReceiveComplete())
+  if (radio.receiveDone())
   {
-    if (radio.CRCPass())
-    {
-      Serial.print('[');Serial.print(radio.GetSender(), DEC);Serial.print("] ");
-      for (byte i = 0; i < radio.GetDataLen(); i++)
-        Serial.print((char)radio.GetData()[i]);
+    Serial.print('[');Serial.print(radio.SENDERID, DEC);Serial.print("] ");
+    for (byte i = 0; i < radio.DATALEN; i++)
+      Serial.print((char)radio.DATA[i]);
+    Serial.print("   [RX_RSSI:");Serial.print(radio.readRSSI());Serial.print("]");
 
-      if (radio.ACKRequested())
-      {
-        radio.SendACK();
-        Serial.println(" - ACK sent.");
-      }
-      Blink(LED,5);
+    if (radio.ACKRequested())
+    {
+      radio.sendACK();
+      Serial.print(" - ACK sent");
+      delay(10);
     }
+    Blink(LED,5);
+    Serial.println();
   }
   
   int currPeriod = millis()/TRANSMITPERIOD;
@@ -110,17 +117,9 @@ void loop() {
     Serial.print("Sending struct (");
     Serial.print(sizeof(theData));
     Serial.print(" bytes) ... ");
-    
-    requestACK = !requestACK; //request every other time
-    
-    radio.Send(GATEWAYID, (const void*)(&theData), sizeof(theData), requestACK);
-    if (requestACK)
-    {
-      Serial.print(" - waiting for ACK...");
-      if (waitForAck(GATEWAYID)) Serial.print("ok!");
-      else Serial.print("nothing...");
-    }
-
+    if (radio.sendWithRetry(GATEWAYID, (const void*)(&theData), sizeof(theData)))
+      Serial.print(" ok!");
+    else Serial.print(" nothing...");
     Serial.println();
     Blink(LED,3);
     lastPeriod=currPeriod;
@@ -133,14 +132,4 @@ void Blink(byte PIN, int DELAY_MS)
   digitalWrite(PIN,HIGH);
   delay(DELAY_MS);
   digitalWrite(PIN,LOW);
-}
-
-// wait a few milliseconds for proper ACK to me, return true if indeed received
-static bool waitForAck(byte theNodeID) {
-  long now = millis();
-  do {
-    if (radio.ACKReceived(theNodeID))
-      return true;
-  } while (millis() - now <= ACK_TIME);
-  return false;
 }

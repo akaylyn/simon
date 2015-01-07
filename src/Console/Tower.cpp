@@ -11,8 +11,8 @@ Metro networkConfigUpdate(CONFIG_SEND_INTERVAL);
 //    to respond to a color (I_RED, I_GRN, I_BLU, I_YEL)
 //    to respond to all colors (I_ALL)
 //    to responde to nothing (ie. not used) (I_NONE)
-byte towerColor[N_TOWERS] = {I_ALL, I_NONE, I_NONE, I_NONE};
-byte towerFire[N_TOWERS] = {I_ALL, I_NONE, I_NONE, I_NONE};
+byte towerColor[N_TOWERS] = {I_ALL, I_ALL, I_ALL, I_ALL};
+byte towerFire[N_TOWERS] = {I_ALL, I_ALL, I_ALL, I_ALL};
 
 // but wait an interval of time before resending
 Metro resendCounter(SEND_INTERVAL);
@@ -40,7 +40,7 @@ void towerStart() {
     while (1);
   }
   // ping the network
-  pingNetwork();
+  pingNetwork(5UL);
   // configure network
   configureNetwork();
   // update network

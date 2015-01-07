@@ -77,10 +77,10 @@ void setup() {
 
   // once, at hardware initialization, we need to bootstrap some settings to the EEPROM
   //  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
-//  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
-//  commsSave(towerNodeID[1]); // write to EEPROM. Select towerNodeID[0..3].
-//  commsSave(towerNodeID[2]); // write to EEPROM. Select towerNodeID[0..3].
-//  commsSave(towerNodeID[3]); // write to EEPROM. Select towerNodeID[0..3].
+//done  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
+//done  commsSave(towerNodeID[1]); // write to EEPROM. Select towerNodeID[0..3].
+//done  commsSave(towerNodeID[2]); // write to EEPROM. Select towerNodeID[0..3].
+//done  commsSave(towerNodeID[3]); // write to EEPROM. Select towerNodeID[0..3].
   //  commsDefault(config, I_ALL, I_NONE); // get a default configuration.
   //  commsSave(config); // write to EEPROM.
   // end boostrap
@@ -118,7 +118,7 @@ void loop() {
     // process it.
     if ( radio.GetDataLen() == sizeof(inst) ) {
       // save instruction for lights/flame
-      inst = *(towerInstruction*)radio.Data;
+      inst = *(towerInstruction*)radio.GetData();
       // do it.
       performInstruction();
       // note network activity
@@ -130,9 +130,9 @@ void loop() {
       Serial << F("Configuration from Console.") << endl;
 
       // check to see if the instructions have changed?
-      if ( memcmp((void*)(&config), (void*)radio.Data, sizeof(config)) != 0 ) {
+      if ( memcmp((void*)(&config), (void*)radio.GetData(), sizeof(config)) != 0 ) {
         // yes, so grab it.
-        config = *(towerConfiguration*)radio.Data;
+        config = *(towerConfiguration*)radio.GetData();
         // save it
         commsSave(config);
       }
