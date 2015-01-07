@@ -35,11 +35,13 @@
 #include <Simon_Indexes.h> // sizes, indexing  
 
 //----- capsense touch: soft capsense buttons
-#include <Adafruit_MPR121.h> // MPR121 capsense board
+#include <MPR121.h> // MPR121 capsense board
 #include <Wire.h> // capsense is an I2C device
 
+#define numElectrodes 12
+
 // starts the Touch interface; returns true if all good.
-boolean touchStart(uint8_t touchCount=30, uint8_t releaseCount=6);
+boolean touchStart();
 
 // calibrates the Touch interface
 void touchCalibrate();
@@ -57,7 +59,7 @@ boolean touchChanged(byte touchIndex);
 boolean touchPressed(byte touchIndex);
   
 // unit test for touch sensor
-void touchUnitTest(boolean details, unsigned long timeout=10000);
+void touchUnitTest(unsigned long timeout=(-1)); // unsigned.  will flip to maximum time.
 
 #endif
 

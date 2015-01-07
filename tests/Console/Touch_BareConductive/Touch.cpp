@@ -5,6 +5,8 @@
 // Walkthrough: https://learn.adafruit.com/adafruit-mpr121-12-key-capacitive-touch-sensor-breakout-tutorial/wiring
 // MPR121 Datasheet: http://www.adafruit.com/datasheets/MPR121.pdf
 
+#define MPR121_I2CADDR_DEFAULT 0x5A
+
 boolean touchStart() {
     // some reasonable defaults are set.
     // expect this to be called after startup
@@ -14,7 +16,7 @@ boolean touchStart() {
     // following Examples->BareConductive_MPR->SimpleTouch
 
     // 0x5C is the MPR121 I2C address on the Bare Touch Board
-    if (!MPR121.begin(0x5A)) {
+    if (!MPR121.begin(MPR121_I2CADDR_DEFAULT)) {
         Serial << F("Touch: error setting up MPR121");
         switch (MPR121.getError()) {
             case ADDRESS_UNKNOWN:
