@@ -81,6 +81,7 @@ void loop() {
       towerUpdate();
     }
   }
+  //touchUnitTest(50UL);
 }
 
 /* possible IRQ pins (for attachInterrupt):
