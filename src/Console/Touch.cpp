@@ -80,6 +80,36 @@ boolean touchAnyPressed() {
     return statusChanged;
     */
 }
+// returns true if any of the buttons are pressed.
+boolean touchAnyChanged() {
+    return (
+            touchChanged(I_RED) ||
+            touchChanged(I_GRN) ||
+            touchChanged(I_BLU) ||
+            touchChanged(I_YEL)
+           );
+}
+// returns true if a specific sensor IS PRESSED
+// this function will be called after touchChanged() asserts a change.
+// TODO: MPR121.getToucheData(i)
+boolean touchPressed(byte touchIndex) {
+    if (touchIndex == I_ALL) return touchAnyPressed();
+
+    MPR121.updateTouchData();
+    return MPR121.getTouchData(touchIndex);
+
+    if (MPR121.isNewTouch(touchIndex)) {
+        Serial << "isNewTouch: " << touchIndex << endl;
+        return true;
+    } else if (MPR121.isNewRelease(touchIndex)) {
+        Serial << "isNewRelease: " << touchIndex << endl;
+        return false;
+    } else {
+        return false;
+    }
+}
+
+// this is working
 boolean touchChanged(byte touchIndex) {
     MPR121.updateTouchData();
     if (touchIndex == I_ALL) return touchAnyChanged();
@@ -92,87 +122,4 @@ boolean touchChanged(byte touchIndex) {
     return false;
 }
 
-// returns true if any of the buttons are pressed.
-boolean touchAnyChanged() {
-    return (
-            touchChanged(I_RED) ||
-            touchChanged(I_GRN) ||
-            touchChanged(I_BLU) ||
-            touchChanged(I_YEL)
-           );
-}
-// returns true if a specific sensor is pressed
-// this function will be called after touchChanged() asserts a change.
-// TODO: MPR121.getToucheData(i)
-boolean touchPressed(byte touchIndex) {
-    MPR121.updateTouchData();
-    if (touchIndex == I_ALL) return touchAnyPressed();
-    return MPR121.getTouchData(touchIndex);
-    /*
-    if (MPR121.touchStatusChanged()) {
 
-    if (touchIndex == I_ALL) { return touchAnyPressed(); }
-
-    MPR121.updateTouchData();
-    if (MPR121.isNewTouch(touchIndex)) {
-        if (DEBUG) {
-            Serial.print(touchIndex, DEC);
-            Serial.println(" wasTouched: true");
-        }
-    } else if (MPR121.isNewRelease(touchIndex)) {
-        if (DEBUG) {
-            Serial.print(touchIndex, DEC);
-            Serial.println(" wasReleased: true");
-        }
-
-        switch ( touchIndex ) {
-            case I_RED:
-                Serial.println("RED!");
-                break;
-            case I_GRN:
-                Serial.println("GREEN!");
-                break;
-            case I_BLU:
-                Serial.println("BLUE!");
-                break;
-            case I_YEL:
-                Serial.println("YELLOW!");
-                break;
-            default:
-                Serial << F("Touch: touchPressed Error, case=") << touchIndex << endl;
-        }
-        return true;
-    }
-    }
-    //Serial.println("wasTouched: false");
-    return false;
-    */
-}
-
-
-void touchUnitTest(unsigned long timeout) {
-    Metro unitTestTimeout(timeout);
-    while (! unitTestTimeout.check() ) {
-
-        if (MPR121.touchStatusChanged()) {
-            MPR121.updateTouchData();
-            for (int i = 0; i < numElectrodes; i++) {
-                if (MPR121.isNewTouch(i)) {
-                    if (DEBUG) {
-                        Serial.print("electrode ");
-                        Serial.print(i, DEC);
-                        Serial.println(" was just touched");
-                    }
-                    touchPressed(i);
-                } else if (MPR121.isNewRelease(i)) {
-                    if (DEBUG) {
-                        Serial.print("electrode ");
-                        Serial.print(i, DEC);
-                        Serial.println(" was just released");
-                    }
-                    touchChanged(i);
-                }
-            }
-        }
-    }
-}
