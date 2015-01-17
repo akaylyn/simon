@@ -63,7 +63,6 @@ void touchCalibrate() {}
 
 // returns true if any of the buttons have switched states.
 // avoid short-circuit eval so that each button gets an update
-// TODO: this should call MPR121.TouchPressed(I_RED)
 boolean touchAnyPressed() {
     return (
             touchPressed(I_RED) ||
@@ -71,15 +70,8 @@ boolean touchAnyPressed() {
             touchPressed(I_BLU) ||
             touchPressed(I_YEL)
            );
-
-    /*
-    bool statusChanged = MPR121.touchStatusChanged();
-    if (statusChanged) {
-        Serial << F("TOUCH ANY PRESSED: ") << statusChanged << endl;
-    }
-    return statusChanged;
-    */
 }
+
 // returns true if any of the buttons are pressed.
 boolean touchAnyChanged() {
     return (
@@ -89,30 +81,22 @@ boolean touchAnyChanged() {
             touchChanged(I_YEL)
            );
 }
-// returns true if a specific sensor IS PRESSED
+
+// returns true WHILE a specific sensor IS PRESSED
 // this function will be called after touchChanged() asserts a change.
-// TODO: MPR121.getToucheData(i)
 boolean touchPressed(byte touchIndex) {
     if (touchIndex == I_ALL) return touchAnyPressed();
 
     MPR121.updateTouchData();
     return MPR121.getTouchData(touchIndex);
-
-    if (MPR121.isNewTouch(touchIndex)) {
-        Serial << "isNewTouch: " << touchIndex << endl;
-        return true;
-    } else if (MPR121.isNewRelease(touchIndex)) {
-        Serial << "isNewRelease: " << touchIndex << endl;
-        return false;
-    } else {
-        return false;
-    }
 }
 
-// this is working
+// Returns true if the state of a specific button has changed
+// based on what it was previously.
 boolean touchChanged(byte touchIndex) {
-    MPR121.updateTouchData();
     if (touchIndex == I_ALL) return touchAnyChanged();
+
+    MPR121.updateTouchData();
     static boolean previousState[N_COLORS];
     boolean currentState = MPR121.getTouchData(touchIndex);
     if (previousState[touchIndex] != currentState) {
@@ -121,5 +105,4 @@ boolean touchChanged(byte touchIndex) {
     }
     return false;
 }
-
 
