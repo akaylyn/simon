@@ -8,6 +8,7 @@
 #include <MPR121.h> // from: https://github.com/BareConductive/mpr121
 #include <Bounce.h> // manual buttons as well
 #include <LED.h> // manual lights as well
+#include "TouchTests.h"
 #include "Touch.h" // this
 
 // should Unit Tests be run if the startup routines return an error?
@@ -19,12 +20,22 @@ void setup() {
 
   // random seed.
   randomSeed(analogRead(0));
-  
-  if( !touchStart() && RUN_UNIT_ON_ERROR || 0) touchUnitTest();
+
+  //if( !touchStart() && RUN_UNIT_ON_ERROR || 0) touchUnitTest();
+  touchStart();
 
 }
 
 // main loop for the core.
 void loop() {
-    touchUnitTest();
+    TouchTests tests;
+
+    Metro timeout(tests.TIMEOUT);
+    while (!timeout.check()) {
+        for (int i = 0; i < NUM_ELECTRODES; i++) {
+
+            tests.testChanged(i);
+            tests.testPressed(i);
+        }
+    }
 }
