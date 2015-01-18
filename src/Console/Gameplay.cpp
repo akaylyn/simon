@@ -57,10 +57,8 @@ void idleState() {
 
     // check buttons for game play start
     if ( buttonAnyPressed() || touchAnyPressed() ) {
-    //if ( touchAnyPressed() ) {
         Serial << F("Gameplay: Idle->Game") << endl;
         quiet();
-        //while ( (! buttonAnyChanged()) && (! touchAnyChanged()) );
         while (1) {
             if (buttonAnyChanged())
                 break;
