@@ -120,7 +120,8 @@ void playerState() {
 
     // otherwise, wait for button press.
     if ( pressed(I_ALL) ) {
-        boolean correct = (pressed(I_GRN) && correctSequence[correctLength] == 'G') ||
+        boolean correct =
+            (pressed(I_GRN) && correctSequence[correctLength] == 'G') ||
             (pressed(I_RED) && correctSequence[correctLength] == 'R') ||
             (pressed(I_BLU) && correctSequence[correctLength] == 'B') ||
             (pressed(I_YEL) && correctSequence[correctLength] == 'Y');
@@ -157,8 +158,6 @@ void playerState() {
             Serial << F("Gameplay: Player->Idle") << endl;
             simon.transitionTo(idle);
         }
-    } else {
-        Serial << F(".");
     }
 
     // check if they've got the sequence complete, or if there's just awesome
