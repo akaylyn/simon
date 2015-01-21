@@ -4,7 +4,7 @@
  *  @author 	Julio Terra
  *  @date		December 28, 2012
  *  @version     1.0.0
- *  
+ *
 */
 
 // MPR121 Register Addresses
@@ -71,3 +71,9 @@
 #define	PROX_NHDAT   	0x3E // ELEPROX Noise Half Delta Amount Touched register address - 0x00
 #define	PROX_NCLT    	0x3F // ELEPROX Noise Count Limit Touched register address - 0x00
 #define	PROX_FDLT    	0x40 // ELEPROX Filter Delay Limit Touched register address - 0x00
+
+void dataAvailable();
+void readCapacitiveSensor();
+void setupCapacitiveRegisters();
+void set_register(int address, unsigned char r, unsigned char v);
+

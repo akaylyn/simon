@@ -10,10 +10,10 @@
 // Touch subunit. Responsible for UX input.
 #include "Touch.h"
 // capsense touch: soft capsense buttons
-#include <Adafruit_MPR121.h> // MPR121 capsense board
+#include <MPR121.h> // MPR121 capsense board
 #include <Wire.h> // capsense is an I2C device
 
-// Button subunit.  Responsible for hard buttons on a PCB. 
+// Button subunit.  Responsible for hard buttons on a PCB.
 #include "Button.h"
 #include <Bounce.h> // with debounce routine.
 
@@ -29,7 +29,7 @@
 //------ Output units.
 
 // Light subunit.  Responsible for UX (light) output local to the console.
-#include "Light.h" 
+#include "Light.h"
 // Three sets of lights:
 // WS2812 lights: lights wrapping the console rim and capsense touch buttons
 // manual lights: hard LEDs on a PCB
@@ -37,14 +37,14 @@
 
 // Tower subunit.  Responsible for UX (light/fire) output at the Tower.
 #include "Tower.h"
-#include <Simon_Indexes.h> // sizes, indexing and 
+#include <Simon_Indexes.h> // sizes, indexing and
 #include <Simon_Comms.h> // comms between Towers and Console
 #include <RFM12B.h> // RFM12b radio transmitter module
 #include <SPI.h> // radio transmitter is a SPI device
 #include <EEPROM.h> // saving and loading radio settings
 
 // Music subunit.  Responsible for UX (sound) output.
-#include "Music.h" 
+#include "Music.h"
 
 // should Unit Tests be run if the startup routines return an error?
 #define RUN_UNIT_ON_ERROR false
@@ -78,9 +78,10 @@ void loop() {
     // we're not playing, so check for Extern traffic; returns true if we have traffic.
     if( ! externUpdate() ) {
       // no Extern traffic, so perform Tower maintenance and idle displays.
-      towerUpdate();  
+      towerUpdate();
     }
-  } 
+  }
+  //touchUnitTest(50UL);
 }
 
 /* possible IRQ pins (for attachInterrupt):

@@ -10,14 +10,14 @@
 // MPR121 touch:
 /* AdaFruit MPR121 capsense touch:
   See: https://learn.adafruit.com/adafruit-mpr121-12-key-capacitive-touch-sensor-breakout-tutorial/wiring
-  
+
   Vin -> 5V
   3Vo -> (unused, but a regulated 3.3 source if we need it)
   GND -> GND
   SCL -> Uno A5 (Mega 21)
   SDA -> Uno A4 (Mega 20)
   IRQ -> (unused, but could be added to generate an interrupt on touch and released
-  ADDR -> 
+  ADDR ->
 
     ADDR not connected: 0x5A
     ADDR tied to 3V: 0x5B
@@ -32,14 +32,16 @@
 
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
-#include <Simon_Indexes.h> // sizes, indexing  
+#include <Simon_Indexes.h> // sizes, indexing
 
 //----- capsense touch: soft capsense buttons
-#include <Adafruit_MPR121.h> // MPR121 capsense board
+#include <MPR121.h> // MPR121 capsense board
 #include <Wire.h> // capsense is an I2C device
 
+#define NUM_ELECTRODES 4
+
 // starts the Touch interface; returns true if all good.
-boolean touchStart(uint8_t touchCount=30, uint8_t releaseCount=6);
+boolean touchStart();
 
 // calibrates the Touch interface
 void touchCalibrate();
@@ -55,9 +57,6 @@ boolean touchChanged(byte touchIndex);
 
 // returns true if a specific button is pressed
 boolean touchPressed(byte touchIndex);
-  
-// unit test for touch sensor
-void touchUnitTest(boolean details, unsigned long timeout=10000);
 
 #endif
 

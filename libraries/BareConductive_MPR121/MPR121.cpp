@@ -2,17 +2,17 @@
 
  Bare Conductive MPR121 library
  ------------------------------
- 
+
  MPR121.cpp - MPR121 class implementation file
- 
- Based on code by Jim Lindblom and plenty of inspiration from the Freescale 
+
+ Based on code by Jim Lindblom and plenty of inspiration from the Freescale
  Semiconductor datasheets and application notes.
- 
+
  Bare Conductive code written by Stefan Dzisiewski-Smith and Peter Krige.
- 
- This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 
+
+ This work is licensed under a Creative Commons Attribution-ShareAlike 3.0
  Unported License (CC BY-SA 3.0) http://creativecommons.org/licenses/by-sa/3.0/
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,13 +39,13 @@ extern "C" {
 #define OUT_OF_RANGE_BIT 4
 
 MPR121_t::MPR121_t(){
-	Wire.begin();	
+	Wire.begin();
 	address = 0x5C;    // default address is 0x5C, for use with Bare Touch Board
 	ECR_backup = 0x00;
 	running = false;
 	error = 1<<NOT_INITED_BIT; // initially, we're not initialised
 	touchData = 0;
-	lastTouchData = 0;	
+	lastTouchData = 0;
 }
 
 void MPR121_t::setRegister(unsigned char reg, unsigned char value){
@@ -57,29 +57,29 @@ void MPR121_t::setRegister(unsigned char reg, unsigned char value){
 			running = true;
 		} else {
 			running = false;
-		} 
+		}
 	} else if(reg<CTL0){
 		wasRunning = running;
 		if(wasRunning) stop(); 	// we should ALWAYS be in stop mode for this
 								// unless modding ECR or GPIO / LED register
 	}
-	
+
     Wire.beginTransmission(address);
     Wire.write(reg);
     Wire.write(value);
-    if(Wire.endTransmission()!=0){ 
+    if(Wire.endTransmission()!=0){
     	error |= 1<<ADDRESS_UNKNOWN_BIT; // set address unknown bit
     } else {
-    	error &= ~(1<<ADDRESS_UNKNOWN_BIT); 
+    	error &= ~(1<<ADDRESS_UNKNOWN_BIT);
     }
-    
+
     if(wasRunning) run();		// restore run mode if necessary
 }
 
 unsigned char MPR121_t::getRegister(unsigned char reg){
 	unsigned char scratch;
 
-    Wire.beginTransmission(address); 
+    Wire.beginTransmission(address);
     Wire.write(reg); // set address to read from our requested register
     Wire.endTransmission(false); // repeated start
     Wire.requestFrom(address,(unsigned char)1);  // just a single byte
@@ -91,14 +91,14 @@ unsigned char MPR121_t::getRegister(unsigned char reg){
     scratch = Wire.read();
     // auto update errors for registers with error data
     if(reg == TS2 && ((scratch&0x80)!=0)){
-    	error |= 1<<OVERCURRENT_FLAG_BIT;	
+    	error |= 1<<OVERCURRENT_FLAG_BIT;
     } else {
-    	error &= ~(1<<OVERCURRENT_FLAG_BIT);	
+    	error &= ~(1<<OVERCURRENT_FLAG_BIT);
     }
     if((reg == OORS1 || reg == OORS2) && (scratch!=0)){
-    	error |= 1<<OUT_OF_RANGE_BIT;    
+    	error |= 1<<OUT_OF_RANGE_BIT;
     } else {
-    	error &= ~(1<<OUT_OF_RANGE_BIT);    
+    	error &= ~(1<<OUT_OF_RANGE_BIT);
     }
     return scratch;
 }
@@ -113,11 +113,11 @@ bool MPR121_t::begin(){
 	} else {
 		return false;
 	}
-	
+
 }
 
 bool MPR121_t::begin(unsigned char address){
-	if(address>=0x5A && address<=0x5D) // addresses only valid 0x5A to 0x5D 
+	if(address>=0x5A && address<=0x5D) // addresses only valid 0x5A to 0x5D
 	{
 		this->address = address; // need to be specific here
 	}
@@ -136,14 +136,14 @@ void MPR121_t::stop(){
 }
 
 bool MPR121_t::reset(){
-	// return true if we successfully reset a device at the 
+	// return true if we successfully reset a device at the
 	// address we are expecting
-	
-	// AFE2 is one of the few registers that defaults to a non-zero value - 
-	// checking it is sensible as reading back an incorrect value implies 
-	// something went wrong - we also check TS2 bit 7 to see if we have an 
+
+	// AFE2 is one of the few registers that defaults to a non-zero value -
+	// checking it is sensible as reading back an incorrect value implies
+	// something went wrong - we also check TS2 bit 7 to see if we have an
 	// overcurrent flag set
-	
+
 	setRegister(SRST, 0x63); // soft reset
 
 	if(getRegister(AFE2)!=0x24){
@@ -156,7 +156,7 @@ bool MPR121_t::reset(){
 		error |= 1<<OVERCURRENT_FLAG_BIT;
 	} else {
 		error &= ~(1<<OVERCURRENT_FLAG_BIT);
-	}	
+	}
 
 	if(getError()==NOT_INITED || getError()==NO_ERROR){ // if our only error is that we are not inited...
 		return true;
@@ -167,7 +167,7 @@ bool MPR121_t::reset(){
 
 void MPR121_t::applySettings(MPR121_settings_t *settings){
 	bool wasRunning = running;
-	if(wasRunning) stop();  // can't change most regs when running - checking 
+	if(wasRunning) stop();  // can't change most regs when running - checking
 							// here avoids multiple stop() / run() calls
 
 	setRegister(MHDR,settings->MHDR);
@@ -193,22 +193,22 @@ void MPR121_t::applySettings(MPR121_settings_t *settings){
 	setRegister(NCLPROXT,settings->NCLPROXT);
 	setRegister(FDLPROXT,settings->FDLPROXT);
   	setRegister(DTR, settings->DTR);
-	setRegister(AFE1, settings->AFE1);  
+	setRegister(AFE1, settings->AFE1);
 	setRegister(AFE2, settings->AFE2);
 	setRegister(ACCR0, settings->ACCR0);
 	setRegister(ACCR1, settings->ACCR1);
-	setRegister(USL, settings->USL); 
-	setRegister(LSL, settings->LSL); 
-	setRegister(TL, settings->TL); 
-	
-	setRegister(ECR, settings->ECR);	
-	
+	setRegister(USL, settings->USL);
+	setRegister(LSL, settings->LSL);
+	setRegister(TL, settings->TL);
+
+	setRegister(ECR, settings->ECR);
+
 	error &= ~(1<<NOT_INITED_BIT); // clear not inited error as we have just inited!
 	setTouchThreshold(settings->TTHRESH);
 	setReleaseThreshold(settings->RTHRESH);
-	setInterruptPin(settings->INTERRUPT);	
-	
-	if(wasRunning) run();	
+	setInterruptPin(settings->INTERRUPT);
+
+	if(wasRunning) run();
 }
 
 mpr121_error_t MPR121_t::getError(){
@@ -223,7 +223,7 @@ mpr121_error_t MPR121_t::getError(){
 	if(!isInited()) return NOT_INITED; // this has its own checker function
 
 	if((error & (1<<ADDRESS_UNKNOWN_BIT)) != 0){
-		return ADDRESS_UNKNOWN;	
+		return ADDRESS_UNKNOWN;
 	} else if((error & (1<<READBACK_FAIL_BIT)) != 0){
 		return READBACK_FAIL;
 	} else if((error & (1<<OVERCURRENT_FLAG_BIT)) != 0){
@@ -231,7 +231,7 @@ mpr121_error_t MPR121_t::getError(){
 	} else if((error & (1<<OUT_OF_RANGE_BIT)) != 0){
 		return OUT_OF_RANGE;
 	} else return NO_ERROR;
-	
+
 }
 
 void MPR121_t::clearError(){
@@ -248,7 +248,7 @@ bool MPR121_t::isInited(){
 
 void MPR121_t::updateTouchData(){
 	if(!isInited()) return;
-	
+
 	lastTouchData = touchData;
 	touchData = (unsigned int)getRegister(TS1) + ((unsigned int)getRegister(TS2)<<8);
 }
@@ -261,12 +261,12 @@ bool MPR121_t::getTouchData(unsigned char electrode){
 
 unsigned char MPR121_t::getNumTouches(){
 	if(!isInited()) return(0xFF);
-	
+
 	unsigned char scratch = 0;
 	for(unsigned char i=0; i<13; i++){
 		if(getTouchData(i)) scratch++;
 	}
-	
+
 	return(scratch);
 }
 
@@ -280,22 +280,22 @@ bool MPR121_t::updateFilteredData(){
 	if(!isInited()) return(false);
 	unsigned char LSB, MSB;
 
-    Wire.beginTransmission(address); 
-    Wire.write(E0FDL); 	// set address register to read from the start of the 
+    Wire.beginTransmission(address);
+    Wire.write(E0FDL); 	// set address register to read from the start of the
     					//filtered data
     Wire.endTransmission(false); // repeated start
-  
+
     if(Wire.requestFrom(address,(unsigned char)26)==26){
 		for(int i=0; i<13; i++){ // 13 filtered values
 		  LSB = Wire.read();
 		  MSB = Wire.read();
 		  filteredData[i] = ((MSB << 8) | LSB);
-		} 
-		return(true);    
+		}
+		return(true);
     } else {
     	// if we don't get back all 26 values we requested, don't update the FDAT values
     	// and return false
-		return(false);     
+		return(false);
     }
 }
 
@@ -308,38 +308,38 @@ int MPR121_t::getFilteredData(unsigned char electrode){
 bool MPR121_t::updateBaselineData(){
 	if(!isInited()) return(false);
 
-    Wire.beginTransmission(address); 
-    Wire.write(E0BV); 	// set address register to read from the start of the 
+    Wire.beginTransmission(address);
+    Wire.write(E0BV); 	// set address register to read from the start of the
     					// baseline data
     Wire.endTransmission(false); // repeated start
-  
+
     if(Wire.requestFrom(address,(unsigned char)13)==13){
 		for(int i=0; i<13; i++){ // 13 filtered values
 		  baselineData[i] = Wire.read()<<2;
-		}    
-		return(true); 
+		}
+		return(true);
     } else {
-		for(int i=0; i<13; i++){         
+		for(int i=0; i<13; i++){
     	// if we don't get back all 26 values we requested, don't update the FDAT values
     	// and return false
-		return(false); 
-		}        
+		return(false);
+		}
     }
 }
 
 int MPR121_t::getBaselineData(unsigned char electrode){
 	if(electrode>12 || !isInited()) return(0xFFFF); // avoid out of bounds behaviour
-  
+
 	return(baselineData[electrode]);
 }
 
 bool MPR121_t::isNewTouch(unsigned char electrode){
-	if(electrode>12 || !isInited()) return(false); // avoid out of bounds behaviour	
+	if(electrode>12 || !isInited()) return(false); // avoid out of bounds behaviour
 	return((getLastTouchData(electrode) == false) && (getTouchData(electrode) == true));
 }
 
 bool MPR121_t::isNewRelease(unsigned char electrode){
-	if(electrode>12 || !isInited()) return(false); // avoid out of bounds behaviour	
+	if(electrode>12 || !isInited()) return(false); // avoid out of bounds behaviour
 	return((getLastTouchData(electrode) == true) && (getTouchData(electrode) == false));
 }
 
@@ -352,36 +352,36 @@ void MPR121_t::updateAll(){
 void MPR121_t::setTouchThreshold(unsigned char val){
 	if(!isInited()) return;
 	bool wasRunning = running;
-	
+
 	if(wasRunning) stop();	// can only change thresholds when not running
-							// checking here avoids multiple stop() / run() 
+							// checking here avoids multiple stop() / run()
 							// calls
-	
+
 	for(unsigned char i=0; i<13; i++){
 		setTouchThreshold(i, val);
 	}
-	
+
 	if(wasRunning) run();
 }
 
 void MPR121_t::setTouchThreshold(unsigned char electrode, unsigned char val){
 	if(electrode>12 || !isInited()) return; // avoid out of bounds behaviour
-	
+
 	// this relies on the internal register map of the MPR121
-	setRegister(E0TTH + (electrode<<1), val); 																							
+	setRegister(E0TTH + (electrode<<1), val);
 }
 
 void MPR121_t::setReleaseThreshold(unsigned char val){
 	if(!isInited()) return;
 	bool wasRunning = running;
-	
+
 	if(wasRunning) stop();	// can only change thresholds when not running
 							// checking here avoids multiple stop / starts
-	
+
 	for(unsigned char i=0; i<13; i++){
 		setReleaseThreshold(i,val);
 	}
-	
+
 	if(wasRunning) run();
 }
 
@@ -389,7 +389,7 @@ void MPR121_t::setReleaseThreshold(unsigned char electrode, unsigned char val){
 	if(electrode>12 || !isInited()) return; // avoid out of bounds behaviour
 
 	// this relies on the internal register map of the MPR121
-	setRegister(E0RTH + (electrode<<1), val); 	
+	setRegister(E0RTH + (electrode<<1), val);
 }
 
 unsigned char MPR121_t::getTouchThreshold(unsigned char electrode){
@@ -405,8 +405,8 @@ void MPR121_t::setInterruptPin(unsigned char pin){
 	// :: here forces the compiler to use Arduino's pinMode, not MPR121's
 	if(!isInited()) return;
 	::pinMode(pin, INPUT_PULLUP);
-	interruptPin = pin;		
-	
+	interruptPin = pin;
+
 }
 
 bool MPR121_t::touchStatusChanged(){
@@ -428,17 +428,17 @@ void MPR121_t::setProxMode(mpr121_proxmode_t mode){
 			break;
 		case PROX0_1:
 			ECR_backup |=  (1<<4);	// ELEPROX[0:1] = 01
-			ECR_backup &= ~(1<<5);			
+			ECR_backup &= ~(1<<5);
 			break;
 		case PROX0_3:
 			ECR_backup &= ~(1<<4);	// ELEPROX[0:1] = 10
-			ECR_backup |=  (1<<5);			
+			ECR_backup |=  (1<<5);
 			break;
 		case PROX0_11:
 			ECR_backup |=  (3<<4);	// ELEPROX[0:1] = 11
 			break;
 	}
-	
+
 	if(wasRunning) run();
 }
 
@@ -447,7 +447,7 @@ void MPR121_t::setNumDigPins(unsigned char numPins){
 	bool wasRunning = running;
 
 	if(numPins>8) numPins = 8; // maximum number of GPIO pins is 8 out of 12
-	
+
 	if(wasRunning){
 		stop(); // have to stop to change ECR
 	}
@@ -455,17 +455,17 @@ void MPR121_t::setNumDigPins(unsigned char numPins){
 	if(wasRunning){
 		run();
 	}
-	
+
 }
 
 void MPR121_t::pinMode(unsigned char electrode, mpr121_pinf_t mode){
 
 	// only valid for ELE4..ELE11
-	if(electrode<4 || electrode >11 || !isInited()) return; 
-											 			
-	// LED0..LED7											 
-	unsigned char bitmask = 1<<(electrode-4);											 
-											 
+	if(electrode<4 || electrode >11 || !isInited()) return;
+
+	// LED0..LED7
+	unsigned char bitmask = 1<<(electrode-4);
+
 	switch(mode){
 		case INPUT_PU:
 			// EN = 1
@@ -475,7 +475,7 @@ void MPR121_t::pinMode(unsigned char electrode, mpr121_pinf_t mode){
 			setRegister(EN, getRegister(EN) | bitmask);
 			setRegister(DIR, getRegister(DIR) & ~bitmask);
 			setRegister(CTL0, getRegister(CTL0) | bitmask);
-			setRegister(CTL1, getRegister(CTL1) | bitmask);		
+			setRegister(CTL1, getRegister(CTL1) | bitmask);
 			break;
 		case INPUT_PD:
 			// EN = 1
@@ -485,8 +485,8 @@ void MPR121_t::pinMode(unsigned char electrode, mpr121_pinf_t mode){
 			setRegister(EN, getRegister(EN) | bitmask);
 			setRegister(DIR, getRegister(DIR) & ~bitmask);
 			setRegister(CTL0, getRegister(CTL0) | bitmask);
-			setRegister(CTL1, getRegister(CTL1) & ~bitmask);		
-			break;		
+			setRegister(CTL1, getRegister(CTL1) & ~bitmask);
+			break;
 		case OUTPUT_HS:
 			// EN = 1
 			// DIR = 1
@@ -495,8 +495,8 @@ void MPR121_t::pinMode(unsigned char electrode, mpr121_pinf_t mode){
 			setRegister(EN, getRegister(EN) | bitmask);
 			setRegister(DIR, getRegister(DIR) | bitmask);
 			setRegister(CTL0, getRegister(CTL0) | bitmask);
-			setRegister(CTL1, getRegister(CTL1) | bitmask);						
-			break;		
+			setRegister(CTL1, getRegister(CTL1) | bitmask);
+			break;
 		case OUTPUT_LS:
 			// EN = 1
 			// DIR = 1
@@ -505,20 +505,20 @@ void MPR121_t::pinMode(unsigned char electrode, mpr121_pinf_t mode){
 			setRegister(EN, getRegister(EN) | bitmask);
 			setRegister(DIR, getRegister(DIR) | bitmask);
 			setRegister(CTL0, getRegister(CTL0) | bitmask);
-			setRegister(CTL1, getRegister(CTL1) & ~bitmask);							
-			break;			
+			setRegister(CTL1, getRegister(CTL1) & ~bitmask);
+			break;
 	}
 }
 
 void MPR121_t::pinMode(unsigned char electrode, int mode){
 	if(!isInited()) return;
-	
-	// this is to catch the fact that Arduino prefers its definition of INPUT 
+
+	// this is to catch the fact that Arduino prefers its definition of INPUT
 	// and OUTPUT to ours...
-	
-	unsigned char bitmask = 1<<(electrode-4);	
-	
-	if(mode == OUTPUT){ 
+
+	unsigned char bitmask = 1<<(electrode-4);
+
+	if(mode == OUTPUT){
 		// EN = 1
 		// DIR = 1
 		// CTL0 = 0
@@ -526,8 +526,8 @@ void MPR121_t::pinMode(unsigned char electrode, int mode){
 		setRegister(EN, getRegister(EN) | bitmask);
 		setRegister(DIR, getRegister(DIR) | bitmask);
 		setRegister(CTL0, getRegister(CTL0) & ~bitmask);
-		setRegister(CTL1, getRegister(CTL1) & ~bitmask);				
-			
+		setRegister(CTL1, getRegister(CTL1) & ~bitmask);
+
 	} else if(mode == INPUT){
 		// EN = 1
 		// DIR = 0
@@ -536,18 +536,18 @@ void MPR121_t::pinMode(unsigned char electrode, int mode){
 		setRegister(EN, getRegister(EN) | bitmask);
 		setRegister(DIR, getRegister(DIR) & ~bitmask);
 		setRegister(CTL0, getRegister(CTL0) & ~bitmask);
-		setRegister(CTL1, getRegister(CTL1) & ~bitmask);						
+		setRegister(CTL1, getRegister(CTL1) & ~bitmask);
 	} else {
 		return; // anything that isn't a 1 or 0 is invalid
 	}
 }
 
 void MPR121_t::digitalWrite(unsigned char electrode, unsigned char val){
-	
+
 	// avoid out of bounds behaviour
-	
-	if(electrode<4 || electrode>11 || !isInited()) return; 
-	
+
+	if(electrode<4 || electrode>11 || !isInited()) return;
+
 	if(val){
 		setRegister(SET, 1<<(electrode-4));
 	} else {
@@ -556,20 +556,20 @@ void MPR121_t::digitalWrite(unsigned char electrode, unsigned char val){
 }
 
 void MPR121_t::digitalToggle(unsigned char electrode){
-	
+
 	// avoid out of bounds behaviour
-	
-	if(electrode<4 || electrode>11 || !isInited()) return; 
-	
-	setRegister(TOG, 1<<(electrode-4));	
+
+	if(electrode<4 || electrode>11 || !isInited()) return;
+
+	setRegister(TOG, 1<<(electrode-4));
 }
 
 bool MPR121_t::digitalRead(unsigned char electrode){
-	
+
 	// avoid out of bounds behaviour
-	
-	if(electrode<4 || electrode>11 || !isInited()) return false; 
-	
+
+	if(electrode<4 || electrode>11 || !isInited()) return false;
+
 	return(((getRegister(DAT)>>(electrode-4))&1)==1);
 }
 
@@ -579,19 +579,19 @@ void MPR121_t::analogWrite(unsigned char electrode, unsigned char value){
 
 	// avoid out of bounds behaviour
 
-	if(electrode<4 || electrode>11 || !isInited()) return; 
-	
-	unsigned char shiftedVal = value>>4;	
-	
+	if(electrode<4 || electrode>11 || !isInited()) return;
+
+	unsigned char shiftedVal = value>>4;
+
 	if(shiftedVal > 0){
-		setRegister(SET, 1<<(electrode-4)); // normal PWM operation 
+		setRegister(SET, 1<<(electrode-4)); // normal PWM operation
 	} else {
-		// this make a 0 PWM setting turn off the output	
-		setRegister(CLR, 1<<(electrode-4)); 
+		// this make a 0 PWM setting turn off the output
+		setRegister(CLR, 1<<(electrode-4));
 	}
-	
+
 	unsigned char scratch;
-  
+
 	switch(electrode-4){
 
 	case 0:
@@ -628,7 +628,7 @@ void MPR121_t::analogWrite(unsigned char electrode, unsigned char value){
 	  break;
 	}
 
-	
+
 }
 
 MPR121_t MPR121 = MPR121_t();

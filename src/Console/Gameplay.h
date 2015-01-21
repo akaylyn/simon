@@ -23,6 +23,9 @@
 // enable this to press anything to match the last sequence
 #define CHEATY_PANTS_MODE false
 
+// disable fanfare - originally used for speeding up debugging
+#define FANFARE_ENABLED false
+
 // define the minimum time between fanfares in kiosk mode  <- influenced by knob 1
 #define KIOSK_FANFARE_MIN 30000UL  // 30 seconds
 #define KIOSK_FANFARE_MAX 300000UL  // 5 minutes
@@ -37,7 +40,7 @@
 // pause between poofs
 #define WAIT_MIN 150UL
 #define WAIT_MAX 500UL
-// define the number of poofs to throw 
+// define the number of poofs to throw
 #define MIN_POOF_COUNT 2
 #define MAX_POOF_COUNT 4
 
@@ -61,7 +64,7 @@ void gameState();
 // game is being played, and the player is trying to presse the correct sequence.  BLOCKING CODE.
 void playerState();
 
-// helper function to tie together Tower, Light, Sound 
+// helper function to tie together Tower, Light, Sound
 void setSoundLights(byte colorIndex, boolean correctTone);
 
 // decode color character and setSoundLights
@@ -81,7 +84,7 @@ char nextMove();
 
 // update lighting on an interval when there's nobody playing
 void idleUpdate();
-  
+
 // do a little ditty on an interval as an attractant.
 void idleFanfare();
 
