@@ -7,7 +7,7 @@
 #define SPEAKER_WIRE 3 // can move, PWM needed
 
 #include <Arduino.h>
-#include <Simon_Comms.h> // sizes, indexing defines.
+#include <Simon_Indexes.h> // sizes, indexing defines.
 
 #include <Streaming.h> // <<-style printing
 

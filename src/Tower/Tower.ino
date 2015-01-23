@@ -5,7 +5,8 @@
 #include <Metro.h> // timers
 #include <Simon_Indexes.h> // sizes, indexing and comms common to Towers and Console
 #include <EEPROM.h> // saving and loading radio settings
-#include <RFM12B.h> // RFM12b radio transmitter module
+#include <SPI.h> // for radio board 
+#include <RFM69.h> // RFM69HW radio transmitter module
 #include <Simon_Comms.h>  // Tower<=>Console
 
 // this is where the lights and fire instructions from Console are placed
@@ -20,7 +21,7 @@ towerConfiguration config;
 const byte greenYellowFraction = 35;
 
 // Need an instance of the Radio Module
-RFM12B radio;
+RFM69 radio;
 // store my NODEID
 byte myNodeID;
 // keep track of activity to note network drop out
@@ -42,13 +43,12 @@ Metro flameCoolDownTime(2000UL);
 #define NETWORK_TEST_PATTERN_UPDATE 20UL // ms
 
 // pin locations for outputs
-#define LED_R 6 // the PWM pin which drives the red LED
-#define LED_G 9 // the PWM pin which drives the green LED
-#define LED_B 5 // the PWM pin which drives the blue LED
-#define FLAME 4 // JeeNode Port 1, pin 2 (DIO)
-#define OTHER A0 // JeeNode Port 1, pin 5 (AIO)
-#define GPIO1 7 // JeeNode Port 4, pin 2 (DIO)
-#define GPIO2 A3 // JeeNode Port 4, pin 5 (AIO)
+#define LED_R 3 // the PWM pin which drives the red LED
+#define LED_G 5 // the PWM pin which drives the green LED
+#define LED_B 6 // the PWM pin which drives the blue LED
+#define LED_W 9 // the PWM pin which drives the blue LED
+#define FLAME 7 // JeeNode Port 1, pin 2 (DIO)
+#define OTHER 8 // JeeNode Port 1, pin 5 (AIO)
 
 // minimum value on the LEDs that don't flicker
 #define MIN_PWM 3
@@ -69,8 +69,8 @@ void setup() {
   bitSet(TCCR1B, WGM12);
 
   Serial << F("Configuring output pins.") << endl;
-  flameOff(); pinMode(FLAME, OUTPUT); // order is important.  set low, then output.
-  otherOff(); pinMode(OTHER, OUTPUT); // order is important.  set low, then output.
+  flameOff(); pinMode(FLAME, OUTPUT); // order is important.  set then output.
+  otherOff(); pinMode(OTHER, OUTPUT); // order is important.  set then output.
   digitalWrite(LED_R, LOW); pinMode(LED_R, OUTPUT);
   digitalWrite(LED_G, LOW); pinMode(LED_G, OUTPUT);
   digitalWrite(LED_B, LOW); pinMode(LED_B, OUTPUT);
@@ -85,7 +85,8 @@ void setup() {
   //  commsSave(config); // write to EEPROM.
   // end boostrap
 
-  myNodeID = commsStart(); // assume that RF12Demo has been used to correctly set values
+  myNodeID = commsStart(); // assume that EEPROM has been used to correctly set values
+  radio.setHighPower(); // for HW boards.
   if ( myNodeID == 0 ) {
     Serial << F("Unable to recover RFM settings!") << endl;
     while (1);
@@ -114,25 +115,25 @@ void loop() {
   }
 
   // check for comms traffic
-  if ( radio.ReceiveComplete() && radio.CRCPass() ) {
+  if ( radio.receiveDone() ) {
     // process it.
-    if ( radio.GetDataLen() == sizeof(inst) ) {
+    if ( radio.DATALEN == sizeof(inst) ) {
       // save instruction for lights/flame
-      inst = *(towerInstruction*)radio.GetData();
+      inst = *(towerInstruction*)radio.DATA;
       // do it.
       performInstruction();
       // note network activity
       networkTimeout.reset();
       doTestPatterns = false;
     }
-    else if ( radio.GetDataLen() == sizeof(config) ) {
+    else if ( radio.DATALEN == sizeof(config) ) {
       // configuration for tower
       Serial << F("Configuration from Console.") << endl;
 
       // check to see if the instructions have changed?
-      if ( memcmp((void*)(&config), (void*)radio.GetData(), sizeof(config)) != 0 ) {
+      if ( memcmp((void*)(&config), (void*)radio.DATA, sizeof(config)) != 0 ) {
         // yes, so grab it.
-        config = *(towerConfiguration*)radio.GetData();
+        config = *(towerConfiguration*)radio.DATA;
         // save it
         commsSave(config);
       }
@@ -146,14 +147,14 @@ void loop() {
       // note we're configured
       amConfigured = true;
     }
-    else if ( radio.GetDataLen() == sizeof(inst) + 1 ) {
+    else if ( radio.DATALEN == sizeof(inst) + 1 ) {
       // ping received.
       Serial << F("+");
     }
 
     // check for ACK request
     if ( radio.ACKRequested() )
-      radio.SendACK();
+      radio.sendACK();
 
   } 
   
@@ -315,9 +316,9 @@ void flameOn(int fireLevel) {
 
     // SAFETY: never, ever, ever set this pin high without resetting the flameOnTime timer, unless you
     // have some other way of turning it back off.
-    // To put a Fine Point on it: this simple line will unleash 100,000 BTU.  Better take care.
 
-    digitalWrite(FLAME, HIGH); // This line should appear exactly once in a sketch, and be swaddled in all manner of caution.
+    // To put a Fine Point on it: this simple line will unleash 100,000 BTU.  Better take care.
+    digitalWrite(FLAME, LOW); // This line should appear exactly once in a sketch, and be swaddled in all manner of caution.
     flameOnTime.interval(flameTime);
     flameOnTime.reset();
     
@@ -329,13 +330,13 @@ void flameOn(int fireLevel) {
 }
 
 void flameOff() {
-  digitalWrite(FLAME, LOW);
+  digitalWrite(FLAME, HIGH);
 }
 
 void otherOn() {
-  digitalWrite(OTHER, HIGH);
+  digitalWrite(OTHER, LOW);
 }
 
 void otherOff() {
-  digitalWrite(OTHER, LOW);
+  digitalWrite(OTHER, HIGH);
 }

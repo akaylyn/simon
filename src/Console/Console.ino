@@ -38,10 +38,10 @@
 // Tower subunit.  Responsible for UX (light/fire) output at the Tower.
 #include "Tower.h"
 #include <Simon_Indexes.h> // sizes, indexing and
-#include <Simon_Comms.h> // comms between Towers and Console
-#include <RFM12B.h> // RFM12b radio transmitter module
-#include <SPI.h> // radio transmitter is a SPI device
 #include <EEPROM.h> // saving and loading radio settings
+#include <SPI.h> // radio transmitter is a SPI device
+#include <RFM12B.h> // RFM12b radio transmitter module
+#include <Simon_Comms.h> // comms between Towers and Console
 
 // Music subunit.  Responsible for UX (sound) output.
 #include "Music.h"
