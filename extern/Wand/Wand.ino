@@ -1,16 +1,29 @@
-/*********************
-
-Example code for the Adafruit RGB Character LCD Shield and Library
-
-This code displays text on the shield, and also reads the buttons on the keypad.
-When a button is pressed, the backlight changes color.
-
-**********************/
+// Compile for Uno
 
 // include the library code:
 #include <Wire.h>
 #include <Adafruit_MCP23017.h>
 #include <Adafruit_RGBLCDShield.h>
+// The IDE requires all libraries to be #include’d in the main (.ino) file.  Clutter.
+#include <Streaming.h> // <<-style printing
+#include <Metro.h> // timers
+#include <Simon_Indexes.h> // sizes, indexing and comms common to Towers and Console
+#include <EEPROM.h> // saving and loading radio settings
+#include <RFM12B.h> // RFM12b radio transmitter module
+#include <Simon_Comms.h>  // Wand<=>Console and Console=>Tower sniffing
+
+// this is where the lights and fire instructions to Console are placed
+towerInstruction inst;
+// from Simon_Comms.h:
+// typedef struct {
+//	byte lightLevel[N_COLORS]; // 0..255.  maps to analogWrite->light level
+//	byte fireLevel[N_COLORS]; // 0..255.  maps to timer->fire duration
+// } towerInstruction;
+
+// Need an instance of the Radio Module
+RFM12B radio;
+// store my NODEID
+byte myNodeID;
 
 // The shield uses the I2C SCL and SDA pins. On classic Arduinos
 // this is Analog 4 and 5 so you can't use those for analogRead() anymore
@@ -27,55 +40,105 @@ Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
 #define VIOLET 0x5
 #define WHITE 0x7
 
+// how many presses to take per second.
+#define PRESS_PER_SECOND 3
+
 void setup() {
   // Debugging output
   Serial.begin(115200);
-  Serial.println("Test.");
-  
-  // set up the LCD's number of columns and rows: 
+  Serial << F("Wand: startup.") << endl;
+
+  // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
 
-  // Print a message to the LCD. We track how long it takes since
-  // this library has been optimized a bit and we're proud of it :)
-  int time = millis();
-  lcd.print("Hello, world!");
-  time = millis() - time;
-  Serial.print("Took "); Serial.print(time); Serial.println(" ms");
   lcd.setBacklight(WHITE);
+  lcd.blink(); // blinking cursor
+  lcd.cursor(); // so we can see
+  
+  // Print a message to the LCD.
+  lcd.setCursor(0, 0);
+  lcd.print(F("Wand: startup"));
+  
+  // zero out instruction.
+  commsDefault(inst);
+
+  myNodeID = commsStart(7); // we're node 7
+  if ( myNodeID == 0 ) {
+    Serial << F("Unable to recover RFM settings!") << endl;
+    while (1);
+  }
+  Serial << F("Radio startup complete. Node: ") << myNodeID << endl;
+
+  Serial << F("Wand: startup complete.") << endl;
+
+  lcd.setCursor(0,1);
+  lcd.print(F("Node: "));
+  lcd.print(myNodeID);
+  
+  delay(500);
 }
 
-uint8_t i=0;
 void loop() {
-  // set the cursor to column 0, line 1
-  // (note: line 1 is the second row, since counting begins with 0):
-  lcd.setCursor(0, 1);
-  // print the number of seconds since reset:
-  lcd.print(millis()/1000);
+  // store which we're selecting
+  const byte colorInd[N_COLORS] = {I_GRN, I_RED, I_YEL, I_BLU};
+  static byte colorSel = 0;
 
-  uint8_t buttons = lcd.readButtons();
-
-  if (buttons) {
-    lcd.clear();
-    lcd.setCursor(0,0);
-    if (buttons & BUTTON_UP) {
-      lcd.print("UP ");
-      lcd.setBacklight(RED);
-    }
-    if (buttons & BUTTON_DOWN) {
-      lcd.print("DOWN ");
-      lcd.setBacklight(YELLOW);
-    }
-    if (buttons & BUTTON_LEFT) {
-      lcd.print("LEFT ");
-      lcd.setBacklight(GREEN);
-    }
-    if (buttons & BUTTON_RIGHT) {
-      lcd.print("RIGHT ");
-      lcd.setBacklight(TEAL);
-    }
-    if (buttons & BUTTON_SELECT) {
-      lcd.print("SELECT ");
-      lcd.setBacklight(VIOLET);
+  // check for comms traffic
+  if ( radio.ReceiveComplete() && radio.CRCPass() ) {
+    // process it.
+    if ( radio.GetDataLen() == sizeof(inst) ) {
+      // save instruction for lights/flame
+      inst = *(towerInstruction*)radio.GetData();
     }
   }
+
+  // print instruction status on LCD, first row
+  printInstruction();
+
+  // move the cursor to show what we're currently setting
+  byte cursorX = colorSel == 0 || colorSel == 2 ? 3 : 12;
+  byte cursorY = colorSel < 2 ? 0 : 1;
+  lcd.setCursor(cursorX, cursorY);
+
+  // read buttons and toggle instructions
+  uint8_t buttons = lcd.readButtons();
+  
+  // but only do so on an interval
+  static Metro buttonInterval(1000UL/PRESS_PER_SECOND);
+  
+  if (buttons && buttonInterval.check()) {
+    if (buttons & BUTTON_UP) {
+      inst.lightLevel[colorInd[colorSel]]++; // will wrap
+    }
+    if (buttons & BUTTON_DOWN) {
+      inst.lightLevel[colorInd[colorSel]]--; // will wrap
+    }
+    if (buttons & BUTTON_LEFT) {
+      if ( colorSel > 0 ) colorSel--;
+      else colorSel == N_COLORS - 1; // wrap
+    }
+    if (buttons & BUTTON_RIGHT) {
+      if ( colorSel < (N_COLORS - 1) ) colorSel++;
+      else colorSel == 0; // wrap
+    }
+    if (buttons & BUTTON_SELECT) {
+      // send now
+      commsSend(inst);
+    }
+    buttonInterval.reset();
+  }
+}
+
+void printInstruction() {
+  char row1[16] = "";
+  char row2[16] = "";
+
+  // formatted
+  sprintf(row1, "Grn:%3d  Red:%3d", inst.lightLevel[I_GRN], inst.lightLevel[I_RED]);
+  sprintf(row2, "Yel:%3d  Blu:%3d", inst.lightLevel[I_YEL], inst.lightLevel[I_BLU]);
+
+  lcd.setCursor(0, 0);
+  lcd.print(row1);
+  lcd.setCursor(0, 1);
+  lcd.print(row2);
 }
