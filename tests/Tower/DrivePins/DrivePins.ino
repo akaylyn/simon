@@ -61,9 +61,9 @@ void loop() {
   }
   Serial << "LED PWM tests..." << endl; 
   for(int i=0; i<N_LED; i++) {
-    for(int j=0; j<10; j++) {
-      setLED(i, random(ledOff,ledOn)+1);
-      delay(50);
+    for(int j=ledOff; j<ledOn; j++) {
+      setLED(i,j);
+      delay(20);
     }
     setLED(i, ledOff);
   }
