@@ -77,7 +77,7 @@ void setup() {
 
   // once, at hardware initialization, we need to bootstrap some settings to the EEPROM
   //  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
-//done  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
+  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
 //done  commsSave(towerNodeID[1]); // write to EEPROM. Select towerNodeID[0..3].
 //done  commsSave(towerNodeID[2]); // write to EEPROM. Select towerNodeID[0..3].
 //done  commsSave(towerNodeID[3]); // write to EEPROM. Select towerNodeID[0..3].
@@ -87,6 +87,8 @@ void setup() {
 
   myNodeID = commsStart(); // assume that EEPROM has been used to correctly set values
   radio.setHighPower(); // for HW boards.
+  radio.promiscuous(true); // so broadcasts are received.
+  
   if ( myNodeID == 0 ) {
     Serial << F("Unable to recover RFM settings!") << endl;
     while (1);
@@ -125,6 +127,7 @@ void loop() {
       // note network activity
       networkTimeout.reset();
       doTestPatterns = false;
+      Serial << F("i") << endl;
     }
     else if ( radio.DATALEN == sizeof(config) ) {
       // configuration for tower
@@ -149,13 +152,8 @@ void loop() {
     }
     else if ( radio.DATALEN == sizeof(inst) + 1 ) {
       // ping received.
-      Serial << F("+");
+      Serial << F("p");
     }
-
-    // check for ACK request
-    if ( radio.ACKRequested() )
-      radio.sendACK();
-
   } 
   
   if ( networkTimeout.check() ) { // comms are quiet

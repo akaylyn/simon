@@ -22,7 +22,6 @@ extern RFM69 radio;
 
 #define D_GROUP_ID 188// default RFM group
 #define D_CS_PIN 10 // default SS pin for RFM module
-#define D_WAIT_ACK 50 // default wait time for ACK receipt, ms
 #if defined(__AVR_ATmega2560__) // transmitter frequency
 #define D_FREQ RF12_915MHZ
 #else
@@ -64,8 +63,8 @@ byte commsStart();
 byte commsStart(byte setNodeID, byte groupID=D_GROUP_ID, byte band=D_FREQ, byte csPin=D_CS_PIN);
 // saves configuration to EEPROM for later commsStart() use.
 void commsSave(byte nodeID, byte groupID=D_GROUP_ID, byte band=D_FREQ, byte csPin=D_CS_PIN);
-// ping functions with ACK used to establish network after comms are initialized
-boolean commsSendPing(byte nodeID, int waitACK=D_WAIT_ACK);
+// ping functions network after comms are initialized
+void commsSendPing(byte nodeID);
 
 // structure definition for information passed between Console and Towers
 
@@ -87,7 +86,7 @@ void commsDefault(towerConfiguration &config, byte colorIndex=I_ALL, byte fireIn
 					unsigned long minFireTime=D_MIN_FLAME, unsigned long maxFireTime=D_MAX_FLAME,
 					unsigned long flameCoolDownTime=D_FLAME_COOLDOWN);
 // send configuration from Console to Tower nodeID.
-boolean commsSend(towerConfiguration &config, byte nodeID, int waitACK=D_WAIT_ACK);
+void commsSend(towerConfiguration &config, byte nodeID);
 // saves configuration to EEPROM.  Towers use this to restart to last configuration state.
 void commsSave(towerConfiguration &config);
 // reads configuration from EEPROM.  Towers use this to save last configuration state.

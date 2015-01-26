@@ -58,7 +58,7 @@ void towerSend(int sendN=TOWER_ECHO_COUNT);
 void towerUpdate();
 
 // ping network for quality
-void pingNetwork(int waitACK=D_WAIT_ACK);
+void pingNetwork(int count=10);
 
 // configure network
 void configureNetwork();

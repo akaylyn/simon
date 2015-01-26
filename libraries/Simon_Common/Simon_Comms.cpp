@@ -1,10 +1,9 @@
 #include "Simon_Comms.h"
 
 // instantiated from main codes
-#ifdef RFM12B_RADIO
+#if defined(__AVR_ATmega2560__)  
 extern RFM12B radio;
-#endif
-#ifdef RFM69_RADIO
+#else 
 extern RFM69 radio;
 #endif
 
@@ -57,30 +56,18 @@ void commsSave(byte nodeID, byte groupID, byte band, byte csPin) {
 	EEPROM.write(radioConfigLocation + (offset++), csPin);
 }
 // ping functions with ACK used to establish network after comms are initialized
-boolean commsSendPing(byte nodeID, int waitACK) {
+void commsSendPing(byte nodeID) {
 	// use the instruction payload size+1.  It's contents are irrelevant.
 	byte payload[sizeof(towerInstruction)+1];
 
 	// send the packet with an ACK request
 
 #if defined(__AVR_ATmega2560__)  
-	radio.Send(nodeID, (const void*)(&payload), sizeof(payload), waitACK>0?true:false);
-	radio.SendWait(); // wait for it to get out the door.
+	radio.Send(nodeID, (const void*)(&payload), sizeof(payload));
 #else
-	radio.send(nodeID, (const void*)(&payload), sizeof(payload), waitACK>0?true:false);
-	while(!radio.canSend()); // wait for it got get out the door.
+	radio.send(nodeID, (const void*)(&payload), sizeof(payload));
 #endif
 	
-	// maybe wait for ACK
-	if( waitACK > 0 ) {
-		unsigned long now = millis();
-		while( millis() - now <= waitACK ) { // wait for ACK		
-			if( radio.ACKReceived(nodeID) ) return(true); // got one
-		}
-		return(false); // didn't get one
-	}
-	return(true); // with no ACK request, we're done.
-
 }
 
 // CONFIGURATION
@@ -102,24 +89,13 @@ void commsPrint(towerConfiguration &config, byte nodeID) {
 	Serial << F("Flame min(") << config.minFireTime << F(") max(") << config.maxFireTime << F(").") << endl;
 }
 // send configuration
-boolean commsSend(towerConfiguration &config, byte nodeID, int waitACK) {
-
-	// send the packet with an ACK request
+void commsSend(towerConfiguration &config, byte nodeID) {
+	// send the packet 
 #if defined(__AVR_ATmega2560__)  
-	radio.Send(nodeID, (const void*)(&config), sizeof(config), waitACK>0?true:false);
+	radio.Send(nodeID, (const void*)(&config), sizeof(config));
 #else
-	radio.send(nodeID, (const void*)(&config), sizeof(config), waitACK>0?true:false);
+	radio.send(nodeID, (const void*)(&config), sizeof(config));
 #endif
- 
-	// maybe wait for ACK
-	if( waitACK > 0 ) {
-		unsigned long now = millis();
-		while( millis() - now <= waitACK ) { // wait for ACK
-			if( radio.ACKReceived(nodeID) ) return(true); // got one
-		}
-		return(false); // didn't get one
-	}
-	return(true); // with no ACK request, we're done.
 }
 // saves configuration to EEPROM
 void commsSave(towerConfiguration &config) { 
@@ -153,9 +129,9 @@ void commsPrint(towerInstruction &inst) {
 void commsSend(towerInstruction &inst) {
 	// send the packet in broadcast mode
 #if defined(__AVR_ATmega2560__)  
-	radio.Send(0, (const void*)(&inst), sizeof(inst), false); 
+	radio.Send(0, (const void*)(&inst), sizeof(inst)); 
 #else
-	radio.send(0, (const void*)(&inst), sizeof(inst), false); 
+	radio.send(0, (const void*)(&inst), sizeof(inst)); 
 #endif
 	// with no ACK, we're done.
 }
