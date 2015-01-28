@@ -9,7 +9,8 @@
 #include <Metro.h> // timers
 #include <Simon_Indexes.h> // sizes, indexing and comms common to Towers and Console
 #include <EEPROM.h> // saving and loading radio settings
-#include <RFM12B.h> // RFM12b radio transmitter module
+#include <SPI.h> // radio board is a SPI device
+#include <RFM69.h> // RFM12b radio transmitter module
 #include <Simon_Comms.h>  // Wand<=>Console and Console=>Tower sniffing
 
 // this is where the lights and fire instructions to Console are placed
@@ -21,7 +22,7 @@ towerInstruction inst;
 // } towerInstruction;
 
 // Need an instance of the Radio Module
-RFM12B radio;
+RFM69 radio;
 // store my NODEID
 byte myNodeID;
 
@@ -63,6 +64,9 @@ void setup() {
   commsDefault(inst);
 
   myNodeID = commsStart(7); // we're node 7
+  radio.setHighPower(); // for HW boards.
+  radio.promiscuous(true); // so broadcasts are received.
+  
   if ( myNodeID == 0 ) {
     Serial << F("Unable to recover RFM settings!") << endl;
     while (1);
@@ -84,11 +88,11 @@ void loop() {
   static byte colorSel = 0;
 
   // check for comms traffic
-  if ( radio.ReceiveComplete() && radio.CRCPass() ) {
+  if ( radio.receiveDone() ) {
     // process it.
-    if ( radio.GetDataLen() == sizeof(inst) ) {
+    if ( radio.DATALEN == sizeof(inst) ) {
       // save instruction for lights/flame
-      inst = *(towerInstruction*)radio.GetData();
+      inst = *(towerInstruction*)radio.DATA;
     }
   }
 
@@ -109,9 +113,11 @@ void loop() {
   if (buttons && buttonInterval.check()) {
     if (buttons & BUTTON_UP) {
       inst.lightLevel[colorInd[colorSel]]++; // will wrap
+      inst.fireLevel[colorInd[colorSel]]++; // will wrap
     }
     if (buttons & BUTTON_DOWN) {
       inst.lightLevel[colorInd[colorSel]]--; // will wrap
+      inst.fireLevel[colorInd[colorSel]]--; // will wrap
     }
     if (buttons & BUTTON_LEFT) {
       if ( colorSel > 0 ) colorSel--;
