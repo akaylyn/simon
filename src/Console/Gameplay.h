@@ -8,7 +8,7 @@
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
 #include <FiniteStateMachine.h>
-#include <Simon_Comms.h> // sizes, indexing defines.
+#include <Simon_Indexes.h> // sizes, indexing defines.
 
 // makes heavy use of the modules.
 #include "Touch.h"

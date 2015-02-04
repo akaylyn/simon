@@ -38,16 +38,22 @@
 // Tower subunit.  Responsible for UX (light/fire) output at the Tower.
 #include "Tower.h"
 #include <Simon_Indexes.h> // sizes, indexing and
-#include <Simon_Comms.h> // comms between Towers and Console
-#include <RFM12B.h> // RFM12b radio transmitter module
-#include <SPI.h> // radio transmitter is a SPI device
 #include <EEPROM.h> // saving and loading radio settings
+#include <SPI.h> // radio transmitter is a SPI device
+#include <RFM12B.h> // RFM12b radio transmitter module
+#include <Simon_Comms.h> // comms between Towers and Console
 
 // Music subunit.  Responsible for UX (sound) output.
 #include "Music.h"
 
 // should Unit Tests be run if the startup routines return an error?
 #define RUN_UNIT_ON_ERROR false
+
+// remote control
+#define SYSTEM_ENABLE_PIN 24
+#define FIRE_ENABLE_PIN 26
+Bounce systemEnable = Bounce(SYSTEM_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
+Bounce fireEnable = Bounce(FIRE_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
 
 void setup() {
   // put your setup code here, to run once:
@@ -56,14 +62,18 @@ void setup() {
   // random seed set from electrical noise on an analog pin.
   randomSeed(analogRead(0));
 
+  // remote control
+  pinMode(SYSTEM_ENABLE_PIN, INPUT_PULLUP);
+  pinMode(FIRE_ENABLE_PIN, INPUT_PULLUP);
+
   // start each unit
   //------ Input units.
   touchStart();
-  if( !buttonStart() && RUN_UNIT_ON_ERROR || 0) buttonUnitTest();
+  if ( !buttonStart() && RUN_UNIT_ON_ERROR || 0) buttonUnitTest();
   //------ Output units.
   lightStart();
   towerStart();
-  if( !musicStart() && RUN_UNIT_ON_ERROR || 0) musicUnitTest();
+  if ( !musicStart() && RUN_UNIT_ON_ERROR || 0) musicUnitTest();
   //------ "This" units.
   gameplayStart();
   externStart();
@@ -73,16 +83,58 @@ void setup() {
 
 // main loop for the core.
 void loop() {
-  // play the Simon game; returns true if we're playing
-  if( ! gameplayUpdate() ) {
-    // we're not playing, so check for Extern traffic; returns true if we have traffic.
-    if( ! externUpdate() ) {
-      // no Extern traffic, so perform Tower maintenance and idle displays.
-      towerUpdate();
+
+  // remote control.  There's a relay that will pull FIRE_ENABLE_PIN to LOW when pressed (enable fire).  
+  // goes to HIGH when pressed again (disable fire).
+  // on the Towers, this same relay will physically prevent the accumulator solenoid from opening,
+  // so this is really a "FYI" for the Console.  We'll use that to make noise over the FM transmitter 
+  // to let the Operator know what's up.
+  if ( fireEnable.update() ) {
+    // fire enable/disable state has changed.
+    int freq;
+    if ( fireEnable.read() == HIGH ) {
+      // fire is disabled.  make three "cheeps"
+      freq = 500; // cheeps
+    } else {
+      // fire is ENABLED.  make three "klaxons"
+      freq = 100; // boops
+    }
+    // this could be replaced by asking Music to play an mp3 file.  For now, we'll just use the tone system.
+    for ( int i = 0; i < 3; i++ ) {
+      tone( SPEAKER_WIRE, freq ); // 500 Hz tone
+      delay( 250UL ); // wait 0.25 seconds
+      noTone( SPEAKER_WIRE );
+      delay( 100UL ); // wait 0.1 seconds
     }
   }
-  //touchUnitTest(50UL);
+
+  // remote control.  There's a relay that will pull SYSTEM_ENABLE_PIN to LOW when pressed (enable gameplay).
+  // goes to HIGH when pressed again (disable gameplay).
+  static boolean systemNormalMode = false;
+  if( systemEnable.update() ) {
+    // system enable/disable state has changed.
+    systemNormalMode = systemEnable.read() == LOW;
+  }
+  if( systemNormalMode ) {
+    // play the Simon game; returns true if we're playing
+    if ( ! gameplayUpdate() ) {
+      // we're not playing, so check for Extern traffic; returns true if we have traffic.
+      if ( ! externUpdate() ) {
+        // no Extern traffic, so perform Tower maintenance and idle displays.
+        towerUpdate();
+      }
+    }
+    //touchUnitTest(50UL);
+  } else {
+    // assume we're setting up the project on-site, so this is a good time to run unit tests, calibration activities, etc.
+    // maybe cycle the lights with commsSend(inst).
+    // maybe when a button is pressed, send the colors out and make some fire (drum machine mode?)
+    // maybe when buttons are pressed in a certain way, change the play mode and/or difficulty "level"?
+    // maybe when buttons are pressed in a certain way, change what towers respond to what indexes?
+  }
 }
+
+
 
 /* possible IRQ pins (for attachInterrupt):
   pin 2 (IRQ 0) taken by RFM12b

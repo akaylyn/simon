@@ -40,7 +40,7 @@ void towerStart() {
     while (1);
   }
   // ping the network
-  //pingNetwork(5UL);
+  pingNetwork();
   // configure network
   configureNetwork();
   // update network
@@ -113,28 +113,20 @@ void towerUpdate() {
 
 
 // ping network for quality
-void pingNetwork(int waitACK) {
+void pingNetwork(int count) {
   Serial << F("Tower: ping network....") << endl;
 
   // check ping quality and use that to figure out how many Towers can be used.
   for ( byte ni = 0; ni < N_TOWERS; ni ++ ) {
     if ( towerColor[ni] != I_NONE || towerFire[ni] != I_NONE ) {
-      Serial << F("Tower: ping node: ") << towerNodeID[ni] << endl;
+      Serial << F("Tower: ping node: ") << towerNodeID[ni]  << endl;
 
-      // store the number of ACKs we get back
-      int ACKcount = 0;
-      // ping 100 times
-      for ( int i = 0; i < 100; i++ ) {
-        if ( commsSendPing(towerNodeID[ni], waitACK) ) {
-          ACKcount++;
-          Serial << F("+");
-        } else {
-          Serial << F("_");
-        }
+      // ping count times
+      for ( int i = 0; i < count; i++ ) {
+        commsSendPing(towerNodeID[ni]);
+        Serial << F("+");
       }
       Serial << endl;
-
-      Serial << F("Tower: quality = ") << ACKcount << F("%. to node: ") << towerNodeID[ni] << endl;
     }
   }
 }
