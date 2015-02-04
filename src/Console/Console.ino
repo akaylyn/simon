@@ -1,4 +1,4 @@
-// Compile for Arduino Mega.
+// Compile for Arduino Megai 2560.
 
 // The IDE requires all libraries to be #include’d in the main (.ino) file.  Clutter.
 // included in several places.
@@ -83,21 +83,23 @@ void setup() {
 
 // main loop for the core.
 void loop() {
-
-  // remote control.  There's a relay that will pull FIRE_ENABLE_PIN to LOW when pressed (enable fire).  
+  // remote control.  There's a relay that will pull FIRE_ENABLE_PIN to LOW when pressed (enable fire).
   // goes to HIGH when pressed again (disable fire).
   // on the Towers, this same relay will physically prevent the accumulator solenoid from opening,
-  // so this is really a "FYI" for the Console.  We'll use that to make noise over the FM transmitter 
+  // so this is really a "FYI" for the Console.  We'll use that to make noise over the FM transmitter
   // to let the Operator know what's up.
   if ( fireEnable.update() ) {
+    Serial << "Fire status change" << endl;
     // fire enable/disable state has changed.
     int freq;
     if ( fireEnable.read() == HIGH ) {
       // fire is disabled.  make three "cheeps"
-      freq = 500; // cheeps
+      freq = 1000; // cheeps
+      Serial << "Fire Disabled" << endl;
     } else {
       // fire is ENABLED.  make three "klaxons"
       freq = 100; // boops
+      Serial << "Fire Enabled" << endl;
     }
     // this could be replaced by asking Music to play an mp3 file.  For now, we'll just use the tone system.
     for ( int i = 0; i < 3; i++ ) {
@@ -110,10 +112,11 @@ void loop() {
 
   // remote control.  There's a relay that will pull SYSTEM_ENABLE_PIN to LOW when pressed (enable gameplay).
   // goes to HIGH when pressed again (disable gameplay).
-  static boolean systemNormalMode = false;
+  static boolean systemNormalMode = true;
   if( systemEnable.update() ) {
     // system enable/disable state has changed.
-    systemNormalMode = systemEnable.read() == LOW;
+    // TODO: change this to LOW when it is properly wired up
+    systemNormalMode = systemEnable.read() == HIGH;
   }
   if( systemNormalMode ) {
     // play the Simon game; returns true if we're playing

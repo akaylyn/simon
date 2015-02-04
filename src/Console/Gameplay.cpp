@@ -216,12 +216,18 @@ void play(char color, boolean correctTone) {
 
 void animateFailure()
 {
-    for (int i = 0; i < 5; i++) {
-        setSoundLights(I_ALL, false);
+    Serial << "AnimateFailure!" << endl;
+    for (int i = 0; i < 6; i++) {
+        towerLightSet(I_ALL, LIGHT_ON);
+        lightSet(I_ALL, LIGHT_ON);
+        musicTone(I_ALL);
 
-        Metro delayNow(6000);
+        delay(50);
         quiet();
     }
+    musicBaff();
+    delay(2000);
+    quiet();
 }
 
 // turn off lights and music
