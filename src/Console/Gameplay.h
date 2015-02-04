@@ -70,6 +70,9 @@ void setSoundLights(byte colorIndex, boolean correctTone);
 // decode color character and setSoundLights
 void play(char color, boolean correctTone);
 
+// play failure animation
+void animateFailure();
+
 // setSoundLights off.
 void quiet();
 

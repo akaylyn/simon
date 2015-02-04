@@ -147,7 +147,8 @@ void playerState() {
         } else {
             Serial << F("Gameplay: Player incorrect.  currentLength = ") << currentLength << endl;
             // if so, show the correct next button
-            play(correctSequence[correctLength], false);
+            //play(correctSequence[correctLength], false);
+            animateFailure();
             // wait
             Metro delayNow(3000);
             while (! delayNow.check() ) {
@@ -210,6 +211,16 @@ void play(char color, boolean correctTone) {
         case 'Y':
             setSoundLights(I_YEL, correctTone);
             break;
+    }
+}
+
+void animateFailure()
+{
+    for (int i = 0; i < 5; i++) {
+        setSoundLights(I_ALL, false);
+
+        Metro delayNow(6000);
+        quiet();
     }
 }
 
