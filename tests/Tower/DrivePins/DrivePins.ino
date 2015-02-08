@@ -16,6 +16,9 @@
 #define FIRE_PIN 7
 #define RSPARE_PIN 8
 
+#define SYSTEM_ENABLE A0
+#define GAMEPLAY_ENABLE A1
+
 // what is in a name?
 const char *ledName[N_LED]={"RED","GRN","BLU","WHT"};
 const char *relayName[N_RELAY]={"FIRE","SPARE"};
@@ -41,31 +44,41 @@ void setup() {
     setRelay(i, relayOff);
     pinMode(relayPin[i], OUTPUT);
   }
-  
+  pinMode(SYSTEM_ENABLE, INPUT_PULLUP);
+  pinMode(GAMEPLAY_ENABLE, INPUT_PULLUP);  
+
   Serial << "Startup complete." << endl;
 }
 
 void loop() {
 
+  Serial << "System Enable: " << digitalRead(SYSTEM_ENABLE) << endl;
+  Serial << "Gameplay Enable: " << digitalRead(GAMEPLAY_ENABLE) << endl;
+ 
   Serial << "LED on/off tests..." << endl; 
   for(int i=0; i<N_LED; i++) {
     setLED(i, ledOn);
     delay(500);
     setLED(i, ledOff);
   }
-  Serial << "Relay on/off tests..." << endl; 
-  for(int i=0; i<N_RELAY; i++) {
-    setRelay(i, relayOn);
-    delay(500);
-    setRelay(i, relayOff);
-  }
-  Serial << "LED PWM tests..." << endl; 
-  for(int i=0; i<N_LED; i++) {
-    for(int j=ledOff; j<ledOn; j++) {
-      setLED(i,j);
-      delay(20);
+  if( digitalRead(SYSTEM_ENABLE) == LOW) {
+    Serial << "Relay on/off tests..." << endl; 
+    for(int i=0; i<N_RELAY; i++) {
+      setRelay(i, relayOn);
+      delay(500);
+      setRelay(i, relayOff);
     }
-    setLED(i, ledOff);
+  }
+  
+  if( digitalRead(GAMEPLAY_ENABLE) == LOW) {
+    Serial << "LED PWM tests..." << endl; 
+    for(int i=0; i<N_LED; i++) {
+      for(int j=ledOff; j<ledOn; j++) {
+        setLED(i,j);
+        delay(5);
+      }
+      setLED(i, ledOff);
+    }
   }
   
 }
