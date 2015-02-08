@@ -17,10 +17,10 @@
 #define NOTE_GS4 415
 #define GRN_TONE NOTE_GS4   // Green 415 Hz G#4 (true pitch 415.305 Hz)
 #define NOTE_GS3 208
-#define BLU_TONE NOTE_GS3   // Blue 209 Hz G#3 (true pitch 207.652 Hz) 
+#define BLU_TONE NOTE_GS3   // Blue 209 Hz G#3 (true pitch 207.652 Hz)
 #define NOTE_B3  248
 #define YEL_TONE NOTE_B3    // Yellow 252 Hz B3 (true pitch 247.942 Hz)
-#define WRONG_TONE 42       // a losing tone of 42 Hz 
+#define WRONG_TONE 42       // a losing tone of 42 Hz
 
 // communications with Music module via Serial port
 #define Music Serial2

@@ -43,8 +43,10 @@
 #include <RFM12B.h> // RFM12b radio transmitter module
 #include <Simon_Comms.h> // comms between Towers and Console
 
-// Music subunit.  Responsible for UX (sound) output.
-#include "Music.h"
+// Sound subunit.  Responsible for UX (music) output.
+#include "Sound.h"
+#include <EasyTransfer.h> // used for sending message to the sound module
+Sound sound;
 
 // should Unit Tests be run if the startup routines return an error?
 #define RUN_UNIT_ON_ERROR false
@@ -73,7 +75,7 @@ void setup() {
   //------ Output units.
   lightStart();
   towerStart();
-  if ( !musicStart() && RUN_UNIT_ON_ERROR || 0) musicUnitTest();
+  if ( !sound.begin() && RUN_UNIT_ON_ERROR || 0) soundTest();
   //------ "This" units.
   gameplayStart();
   externStart();

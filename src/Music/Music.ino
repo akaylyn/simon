@@ -5,6 +5,8 @@
 #include <SD.h>
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
+#include <EasyTransfer.h> // data transfer between arduinos
+#include <SoundMessage.h> // message structure (used with EasyTransfer)
 
 // Serial speed.  match on the other side.
 #define SERIAL_SPEED 19200 // baud
@@ -34,10 +36,10 @@ byte playingWhat = 0;
 
 // instantiate
 Adafruit_VS1053_FilePlayer musicPlayer =
-  //  Adafruit_VS1053_FilePlayer(MP3_RST, MP3_CS, MP3_XDCS, MP3_DREQ, MP3_SDCS);
-  Adafruit_VS1053_FilePlayer( // use hardware SPI with these commented out: MP3_MOSI, MP3_MISO, MP3_CLK,
-    MP3_RST, MP3_CS, MP3_XDCS, MP3_DREQ,
-    MP3_SDCS);
+//  Adafruit_VS1053_FilePlayer(MP3_RST, MP3_CS, MP3_XDCS, MP3_DREQ, MP3_SDCS);
+Adafruit_VS1053_FilePlayer( // use hardware SPI with these commented out: MP3_MOSI, MP3_MISO, MP3_CLK,
+        MP3_RST, MP3_CS, MP3_XDCS, MP3_DREQ,
+        MP3_SDCS);
 
 // holds the number of possible tracks to play in each gesture
 int tracksBaff = 0;
@@ -51,214 +53,214 @@ const char dirLose[] = "LOSE";
 const char dirRock[] = "ROCK";
 
 void setup() {
-  Serial.begin(SERIAL_SPEED);
+    Serial.begin(SERIAL_SPEED);
 
-  // put your setup code here, to run once:
-  musicStart();
+    // put your setup code here, to run once:
+    musicStart();
 
-  // set random seed from analog noise
-  randomSeed(analogRead(A0));
-  
-  // setup LED pin
-  pinMode(LED_PIN, OUTPUT);
+    // set random seed from analog noise
+    randomSeed(analogRead(A0));
+
+    // setup LED pin
+    pinMode(LED_PIN, OUTPUT);
 }
 
 void toggleLED() {
-  static boolean state=false;
-  
-  state=!state;
-  
-  digitalWrite(LED_PIN, state);
+    static boolean state=false;
+
+    state=!state;
+
+    digitalWrite(LED_PIN, state);
 }
 
 // called when a serial message is received.
 void serialEvent() {
-  //  if ( musicPlayer.playingMusic )
-  //    musicPlayer.pausePlaying(true); // hang on.  the music playback has enough interrupt calls that it disrupts serial.
+    //  if ( musicPlayer.playingMusic )
+    //    musicPlayer.pausePlaying(true); // hang on.  the music playback has enough interrupt calls that it disrupts serial.
 
-  char command = Serial.read();
+    char command = Serial.read();
 
-  //  if ( musicPlayer.paused )
-  //    musicPlayer.pausePlaying(false); // restart if needed.
+    //  if ( musicPlayer.paused )
+    //    musicPlayer.pausePlaying(false); // restart if needed.
 
-  if ( command < '0' || command > 'z' ) return; // spurious characters like line feed.
-  else Serial << command << endl;
+    if ( command < '0' || command > 'z' ) return; // spurious characters like line feed.
+    else Serial << command << endl;
 
-  if ( command >= '0' && command <= '9' ) {
-    byte vol = constrain(map(command - '0', 0, 9, MIN_MP3_VOL, 0), 0, MIN_MP3_VOL); // 0 is the loudest.  map 1-9 to 0-255.
-    // Set volume for left, right channels. lower numbers == louder volume!
-    musicPlayer.setVolume(vol, vol);
-    Serial << F("Volume set: ") << vol << endl;
-  } else {
-    switch ( command ) {
-      case 'u': playingWhat = 5; break;
-      case 'p': musicPlayer.pausePlaying(!musicPlayer.paused()); break;
-      case 's': playingWhat = 0; break;
-      case 'r': playingWhat = 1; break;
-      case 'w': playingWhat = 2; break;
-      case 'l': playingWhat = 3; break;
-      case 'b': playingWhat = 4; break;
-      default: Serial << F("Unknown Command(") << command << F(") Try: u,p,s,0-9,r,w,l,b.") << endl;
+    if ( command >= '0' && command <= '9' ) {
+        byte vol = constrain(map(command - '0', 0, 9, MIN_MP3_VOL, 0), 0, MIN_MP3_VOL); // 0 is the loudest.  map 1-9 to 0-255.
+        // Set volume for left, right channels. lower numbers == louder volume!
+        musicPlayer.setVolume(vol, vol);
+        Serial << F("Volume set: ") << vol << endl;
+    } else {
+        switch ( command ) {
+            case 'u': playingWhat = 5; break;
+            case 'p': musicPlayer.pausePlaying(!musicPlayer.paused()); break;
+            case 's': playingWhat = 0; break;
+            case 'r': playingWhat = 1; break;
+            case 'w': playingWhat = 2; break;
+            case 'l': playingWhat = 3; break;
+            case 'b': playingWhat = 4; break;
+            default: Serial << F("Unknown Command(") << command << F(") Try: u,p,s,0-9,r,w,l,b.") << endl;
+        }
     }
-  }
 }
 
 void loop() {
-  // check playing state, and report if we've stopped
-  if ( playingWhat > 0 && !musicPlayer.playingMusic) {
-    // we've just stopped
-    Serial << endl;
-    playAnotherRandomTrack();
-  } else if( playingWhat == 0 && musicPlayer.playingMusic ) {
-    // we should stop
-    musicPlayer.stopPlaying();
-  }
+    // check playing state, and report if we've stopped
+    if ( playingWhat > 0 && !musicPlayer.playingMusic) {
+        // we've just stopped
+        Serial << endl;
+        playAnotherRandomTrack();
+    } else if( playingWhat == 0 && musicPlayer.playingMusic ) {
+        // we should stop
+        musicPlayer.stopPlaying();
+    }
 
-  // put your main code here, to run repeatedly:
-  // check if music is running.
-  static Metro isPlayingTick(500);
-  if (musicPlayer.playingMusic && isPlayingTick.check()) {
-    // file is now playing in the 'background' so now's a good time
-    // to do something else like handling LEDs or buttons :)
-    Serial << F(".");
-    toggleLED();
-    isPlayingTick.reset();
-  }
+    // put your main code here, to run repeatedly:
+    // check if music is running.
+    static Metro isPlayingTick(500);
+    if (musicPlayer.playingMusic && isPlayingTick.check()) {
+        // file is now playing in the 'background' so now's a good time
+        // to do something else like handling LEDs or buttons :)
+        Serial << F(".");
+        toggleLED();
+        isPlayingTick.reset();
+    }
 
 }
 
 void playAnotherRandomTrack() {
-  switch (playingWhat) {
-    case 1: playRandomTrack(dirRock, tracksRock); break;
-    case 2: playRandomTrack(dirWins, tracksWins); break;
-    case 3: playRandomTrack(dirLose, tracksLose); break;
-    case 4: playRandomTrack(dirBaff, tracksBaff); break;
-    case 5: musicUnitTest(); break;
-  }
+    switch (playingWhat) {
+        case 1: playRandomTrack(dirRock, tracksRock); break;
+        case 2: playRandomTrack(dirWins, tracksWins); break;
+        case 3: playRandomTrack(dirLose, tracksLose); break;
+        case 4: playRandomTrack(dirBaff, tracksBaff); break;
+        case 5: musicUnitTest(); break;
+    }
 }
 
 void playRandomTrack(const char *dirName, int totalTracks) {
-  // soft reset.  hate to have this here, but when I flip btw codec types, I get static w/o this.
-  musicPlayer.stopPlaying();
-  musicPlayer.sciWrite(VS1053_REG_MODE, VS1053_MODE_SM_SDINEW | VS1053_MODE_SM_RESET);
+    // soft reset.  hate to have this here, but when I flip btw codec types, I get static w/o this.
+    musicPlayer.stopPlaying();
+    musicPlayer.sciWrite(VS1053_REG_MODE, VS1053_MODE_SM_SDINEW | VS1053_MODE_SM_RESET);
 
-  // open the directory
-  File dir = SD.open(dirName);
-  if ( ! dir.isDirectory() ) {
-    Serial << F("Error! not a directory: ") << dirName << endl;
-  }
-  dir.rewindDirectory(); // can't seem to cleanly get the SD card file handlers to start at the top of the dir!!!!
+    // open the directory
+    File dir = SD.open(dirName);
+    if ( ! dir.isDirectory() ) {
+        Serial << F("Error! not a directory: ") << dirName << endl;
+    }
+    dir.rewindDirectory(); // can't seem to cleanly get the SD card file handlers to start at the top of the dir!!!!
 
-  // pick a track
-  int track = random(0, totalTracks);
+    // pick a track
+    int track = random(0, totalTracks);
 
-  // seek file
-  File entry = dir.openNextFile(); // have to open a file simply to get it's name!!
-  entry.close(); // not actually opening them.  just getting name.
+    // seek file
+    File entry = dir.openNextFile(); // have to open a file simply to get it's name!!
+    entry.close(); // not actually opening them.  just getting name.
 
-  //  Serial << entry.name() << F("\t");
-  for ( int i = 0; i < track; i++ ) {
-    entry = dir.openNextFile(dir);
-    entry.close();
-    //   Serial << entry.name() << F("\t");z
-  }
-  //  Serial << endl;
+    //  Serial << entry.name() << F("\t");
+    for ( int i = 0; i < track; i++ ) {
+        entry = dir.openNextFile(dir);
+        entry.close();
+        //   Serial << entry.name() << F("\t");z
+    }
+    //  Serial << endl;
 
-  // close up
-  dir.close();
+    // close up
+    dir.close();
 
-  Serial << endl << F(" -> ") << dir.name() << F("/") << entry.name() << F(" [") << track + 1 << F("/") << totalTracks << F("]") << endl;
+    Serial << endl << F(" -> ") << dir.name() << F("/") << entry.name() << F(" [") << track + 1 << F("/") << totalTracks << F("]") << endl;
 
-  // make sure we've stopped.
-  while (! musicPlayer.stopped() );
+    // make sure we've stopped.
+    while (! musicPlayer.stopped() );
 
-  // Start playing a file, then we can do stuff while waiting for it to finish
-  if (! musicPlayer.startPlayingFile(strcat(strcat(dir.name(), "/"), entry.name()))) {
-    Serial.println(F("Could not open file."));
-    while (1);
-  }
+    // Start playing a file, then we can do stuff while waiting for it to finish
+    if (! musicPlayer.startPlayingFile(strcat(strcat(dir.name(), "/"), entry.name()))) {
+        Serial.println(F("Could not open file."));
+        while (1);
+    }
 }
 
 void musicStart() {
-  Serial << F("Startup Adafruit VS1053 breakout.") << endl;
-  // initialise the music player
-  if (! musicPlayer.begin()) { // initialise the music player
-    Serial << F("Couldn't find VS1053, do you have the right pins defined?") << endl;
-    while (1);
-  }
-  Serial << F("VS1053 found") << endl;
+    Serial << F("Startup Adafruit VS1053 breakout.") << endl;
+    // initialise the music player
+    if (! musicPlayer.begin()) { // initialise the music player
+        Serial << F("Couldn't find VS1053, do you have the right pins defined?") << endl;
+        while (1);
+    }
+    Serial << F("VS1053 found") << endl;
 
-  if (! musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT))
-    Serial << F("DREQ pin is not an interrupt pin.") << endl;
+    if (! musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT))
+        Serial << F("DREQ pin is not an interrupt pin.") << endl;
 
-  //  if (! musicPlayer.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT))
-  //   Serial << F("Can't use Timer0.") << endl;
+    //  if (! musicPlayer.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT))
+    //   Serial << F("Can't use Timer0.") << endl;
 
-  if (!SD.begin(MP3_SDCS)) {
-    Serial << F("SD failed, or not present") << endl;
-    while (1);  // don't do anything more
-  }
-  Serial << F("SD OK!") << endl;
+    if (!SD.begin(MP3_SDCS)) {
+        Serial << F("SD failed, or not present") << endl;
+        while (1);  // don't do anything more
+    }
+    Serial << F("SD OK!") << endl;
 
-  // get track counts
-  tracksBaff = countTracks(dirBaff);
-  tracksWins = countTracks(dirWins);
-  tracksLose = countTracks(dirLose);
-  tracksRock = countTracks(dirRock);
+    // get track counts
+    tracksBaff = countTracks(dirBaff);
+    tracksWins = countTracks(dirWins);
+    tracksLose = countTracks(dirLose);
+    tracksRock = countTracks(dirRock);
 
-  // show counts
-  Serial << F("Track counts:") << endl;
-  Serial << dirBaff << F(": ") << tracksBaff << endl;
-  Serial << dirWins << F(": ") << tracksWins << endl;
-  Serial << dirLose << F(": ") << tracksLose << endl;
-  Serial << dirRock << F(": ") << tracksRock << endl;
+    // show counts
+    Serial << F("Track counts:") << endl;
+    Serial << dirBaff << F(": ") << tracksBaff << endl;
+    Serial << dirWins << F(": ") << tracksWins << endl;
+    Serial << dirLose << F(": ") << tracksLose << endl;
+    Serial << dirRock << F(": ") << tracksRock << endl;
 
-  // Set volume for left, right channels. lower numbers == louder volume!
-  musicPlayer.setVolume(MIN_MP3_VOL / 2, MIN_MP3_VOL / 2);
+    // Set volume for left, right channels. lower numbers == louder volume!
+    musicPlayer.setVolume(MIN_MP3_VOL / 2, MIN_MP3_VOL / 2);
 
-  // wait for it.
-  Serial.flush();
+    // wait for it.
+    Serial.flush();
 }
 
 void musicUnitTest() {
-  // soft reset.  hate to have this here, but when I flip btw codec types, I get static w/o this.
-  musicPlayer.stopPlaying();
-  musicPlayer.sciWrite(VS1053_REG_MODE, VS1053_MODE_SM_SDINEW | VS1053_MODE_SM_RESET);
+    // soft reset.  hate to have this here, but when I flip btw codec types, I get static w/o this.
+    musicPlayer.stopPlaying();
+    musicPlayer.sciWrite(VS1053_REG_MODE, VS1053_MODE_SM_SDINEW | VS1053_MODE_SM_RESET);
 
-  // make sure we've stopped.
-  while (! musicPlayer.stopped() );
+    // make sure we've stopped.
+    while (! musicPlayer.stopped() );
 
-  // Start playing a file, then we can do stuff while waiting for it to finish
-  if (! musicPlayer.startPlayingFile("UnitTest.mp3")) {
-    Serial.println(F("Could not open file UnitTest.mp3"));
-    while (1);
-  }
-  Serial.println(F("Started playing UnitTest.mp3"));
+    // Start playing a file, then we can do stuff while waiting for it to finish
+    if (! musicPlayer.startPlayingFile("UnitTest.mp3")) {
+        Serial.println(F("Could not open file UnitTest.mp3"));
+        while (1);
+    }
+    Serial.println(F("Started playing UnitTest.mp3"));
 }
 
 // File listing helper
 int countTracks(const char *dirName) {
-  int count = 0; // track number
+    int count = 0; // track number
 
-  File dir = SD.open(dirName);
+    File dir = SD.open(dirName);
 
-  while (true) {
+    while (true) {
 
-    File entry =  dir.openNextFile();
-    if (! entry) {
-      // no more files
-      //      Serial << dir.name() << F(" track count: ") << count << endl;
-      //     dir.rewindDirectory(); // key!
-      break;
+        File entry =  dir.openNextFile();
+        if (! entry) {
+            // no more files
+            //      Serial << dir.name() << F(" track count: ") << count << endl;
+            //     dir.rewindDirectory(); // key!
+            break;
+        }
+        if (!entry.isDirectory()) {
+            count ++; // track
+        }
+        entry.close();
     }
-    if (!entry.isDirectory()) {
-      count ++; // track
-    }
-    entry.close();
-  }
 
-  dir.close();
-  return (count);
+    dir.close();
+    return (count);
 }
 
 

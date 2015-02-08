@@ -9,23 +9,23 @@ boolean musicStart() {
 
   // setup speaker
   pinMode(SPEAKER_WIRE, OUTPUT);
-  
+
   // setup comms to Music
   Music.begin(MUSIC_COMMS_RATE);
 
   // set the default volume
   musicVolumeSet(volumeSetting);
-  
+
   // stop it
   musicStop();
-  
+
   return( Music ); // if there was an error with Serial connection to Music, return false.
 }
-  
+
 // plays a tone
 void musicTone(byte colorIndex, unsigned long duration) {
   unsigned int freq = WRONG_TONE;
-  
+
     // this function will be called after buttonChanged() asserts a change.
   switch ( colorIndex ) {
     case I_RED:
@@ -73,7 +73,7 @@ void musicVolumeSet(byte level) {
   // send
   musicSend(send);
   // track volume setting
-  volumeSetting = send - '0';  
+  volumeSetting = send - '0';
 }
 void musicVolumeUp() {
   musicVolumeSet(++volumeSetting);
@@ -102,10 +102,10 @@ void musicRock() {
 // unit test for Music
 void musicUnitTest() {
   Serial << F("Music: tone test...") << endl;
-  
+
   musicTone(I_RED);
   delay(500);
-  
+
   musicTone(I_GRN);
   delay(500);
 
@@ -114,16 +114,16 @@ void musicUnitTest() {
 
   musicTone(I_YEL);
   delay(500);
-  
+
   // send STOP
   musicStop();
-  
+
   // up volume
   musicVolumeSet(MUSIC_MAX_VOL);
 
-  // start a unit test.  
+  // start a unit test.
   musicSend('w');
-  
+
   Serial << F("from Music: ");
   while( volumeSetting > 0 ) {
     while( Music.available() > 0) {
@@ -133,9 +133,9 @@ void musicUnitTest() {
     musicVolumeDown();
   }
   Serial << endl;
-  
+
   musicStop();
-  
+
   Serial << F("Music: unit test stopped playback.") << endl;
 }
 
