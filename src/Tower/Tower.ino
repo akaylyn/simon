@@ -2,6 +2,7 @@
 
 // The IDE requires all libraries to be #include’d in the main (.ino) file.  Clutter.
 #include <Streaming.h> // <<-style printing
+#include <Bounce.h> // buttons
 #include <Metro.h> // timers
 #include <Simon_Indexes.h> // sizes, indexing and comms common to Towers and Console
 #include <EEPROM.h> // saving and loading radio settings
@@ -57,6 +58,13 @@ Metro flameCoolDownTime(2000UL);
 #define RED_MAX 255
 #define GRN_MAX 220
 #define BLU_MAX 210
+
+// remote control
+#define SYSTEM_ENABLE_PIN A0
+#define FIRE_ENABLE_PIN A1
+Bounce systemEnable = Bounce(SYSTEM_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
+Bounce fireEnable = Bounce(FIRE_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
+
 
 void setup() {
   // put your setup code here, to run once:
