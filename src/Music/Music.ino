@@ -52,6 +52,9 @@ const char dirWins[] = "WINS";
 const char dirLose[] = "LOSE";
 const char dirRock[] = "ROCK";
 
+EasyTransfer easyTransfer;
+PlayMessage message;
+
 void setup() {
     Serial.begin(SERIAL_SPEED);
 
@@ -60,59 +63,32 @@ void setup() {
 
     // set random seed from analog noise
     randomSeed(analogRead(A0));
+    easyTransfer.begin(details(message), &Music);
 
     // setup LED pin
     pinMode(LED_PIN, OUTPUT);
 }
 
 void toggleLED() {
-    static boolean state=false;
+    static boolean state = false;
 
-    state=!state;
+    state = !state;
 
     digitalWrite(LED_PIN, state);
 }
 
-// called when a serial message is received.
 void serialEvent() {
-    //  if ( musicPlayer.playingMusic )
-    //    musicPlayer.pausePlaying(true); // hang on.  the music playback has enough interrupt calls that it disrupts serial.
-
-    char command = Serial.read();
-
-    //  if ( musicPlayer.paused )
-    //    musicPlayer.pausePlaying(false); // restart if needed.
-
-    if ( command < '0' || command > 'z' ) return; // spurious characters like line feed.
-    else Serial << command << endl;
-
-    if ( command >= '0' && command <= '9' ) {
-        byte vol = constrain(map(command - '0', 0, 9, MIN_MP3_VOL, 0), 0, MIN_MP3_VOL); // 0 is the loudest.  map 1-9 to 0-255.
-        // Set volume for left, right channels. lower numbers == louder volume!
-        musicPlayer.setVolume(vol, vol);
-        Serial << F("Volume set: ") << vol << endl;
-    } else {
-        switch ( command ) {
-            case 'u': playingWhat = 5; break;
-            case 'p': musicPlayer.pausePlaying(!musicPlayer.paused()); break;
-            case 's': playingWhat = 0; break;
-            case 'r': playingWhat = 1; break;
-            case 'w': playingWhat = 2; break;
-            case 'l': playingWhat = 3; break;
-            case 'b': playingWhat = 4; break;
-            default: Serial << F("Unknown Command(") << command << F(") Try: u,p,s,0-9,r,w,l,b.") << endl;
-        }
+    if (easyTransfer.receiveData()) {
+        playMusic(message);
     }
 }
 
 void loop() {
     // check playing state, and report if we've stopped
-    if ( playingWhat > 0 && !musicPlayer.playingMusic) {
-        // we've just stopped
-        Serial << endl;
-        playAnotherRandomTrack();
-    } else if( playingWhat == 0 && musicPlayer.playingMusic ) {
-        // we should stop
+    if ( message.type > TYPE_STOP && !musicPlayer.playingMusic) {
+        Serial << endl; // TODO: what does this line do?
+        playRandomTrack(getDirectory(message.type), message.playCount);
+    } else if( message.type == TYPE_STOP && musicPlayer.playingMusic ) {
         musicPlayer.stopPlaying();
     }
 
@@ -126,16 +102,16 @@ void loop() {
         toggleLED();
         isPlayingTick.reset();
     }
-
 }
 
-void playAnotherRandomTrack() {
-    switch (playingWhat) {
-        case 1: playRandomTrack(dirRock, tracksRock); break;
-        case 2: playRandomTrack(dirWins, tracksWins); break;
-        case 3: playRandomTrack(dirLose, tracksLose); break;
-        case 4: playRandomTrack(dirBaff, tracksBaff); break;
-        case 5: musicUnitTest(); break;
+char* getDirectory(int messageType) {
+    switch (messageType) {
+        case TYPE_BAFF: return dirBaff;
+        case TYPE_WIN: return dirWins;
+        case TYPE_LOSE: return dirLose;
+        case TYPE_ROCK: return dirRock;
+        default: dirRock;
+        //case 5: musicUnitTest(); break;
     }
 }
 
@@ -144,7 +120,6 @@ void playRandomTrack(const char *dirName, int totalTracks) {
     musicPlayer.stopPlaying();
     musicPlayer.sciWrite(VS1053_REG_MODE, VS1053_MODE_SM_SDINEW | VS1053_MODE_SM_RESET);
 
-    // open the directory
     File dir = SD.open(dirName);
     if ( ! dir.isDirectory() ) {
         Serial << F("Error! not a directory: ") << dirName << endl;
@@ -166,7 +141,6 @@ void playRandomTrack(const char *dirName, int totalTracks) {
     }
     //  Serial << endl;
 
-    // close up
     dir.close();
 
     Serial << endl << F(" -> ") << dir.name() << F("/") << entry.name() << F(" [") << track + 1 << F("/") << totalTracks << F("]") << endl;
