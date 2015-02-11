@@ -46,7 +46,7 @@
 // Sound subunit.  Responsible for UX (music) output.
 #include "Sound.h"
 #include <EasyTransfer.h> // used for sending message to the sound module
-Sound sound;
+#include <SoundMessage.h> // contains the share message for EasyTransfer
 
 // should Unit Tests be run if the startup routines return an error?
 #define RUN_UNIT_ON_ERROR false
@@ -56,6 +56,8 @@ Sound sound;
 #define FIRE_ENABLE_PIN 26
 Bounce systemEnable = Bounce(SYSTEM_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
 Bounce fireEnable = Bounce(FIRE_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
+
+extern Sound sound;
 
 void setup() {
   // put your setup code here, to run once:
@@ -77,7 +79,7 @@ void setup() {
   towerStart();
   if ( !sound.begin() && RUN_UNIT_ON_ERROR || 0) soundTest();
   //------ "This" units.
-  gameplayStart();
+  gameplayStart(sound);
   externStart();
 
   Serial << F("STARTUP: complete.") << endl;

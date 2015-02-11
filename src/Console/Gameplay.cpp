@@ -1,4 +1,5 @@
 #include "Gameplay.h"
+#include "Sound.h"
 
 // during idle, do a fanfare of light, music and fire
 Metro kioskTimer(KIOSK_FANFARE_MAX);
@@ -24,9 +25,12 @@ State player = State(playerState);
 // the state machine controls which of the states get attention and execution time
 FSM simon = FSM(idle); //initialize state machine, start in state: idle
 
+Sound sound;
+
 // startup
-void gameplayStart() {
+void gameplayStart(Sound &currSound) {
     Serial << F("Gameplay: startup.") << endl;
+    sound = currSound;
 }
 
 // call this from loop()
@@ -190,7 +194,7 @@ void setSoundLights(byte colorIndex, boolean correctTone) {
     towerLightSet(colorIndex, LIGHT_ON);
 
     // Sound on Console and Tower
-    musicTone(correctTone? colorIndex : I_NONE);
+    sound.playTone(correctTone? colorIndex : I_NONE);
 
     // Lights on Console
     lightSet(colorIndex, LIGHT_ON);
@@ -220,12 +224,12 @@ void animateFailure()
     for (int i = 0; i < 6; i++) {
         towerLightSet(I_ALL, LIGHT_ON);
         lightSet(I_ALL, LIGHT_ON);
-        musicTone(I_ALL);
+        sound.playTone(I_ALL);
 
         delay(50);
         quiet();
     }
-    musicBaff();
+    sound.playBaff();
     delay(2000);
     quiet();
 }
@@ -236,7 +240,7 @@ void quiet() {
     towerQuiet();
 
     // Sound on Console and Tower
-    musicStop();
+    sound.stop();
 
     // Lights on Console
     lightSet(I_ALL, LIGHT_OFF);
@@ -346,10 +350,10 @@ void playerFanfare() {
 
     // turn up the music
     byte volume = MUSIC_DEFAULT_VOL;
-    musicVolumeSet(volume);
+    sound.setVolume(volume);
 
     // make sweet fire/light/music.
-    musicWins();
+    sound.playWin();
     while( ! fanfareDuration.check() ) {
         // should calculate Light and Fire on Towers here.
 
@@ -363,7 +367,7 @@ void playerFanfare() {
         if( volumeRampTime.check() ) {
             volumeRampTime.reset();
             volume--;
-            musicVolumeDown();
+            sound.decVolume();
         }
 
         // resend tower commands

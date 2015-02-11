@@ -92,8 +92,9 @@ void Sound::stop() {
 }
 
 void Sound::sendData() {
-    Serial << F("Music: sending ") << endl;
+    Serial << F("sendData: sending ") << endl;
     easyTransfer.sendData();
+    Serial << F("sendData: complete") << endl;
 
     // reset message parameters
     // not every usage of the message structure sets all values

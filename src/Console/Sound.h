@@ -45,17 +45,17 @@ class Sound {
         bool begin();
 
         // Play tracks by type
-        void playWin(int playCount);
+        void playWin(int playCount=1);
         void playLose();
         void playBaff();
-        void playRock(int playCount);
+        void playRock(int playCount=1);
 
         // Control volume level
         void setVolume(int level);
         void incVolume();
         void decVolume();
 
-        void playTone(byte colorIndex, unsigned long duration);
+        void playTone(byte colorIndex, unsigned long duration=0);
 
         // Stop playing sounds
         void stop();

@@ -1,5 +1,5 @@
 #ifndef SoundMessage_h
-#define SoundMesage_h
+#define SoundMessage_h
 
 // Data Transfer; Sound Types
 #define TYPE_STOP 0

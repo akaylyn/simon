@@ -14,7 +14,7 @@
 #include "Touch.h"
 #include "Button.h"
 #include "Light.h"
-#include "Music.h"
+#include "Sound.h"
 #include "Tower.h"
 
 // when playing, a player can wait this interval between button presses before losing.
@@ -51,7 +51,7 @@
 #define MUSIC_RAMP_DOWN_TIME 2000UL // ms
 
 // startup the Simon game
-void gameplayStart();
+void gameplayStart(Sound &currSound);
 
 // call this from to upate the FSM.  returns true if state in [game, player], false if [idle].
 boolean gameplayUpdate();
