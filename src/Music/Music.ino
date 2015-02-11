@@ -53,7 +53,8 @@ const char dirLose[] = "LOSE";
 const char dirRock[] = "ROCK";
 
 EasyTransfer easyTransfer;
-PlayMessage message;
+SoundMessage message;
+char currDir[] = {4};
 
 void setup() {
     Serial.begin(SERIAL_SPEED);
@@ -63,7 +64,7 @@ void setup() {
 
     // set random seed from analog noise
     randomSeed(analogRead(A0));
-    easyTransfer.begin(details(message), &Music);
+    easyTransfer.begin(details(message), &Serial);
 
     // setup LED pin
     pinMode(LED_PIN, OUTPUT);
@@ -79,15 +80,16 @@ void toggleLED() {
 
 void serialEvent() {
     if (easyTransfer.receiveData()) {
-        playMusic(message);
+        playRandomTrack(dirBaff, message.playCount);
     }
 }
 
 void loop() {
+
     // check playing state, and report if we've stopped
     if ( message.type > TYPE_STOP && !musicPlayer.playingMusic) {
         Serial << endl; // TODO: what does this line do?
-        playRandomTrack(getDirectory(message.type), message.playCount);
+        playRandomTrack(currDir, message.playCount);
     } else if( message.type == TYPE_STOP && musicPlayer.playingMusic ) {
         musicPlayer.stopPlaying();
     }
@@ -104,17 +106,19 @@ void loop() {
     }
 }
 
-char* getDirectory(int messageType) {
+/*
+void setCurrDir(int messageType) {
+    if (messageType == TYPE_BAFF) { currDir = dirBaff;}
     switch (messageType) {
-        case TYPE_BAFF: return dirBaff;
-        case TYPE_WIN: return dirWins;
-        case TYPE_LOSE: return dirLose;
-        case TYPE_ROCK: return dirRock;
-        default: dirRock;
+        case TYPE_BAFF: currDir = dirBaff; break;
+        case TYPE_WIN: currDir = dirWins; break;
+        case TYPE_LOSE: currDir = dirLose; break;
+        case TYPE_ROCK: currDir = dirRock; break;
         //case 5: musicUnitTest(); break;
     }
 }
 
+*/
 void playRandomTrack(const char *dirName, int totalTracks) {
     // soft reset.  hate to have this here, but when I flip btw codec types, I get static w/o this.
     musicPlayer.stopPlaying();
