@@ -20,32 +20,32 @@
 #define GAMEPLAY_ENABLE A1
 
 // what is in a name?
-const char *ledName[N_LED]={"RED","GRN","BLU","WHT"};
-const char *relayName[N_RELAY]={"FIRE","SPARE"};
+const char *ledName[N_LED] = {"RED", "GRN", "BLU", "WHT"};
+const char *relayName[N_RELAY] = {"FIRE", "SPARE"};
 // pin locations
-const byte ledPin[N_LED]={RED_PIN,GRN_PIN,BLU_PIN,WHT_PIN};
-const byte relayPin[N_RELAY]={FIRE_PIN,RSPARE_PIN};
+const byte ledPin[N_LED] = {RED_PIN, GRN_PIN, BLU_PIN, WHT_PIN};
+const byte relayPin[N_RELAY] = {FIRE_PIN, RSPARE_PIN};
 // colors are controlled by a current source system
-const byte ledOn=255;
-const byte ledOff=0;
+const byte ledOn = 255;
+const byte ledOff = 0;
 // relays are controlled by a current sink system
-const byte relayOn=LOW;
-const byte relayOff=HIGH;
+const byte relayOn = LOW;
+const byte relayOff = HIGH;
 
 void setup() {
   Serial.begin(115200);
-  
+
   // setup pins and start in off state
-  for(int i=0; i<N_LED; i++) {
+  for (int i = 0; i < N_LED; i++) {
     setLED(i, ledOff);
     pinMode(ledPin[i], OUTPUT);
   }
-  for(int i=0; i<N_RELAY; i++) {
+  for (int i = 0; i < N_RELAY; i++) {
     setRelay(i, relayOff);
     pinMode(relayPin[i], OUTPUT);
   }
   pinMode(SYSTEM_ENABLE, INPUT_PULLUP);
-  pinMode(GAMEPLAY_ENABLE, INPUT_PULLUP);  
+  pinMode(GAMEPLAY_ENABLE, INPUT_PULLUP);
 
   Serial << "Startup complete." << endl;
 }
@@ -54,37 +54,51 @@ void loop() {
 
   Serial << "System Enable: " << digitalRead(SYSTEM_ENABLE) << endl;
   Serial << "Gameplay Enable: " << digitalRead(GAMEPLAY_ENABLE) << endl;
- 
-  Serial << "LED on/off tests..." << endl; 
-  for(int i=0; i<N_LED; i++) {
+
+  Serial << "LED on/off tests..." << endl;
+  for (int i = 0; i < N_LED; i++) {
     setLED(i, ledOn);
-    delay(500);
+    delay(2000);
     setLED(i, ledOff);
   }
-  if( digitalRead(SYSTEM_ENABLE) == LOW) {
-    Serial << "Relay on/off tests..." << endl; 
-    for(int i=0; i<N_RELAY; i++) {
+  if ( digitalRead(SYSTEM_ENABLE) == LOW) {
+    Serial << "Relay on/off tests..." << endl;
+    for (int i = 0; i < N_RELAY; i++) {
       setRelay(i, relayOn);
       delay(500);
       setRelay(i, relayOff);
     }
   }
-  
-  if( digitalRead(GAMEPLAY_ENABLE) == LOW) {
-    Serial << "LED PWM tests..." << endl; 
-    for(int i=0; i<N_LED; i++) {
-      for(int j=ledOff; j<ledOn; j++) {
-        setLED(i,j);
+
+  if ( digitalRead(GAMEPLAY_ENABLE) == LOW) {
+    delay(500);
+    Serial << "LED PWM tests..." << endl;
+    for (int i = 0; i < N_LED; i++) {
+      for (int j = ledOff; j < ledOn; j++) {
+        setLED(i, j);
         delay(5);
       }
       setLED(i, ledOff);
     }
+    delay(500);
+
+    for (int j = ledOff; j < ledOn; j++) {
+      for (int i = 0; i < N_LED; i++) {
+        setLED(i, j);
+      }
+      delay(5);
+    }
+    for (int i = 0; i < N_LED; i++) {
+      setLED(i, ledOff);
+    }
+    delay(500);
+
   }
-  
+
 }
 
 void setLED(byte i, byte val) {
-  if( val==0 ) { 
+  if ( val == 0 ) {
     // special case, "off", using digitalWrite to fully turn off pins 5&6
     digitalWrite(ledPin[i], ledOff);
   } else {
