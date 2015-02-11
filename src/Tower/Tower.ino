@@ -61,10 +61,15 @@ Metro flameCoolDownTime(2000UL);
 
 // remote control
 #define SYSTEM_ENABLE_PIN A0
-#define FIRE_ENABLE_PIN A1
-Bounce systemEnable = Bounce(SYSTEM_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
-Bounce fireEnable = Bounce(FIRE_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
-
+#define GAMEPLAY_ENABLE_PIN A1
+#define DEBOUNCE_TIME 10UL
+Bounce systemEnable = Bounce(SYSTEM_ENABLE_PIN, DEBOUNCE_TIME);
+Bounce gameplayEnable = Bounce(GAMEPLAY_ENABLE_PIN, DEBOUNCE_TIME);
+// track states here
+boolean systemEnableFlag = false;
+#define SETUP_LIGHT_CYCLE_INTERVAL 30000UL
+Metro setupModeLightTimer(SETUP_LIGHT_CYCLE_INTERVAL);
+boolean gameplayEnableFlag = false;
 
 void setup() {
   // put your setup code here, to run once:
@@ -82,6 +87,10 @@ void setup() {
   digitalWrite(LED_R, LOW); pinMode(LED_R, OUTPUT);
   digitalWrite(LED_G, LOW); pinMode(LED_G, OUTPUT);
   digitalWrite(LED_B, LOW); pinMode(LED_B, OUTPUT);
+
+  Serial << F("Configuring input pins.") << endl;
+  pinMode(SYSTEM_ENABLE_PIN, INPUT_PULLUP);
+  pinMode(GAMEPLAY_ENABLE_PIN, INPUT_PULLUP);  
 
   // once, at hardware initialization, we need to bootstrap some settings to the EEPROM
   //  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
@@ -124,62 +133,86 @@ void loop() {
     flameOff();
   }
 
-  // check for comms traffic
-  if ( radio.receiveDone() ) {
-    // process it.
-    if ( radio.DATALEN == sizeof(inst) ) {
-      // save instruction for lights/flame
-      inst = *(towerInstruction*)radio.DATA;
-      // do it.
-      performInstruction();
-      // note network activity
-      networkTimeout.reset();
-      doTestPatterns = false;
-      Serial << F("i") << endl;
-    }
-    else if ( radio.DATALEN == sizeof(config) ) {
-      // configuration for tower
-      Serial << F("Configuration from Console.") << endl;
-
-      // check to see if the instructions have changed?
-      if ( memcmp((void*)(&config), (void*)radio.DATA, sizeof(config)) != 0 ) {
-        // yes, so grab it.
-        config = *(towerConfiguration*)radio.DATA;
-        // save it
-        commsSave(config);
-      }
-
-      // show it
-      commsPrint(config, myNodeID);
-
-      // set flame cooldown from config
-      flameCoolDownTime.interval(config.flameCoolDownTime);
-
-      // note we're configured
-      amConfigured = true;
-    }
-    else if ( radio.DATALEN == sizeof(inst) + 1 ) {
-      // ping received.
-      Serial << F("p");
-    }
-  } 
-  
-  if ( networkTimeout.check() ) { // comms are quiet
-    doTestPatterns = true;
+  // check system enable state
+  if( systemEnable.update() ) { // system enable state change
+    systemEnableFlag = systemEnable.read() == LOW; // pulled LOW on enable
   }
 
-  if( doTestPatterns ) {
+  // check system enable state
+  if( gameplayEnable.update() ) { // gameplay enable state change
+    gameplayEnableFlag = gameplayEnable.read() == LOW; // pulled LOW on enable
+  }
+
+  if( systemEnableFlag && gameplayEnableFlag) {
+    // NORMAL OPERATION
+    
+    // check for comms traffic
+    if ( radio.receiveDone() ) {
+      // process it.
+      if ( radio.DATALEN == sizeof(inst) ) {
+        // save instruction for lights/flame
+        inst = *(towerInstruction*)radio.DATA;
+        // do it.
+        performInstruction();
+        // note network activity
+        networkTimeout.reset();
+        doTestPatterns = false;
+        Serial << F("i") << endl;
+      }
+      else if ( radio.DATALEN == sizeof(config) ) {
+        // configuration for tower
+        Serial << F("Configuration from Console.") << endl;
+  
+        // check to see if the instructions have changed?
+        if ( memcmp((void*)(&config), (void*)radio.DATA, sizeof(config)) != 0 ) {
+          // yes, so grab it.
+          config = *(towerConfiguration*)radio.DATA;
+          // save it
+          commsSave(config);
+        }
+  
+        // show it
+        commsPrint(config, myNodeID);
+  
+        // set flame cooldown from config
+        flameCoolDownTime.interval(config.flameCoolDownTime);
+  
+        // note we're configured
+        amConfigured = true;
+      }
+      else if ( radio.DATALEN == sizeof(inst) + 1 ) {
+        // ping received.
+        Serial << F("p");
+      }
+    } 
+    
+    if ( networkTimeout.check() ) { // comms are quiet
+      doTestPatterns = true;
+    }
+  
+    if( doTestPatterns ) {
+      if( amConfigured ) updateNetworkTestPattern(); // if we need to update the test pattern, do so.
+      else updateSoloTestPattern(); // if we need to update the test pattern, do so.
+    }
+  } else if( !systemEnableFlag && setupModeLightTimer.check() ) {
+    // SYSTEM is being set up
+    
+    // ramp up lights to white quickly.
+    for(byte i=0;i < 255; i++) {
+       // set them, apping a final scaling to keep brightness roughly equivalent.
+      lightSet(LED_R, map(i, 0, 255, 0, RED_MAX));
+      lightSet(LED_G, map(i, 0, 255, 0, GRN_MAX));
+      lightSet(LED_B, map(i, 0, 255, 0, BLU_MAX));
+      delay(5);
+    }
+    setupModeLightTimer.reset();
+  } else if( !gameplayEnableFlag ) {
+    // SYSTEM is setup, but not in gameplay mode 
+    
+    // run lighting test patterns according to configuration settings.
     if( amConfigured ) updateNetworkTestPattern(); // if we need to update the test pattern, do so.
     else updateSoloTestPattern(); // if we need to update the test pattern, do so.
   }
-
-  // check to see if we need to request configuration information from Console
-//  if ( notConfigured && joinInterval.check() ) {
-//    Serial << F("Join request.") << endl;
-//    boolean toss = commsSend(config, consoleNodeID, 0); // ask for a configuration, no ACK request
-//    joinInterval.interval(random(250, 500)); // important that each tower has its own timing to prevent Tx collision.
-//    joinInterval.reset();
-//  }
 
 }
 
