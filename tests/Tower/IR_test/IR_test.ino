@@ -1,44 +1,123 @@
+// need to strike RobotIRRemote directory in Arduino IDE libraries folder.  Name collision!
 #include <IRremote.h>
+#include <Streaming.h>
 
 IRsend irsend;
 
-// see http://www.vishay.com/docs/80071/dataform.pdf
-// see https://github.com/RC-Navy/DigisparkArduinoIntegration/blob/master/libraries/DigisparkIRLib/examples/DigiIrRgbCtrl/DigiIrRgbCtrl.ino#L45
+#define K24_OFF          0xF740BF
+#define K44_OFF          0xFF02FD
+#define K24_ON           0xF7C03F
+#define K44_ON           0xFF827D
 
-#define CODE_OFF           0xF740BF
-#define CODE_ON            0xF7C03F
-#define CODE_BRIGHT_MINUS  0xF7807F
-#define CODE_BRIGHT_PLUS   0xF700FF
+#define K24_RED          0xF720DF
+#define K44_RED          0xFF1AE5
+#define K44_RED_UP       0xFF28D7
+#define K44_RED_DOWN     0xFF08F7
 
-#define CODE_FLASH         0xF7D02F
-#define CODE_STROBE        0xF7F00F
-#define CODE_FADE          0xF7C837
-#define CODE_SMOOTH        0xF7E817
+#define K24_GRN          0xF7A05F
+#define K44_GRN          0xFF9A65
+#define K44_GRN_UP       0xFFA857
+#define K44_GRN_DOWN     0xFF8877
 
-#define CODE_RED           0xF720DF
-#define CODE_GREEN         0xF7A05F
-#define CODE_BLUE          0xF7609F
-#define CODE_WHITE         0xF7E01F
+#define K24_BLU          0xF7609F
+#define K44_BLU          0xFFA25D
+#define K44_BLU_UP       0xFF6897
+#define K44_BLU_DOWN     0xFF48B7
 
-#define CODE_ORANGE        0xF710EF
-#define CODE_ORANGE_LIGTH  0xF730CF
-#define CODE_BROWN         0xF708F7
-#define CODE_YELLOW        0xF728D7
+#define K24_YEL          0xF728D7
+#define K44_YEL          0xFF38C7
 
-#define CODE_GREEN_LIGTH   0xF7906F
-#define CODE_GREEN_BLUE1   0xF7B04F
-#define CODE_GREEN_BLUE2   0xF78877
-#define CODE_GREEN_BLUE3   0xF7A857
+#define K24_WHT          0xF7E01F
+#define K44_WHT          0xFF22DD
 
-#define CODE_BLUE_LIGTH    0xF750AF
-#define CODE_PURPLE_DARK   0xF7708F
-#define CODE_PURPLE_LIGTH  0xF748B7
-#define CODE_PINK          0xF76897
+#define K24_DOWN         0xF7807F
+#define K44_DOWN         0xFFBA45
+#define K24_UP           0xF700FF
+#define K44_UP           0xFF3AC5
 
-#define BRIGTH_STEP        10
-#define CODE_REPEAT        0xFFFFFF
+#define K44_QUICKER      0xFFE817
+#define K44_SLOWER       0xFFC837
+
+#define K24_FLASH        0xF7D02F
+#define K44_FLASH        0xFFD02F
+
+#define K24_STROBE       0xF7F00F
+
+#define K24_FADE         0xF7C837
+#define K44_FADE3        0xFF609F
+#define K44_FADE7        0xFFE01F
+          
+#define K24_SMOOTH       0xF7E817
+
+#define CODE_REPEAT      0xFFFFFF
+
+#define N_BRIGHT_STEPS   8
+
+void setup()
+{
+  Serial.begin(115200);
+  Serial << "Startup." << endl;
+}
+
+void loop() {
+  
+  Serial << "Test 24-key functions." << endl;
+  send(K24_ON); Serial << "24 on." << endl;
+  
+  send(K24_RED); Serial << "red toggled." << endl;
+  upDown(K24_UP, K24_DOWN, N_BRIGHT_STEPS, 200);
+  send(K24_RED); Serial << "red toggled." << endl;
+
+  send(K24_GRN); Serial << "grn toggled." << endl;
+  upDown(K24_UP, K24_DOWN, N_BRIGHT_STEPS, 200);
+  send(K24_GRN); Serial << "grn toggled." << endl;
+
+  send(K24_BLU); Serial << "blu toggled." << endl;
+  upDown(K24_UP, K24_DOWN, N_BRIGHT_STEPS, 200);
+  send(K24_BLU); Serial << "blu toggled." << endl;
+
+  send(K24_YEL); Serial << "yel toggled." << endl;
+  upDown(K24_UP, K24_DOWN, N_BRIGHT_STEPS, 200);
+  send(K24_YEL); Serial << "yel toggled." << endl;
+  
+  send(K24_WHT); Serial << "wht toggled." << endl;
+  upDown(K24_UP, K24_DOWN, N_BRIGHT_STEPS, 200);
+  send(K24_WHT); Serial << "wht toggled." << endl;
+  
+  send(K24_FADE); Serial << "fade toggled." << endl;
+  sendMultiple(K24_UP, N_BRIGHT_STEPS, 5);
+  delay(5000);
+  sendMultiple(K24_DOWN, N_BRIGHT_STEPS, 5);
+  send(K24_FADE); Serial << "fade toggled." << endl;
+  
+  Serial << "End 24-key tests." << endl;
+  send(K24_OFF); Serial << "24 off." << endl;
+  
+  while(1);
+}
+
+void send(unsigned long data) {
+  // simple wrapper
+  irsend.sendNEC(data, 32);
+}
+
+void sendMultiple(unsigned long data, int steps, unsigned long dtime) {
+  for( int i=0; i<steps; i++ ) {
+    send(data); Serial << i << " ";
+    delay(dtime);
+  }
+  Serial << endl;
+}
+
+void upDown(unsigned long up, unsigned long down, int steps, unsigned long dtime) {
+  Serial << "up: ";
+  sendMultiple(up, steps, dtime);
+  Serial << "down: ";
+  sendMultiple(down, steps, dtime);
+}
 
 /* from http://forum.osmc.tv/showthread.php?tid=7142
+44-key:
 
       led-brighter            0x3AC5
           led-dim               0xBA45
@@ -101,7 +180,16 @@ IRsend irsend;
           led-fade7        0xE01F
           
 */
-/* or: for a 44-key remote:
+
+
+// see http://www.vishay.com/docs/80071/dataform.pdf
+// see https://github.com/RC-Navy/DigisparkArduinoIntegration/blob/master/libraries/DigisparkIRLib/examples/DigiIrRgbCtrl/DigiIrRgbCtrl.ino#L45
+// 24-key controller:
+
+
+
+/* http://forum.osmc.tv/showthread.php?tid=7142
+or: for a 44-key remote:
           LED_UP                0x3AC5
           LED_DOWN              0xBA45
           LED_Power_ON          0x827D
@@ -158,37 +246,3 @@ IRsend irsend;
           FADE7                 0xE01F
 
 */
-void setup()
-{
-  Serial.begin(115200);
-  irsend.sendNEC(CODE_OFF, 32);
-  irsend.sendNEC(CODE_ON, 32);
-}
-
-void loop() {
-  irsend.sendNEC(CODE_ON, 32);
-  delay(500);
-
-  irsend.sendNEC(CODE_RED, 32);
-  delay(500);
-  for (int i = 0; i < 10; i++) {
-    irsend.sendNEC(CODE_BRIGHT_MINUS, 32);
-    delay(500);
-  }
-  for (int i = 0; i < 10; i++) {
-    irsend.sendNEC(CODE_BRIGHT_PLUS, 32);
-    delay(500);
-  }
-  irsend.sendNEC(CODE_RED, 32);
-
-  irsend.sendNEC(CODE_GREEN, 32);
-  delay(500);
-  irsend.sendNEC(CODE_BLUE, 32);
-  delay(500);
-  irsend.sendNEC(CODE_WHITE, 32);
-  delay(500);
-  irsend.sendNEC(CODE_OFF, 32);
-  delay(500);
-}
-
-
