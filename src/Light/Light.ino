@@ -39,7 +39,7 @@
 #define YEL_BUTTON 5
 #define GRN_BUTTON 6
 #define BLU_BUTTON 7
-#define DEBOUNCE_TIME 3UL
+#define DEBOUNCE_TIME 5UL
 Bounce redButton = Bounce( RED_BUTTON, DEBOUNCE_TIME );
 Bounce grnButton = Bounce( GRN_BUTTON, DEBOUNCE_TIME );
 Bounce bluButton = Bounce( BLU_BUTTON, DEBOUNCE_TIME );

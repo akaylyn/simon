@@ -50,9 +50,9 @@
 #define RUN_UNIT_ON_ERROR false
 
 // remote control
-#define SYSTEM_ENABLE_PIN 24
-#define FIRE_ENABLE_PIN 26
-Bounce systemEnable = Bounce(SYSTEM_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
+#define GAME_ENABLE_PIN 45
+#define FIRE_ENABLE_PIN 47
+Bounce gameEnable = Bounce(GAME_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
 Bounce fireEnable = Bounce(FIRE_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
 
 void setup() {
@@ -63,12 +63,12 @@ void setup() {
   randomSeed(analogRead(0));
 
   // remote control
-  pinMode(SYSTEM_ENABLE_PIN, INPUT_PULLUP);
+  pinMode(GAME_ENABLE_PIN, INPUT_PULLUP);
   pinMode(FIRE_ENABLE_PIN, INPUT_PULLUP);
 
   // start each unit
   //------ Input units.
-  touchStart();
+  if ( !touchStart() && RUN_UNIT_ON_ERROR || 0) touchUnitTest();
   if ( !buttonStart() && RUN_UNIT_ON_ERROR || 0) buttonUnitTest();
   //------ Output units.
   lightStart();
@@ -84,20 +84,26 @@ void setup() {
 // main loop for the core.
 void loop() {
 
-  // remote control.  There's a relay that will pull FIRE_ENABLE_PIN to LOW when pressed (enable fire).  
+  // remote control.  There's a relay that will pull FIRE_ENABLE_PIN to LOW when pressed (enable fire).
   // goes to HIGH when pressed again (disable fire).
   // on the Towers, this same relay will physically prevent the accumulator solenoid from opening,
-  // so this is really a "FYI" for the Console.  We'll use that to make noise over the FM transmitter 
+  // so this is really a "FYI" for the Console.  We'll use that to make noise over the FM transmitter
   // to let the Operator know what's up.
+  static boolean fireMode = fireEnabled();
   if ( fireEnable.update() ) {
     // fire enable/disable state has changed.
+    Serial << "Fire Enable pin change!" << endl;
+    fireMode = fireEnabled();
     int freq;
-    if ( fireEnable.read() == HIGH ) {
-      // fire is disabled.  make three "cheeps"
-      freq = 500; // cheeps
-    } else {
+    if ( fireMode ) {
+      Serial << "Fire ENABLED!" << endl;
       // fire is ENABLED.  make three "klaxons"
       freq = 100; // boops
+    } else {
+      Serial << "Fire disabled!" << endl;
+      // fire is disabled.  make three "cheeps"
+      freq = 500; // cheeps
+
     }
     // this could be replaced by asking Music to play an mp3 file.  For now, we'll just use the tone system.
     for ( int i = 0; i < 3; i++ ) {
@@ -108,14 +114,20 @@ void loop() {
     }
   }
 
-  // remote control.  There's a relay that will pull SYSTEM_ENABLE_PIN to LOW when pressed (enable gameplay).
-  // goes to HIGH when pressed again (disable gameplay).
-  static boolean systemNormalMode = false;
-  if( systemEnable.update() ) {
+  // remote control.  There's a relay that will pull GAME_ENABLE_PIN to LOW when pressed (disable gameplay).
+  // goes to HIGH when pressed again (enable gameplay).
+  static boolean gamePlayMode = gameEnabled();
+  if ( gameEnable.update() ) {
+    Serial << "Game Enable pin change!" << endl;
     // system enable/disable state has changed.
-    systemNormalMode = systemEnable.read() == LOW;
+    gamePlayMode = gameEnabled();
+    if( gamePlayMode ) {
+      Serial << "Game enabled!" << endl;
+    } else {
+      Serial << "Game DISABLED!" << endl;
+    }
   }
-  if( systemNormalMode ) {
+  if ( gamePlayMode ) {
     // play the Simon game; returns true if we're playing
     if ( ! gameplayUpdate() ) {
       // we're not playing, so check for Extern traffic; returns true if we have traffic.
@@ -134,7 +146,15 @@ void loop() {
   }
 }
 
+boolean fireEnabled() {
+  // at system power up, relay is open, meaning pin will read HIGH.
+  return ( fireEnable.read() == LOW );
+}
 
+boolean gameEnabled() {
+  // at system power up, relay is open, meaning pin will read HIGH.
+  return ( gameEnable.read() == HIGH );
+}
 
 /* possible IRQ pins (for attachInterrupt):
   pin 2 (IRQ 0) taken by RFM12b

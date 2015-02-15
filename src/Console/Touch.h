@@ -58,5 +58,8 @@ boolean touchChanged(byte touchIndex);
 // returns true if a specific button is pressed
 boolean touchPressed(byte touchIndex);
 
+// runs a unit test on Touch
+void touchUnitTest();
+
 #endif
 

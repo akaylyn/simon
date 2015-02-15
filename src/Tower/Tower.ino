@@ -27,7 +27,7 @@ RFM69 radio;
 byte myNodeID;
 // keep track of activity to note network drop out
 #define D_NETWORK_TIMOUT 10000UL
-Metro networkTimeout(D_NETWORK_TIMOUT, 0); 
+Metro networkTimeout(D_NETWORK_TIMOUT, 0);
 
 boolean amConfigured = false; // ask for config once after startup.
 boolean doTestPatterns = true; // switch to test patterns
@@ -60,16 +60,24 @@ Metro flameCoolDownTime(2000UL);
 #define BLU_MAX 210
 
 // remote control
-#define SYSTEM_ENABLE_PIN A0
-#define GAMEPLAY_ENABLE_PIN A1
+#define RESET_PIN A0
+#define GAME_ENABLE_PIN A1
 #define DEBOUNCE_TIME 10UL
-Bounce systemEnable = Bounce(SYSTEM_ENABLE_PIN, DEBOUNCE_TIME);
-Bounce gameplayEnable = Bounce(GAMEPLAY_ENABLE_PIN, DEBOUNCE_TIME);
+Bounce systemReset = Bounce(RESET_PIN, DEBOUNCE_TIME);
+Bounce gameEnable = Bounce(GAME_ENABLE_PIN, DEBOUNCE_TIME);
 // track states here
-boolean systemEnableFlag = false;
 #define SETUP_LIGHT_CYCLE_INTERVAL 30000UL
-Metro setupModeLightTimer(SETUP_LIGHT_CYCLE_INTERVAL);
-boolean gameplayEnableFlag = false;
+Metro setupModeLightTimer(0UL);
+
+boolean systemReseted() {
+  // at system power up, relay is open, meaning pin will read HIGH.
+  return ( systemReset.read() == LOW );
+}
+
+boolean gameEnabled() {
+  // at system power up, relay is open, meaning pin will read HIGH.
+  return ( gameEnable.read() == HIGH );
+}
 
 void setup() {
   // put your setup code here, to run once:
@@ -89,23 +97,26 @@ void setup() {
   digitalWrite(LED_B, LOW); pinMode(LED_B, OUTPUT);
 
   Serial << F("Configuring input pins.") << endl;
-  pinMode(SYSTEM_ENABLE_PIN, INPUT_PULLUP);
-  pinMode(GAMEPLAY_ENABLE_PIN, INPUT_PULLUP);  
+  pinMode(RESET_PIN, INPUT_PULLUP);
+  pinMode(GAME_ENABLE_PIN, INPUT_PULLUP);
+
+  Serial << "System Reset: " << systemReseted() << endl;
+  Serial << "Game Enable: " << gameEnabled() << endl;
 
   // once, at hardware initialization, we need to bootstrap some settings to the EEPROM
   //  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
-  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
-//done  commsSave(towerNodeID[1]); // write to EEPROM. Select towerNodeID[0..3].
-//done  commsSave(towerNodeID[2]); // write to EEPROM. Select towerNodeID[0..3].
-//done  commsSave(towerNodeID[3]); // write to EEPROM. Select towerNodeID[0..3].
-  //  commsDefault(config, I_ALL, I_NONE); // get a default configuration.
-  //  commsSave(config); // write to EEPROM.
+//  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
+  //  commsSave(towerNodeID[1]); // write to EEPROM. Select towerNodeID[0..3].
+  //  commsSave(towerNodeID[2]); // write to EEPROM. Select towerNodeID[0..3].
+  //  commsSave(towerNodeID[3]); // write to EEPROM. Select towerNodeID[0..3].
+//  commsDefault(config, I_ALL, I_ALL); // get a default configuration.
+//  commsSave(config); // write to EEPROM.
   // end boostrap
 
   myNodeID = commsStart(); // assume that EEPROM has been used to correctly set values
   radio.setHighPower(); // for HW boards.
   radio.promiscuous(true); // so broadcasts are received.
-  
+
   if ( myNodeID == 0 ) {
     Serial << F("Unable to recover RFM settings!") << endl;
     while (1);
@@ -134,18 +145,25 @@ void loop() {
   }
 
   // check system enable state
-  if( systemEnable.update() ) { // system enable state change
-    systemEnableFlag = systemEnable.read() == LOW; // pulled LOW on enable
+  if ( systemReset.update() ) { // reset state change
+    while ( systemReseted() ) {
+      // in RST mode.
+       // ramp the lights 
+      updateResetTestPattern();
+    }
   }
 
   // check system enable state
-  if( gameplayEnable.update() ) { // gameplay enable state change
-    gameplayEnableFlag = gameplayEnable.read() == LOW; // pulled LOW on enable
+  static boolean gameEnableFlag = true;
+  if ( gameEnable.update() ) { // gameplay enable state change
+    Serial << F("Gameplay state change.  State: ");
+    gameEnableFlag = gameEnabled();
+    Serial << gameEnableFlag << endl;
   }
 
-  if( systemEnableFlag && gameplayEnableFlag) {
+  if ( gameEnableFlag ) {
     // NORMAL OPERATION
-    
+
     // check for comms traffic
     if ( radio.receiveDone() ) {
       // process it.
@@ -162,7 +180,7 @@ void loop() {
       else if ( radio.DATALEN == sizeof(config) ) {
         // configuration for tower
         Serial << F("Configuration from Console.") << endl;
-  
+
         // check to see if the instructions have changed?
         if ( memcmp((void*)(&config), (void*)radio.DATA, sizeof(config)) != 0 ) {
           // yes, so grab it.
@@ -170,13 +188,13 @@ void loop() {
           // save it
           commsSave(config);
         }
-  
+
         // show it
         commsPrint(config, myNodeID);
-  
+
         // set flame cooldown from config
         flameCoolDownTime.interval(config.flameCoolDownTime);
-  
+
         // note we're configured
         amConfigured = true;
       }
@@ -184,36 +202,41 @@ void loop() {
         // ping received.
         Serial << F("p");
       }
-    } 
-    
+    }
+
     if ( networkTimeout.check() ) { // comms are quiet
       doTestPatterns = true;
     }
-  
-    if( doTestPatterns ) {
-      if( amConfigured ) updateNetworkTestPattern(); // if we need to update the test pattern, do so.
+
+    if ( doTestPatterns ) {
+      if ( amConfigured ) updateNetworkTestPattern(); // if we need to update the test pattern, do so.
       else updateSoloTestPattern(); // if we need to update the test pattern, do so.
     }
-  } else if( !systemEnableFlag && setupModeLightTimer.check() ) {
-    // SYSTEM is being set up
-    
-    // ramp up lights to white quickly.
-    for(byte i=0;i < 255; i++) {
-       // set them, apping a final scaling to keep brightness roughly equivalent.
-      lightSet(LED_R, map(i, 0, 255, 0, RED_MAX));
-      lightSet(LED_G, map(i, 0, 255, 0, GRN_MAX));
-      lightSet(LED_B, map(i, 0, 255, 0, BLU_MAX));
-      delay(5);
+  } else {
+    // not in gameplay mode
+    if( setupModeLightTimer.check() ) {
+      Serial << F("Not in Gameplay mode.  Bringing up lights...") << endl;
+      // ramp the lights
+      updateResetTestPattern();
+      setupModeLightTimer.interval(SETUP_LIGHT_CYCLE_INTERVAL);
+      setupModeLightTimer.reset();
     }
-    setupModeLightTimer.reset();
-  } else if( !gameplayEnableFlag ) {
-    // SYSTEM is setup, but not in gameplay mode 
-    
-    // run lighting test patterns according to configuration settings.
-    if( amConfigured ) updateNetworkTestPattern(); // if we need to update the test pattern, do so.
-    else updateSoloTestPattern(); // if we need to update the test pattern, do so.
   }
 
+}
+
+void updateResetTestPattern() {
+  // ramp up lights to white quickly.
+  for (byte i = 0; i < 255; i++) {
+    // set them, apping a final scaling to keep brightness roughly equivalent.
+    lightSet(LED_R, map(i, 0, 255, 0, RED_MAX));
+    lightSet(LED_G, map(i, 0, 255, 0, GRN_MAX));
+    lightSet(LED_B, map(i, 0, 255, 0, BLU_MAX));
+    delay(5);
+    // check for state changes.
+    systemReset.update();
+    gameEnable.update();
+  }
 }
 
 // generate a random number on the interval [a, b] with mode c.
@@ -249,9 +272,9 @@ void updateSoloTestPattern() {
 
     inst.lightLevel[currInd] = 255;
     performInstruction();
-    
+
     // reset the interval update to add some randomness.
-    onTime.interval(trandom(SOLO_TEST_PATTERN_UPDATE/2, SOLO_TEST_PATTERN_UPDATE, SOLO_TEST_PATTERN_UPDATE*2));
+    onTime.interval(trandom(SOLO_TEST_PATTERN_UPDATE / 2, SOLO_TEST_PATTERN_UPDATE, SOLO_TEST_PATTERN_UPDATE * 2));
     onTime.reset();
   }
 
@@ -329,7 +352,7 @@ void performInstruction() {
 }
 
 void lightSet(int lightPin, byte lightLevel) {
-  
+
   //  Serial << "setting pin " << lightPin << " to " << lightLevel << endl;
   if ( lightLevel <= 0 ) { // special case for fireLevel==0 i.e. "none"
     digitalWrite(lightPin, LOW); // also, faster than analogWrite
@@ -360,7 +383,7 @@ void flameOn(int fireLevel) {
     digitalWrite(FLAME, LOW); // This line should appear exactly once in a sketch, and be swaddled in all manner of caution.
     flameOnTime.interval(flameTime);
     flameOnTime.reset();
-    
+
     Serial << F("Flame on!") << endl;
 
     // start cooldown counter
