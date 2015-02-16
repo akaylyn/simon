@@ -30,7 +30,6 @@ byte myNodeID;
 Metro networkTimeout(D_NETWORK_TIMOUT, 0);
 
 boolean amConfigured = false; // ask for config once after startup.
-boolean doTestPatterns = true; // switch to test patterns
 
 // track how long we need to have the flame on for.
 Metro flameOnTime(100UL);
@@ -67,7 +66,7 @@ Bounce systemReset = Bounce(RESET_PIN, DEBOUNCE_TIME);
 Bounce gameEnable = Bounce(GAME_ENABLE_PIN, DEBOUNCE_TIME);
 // track states here
 #define SETUP_LIGHT_CYCLE_INTERVAL 30000UL
-Metro setupModeLightTimer(0UL);
+Metro setupModeLightTimer(SETUP_LIGHT_CYCLE_INTERVAL);
 
 boolean systemReseted() {
   // at system power up, relay is open, meaning pin will read HIGH.
@@ -105,12 +104,12 @@ void setup() {
 
   // once, at hardware initialization, we need to bootstrap some settings to the EEPROM
   //  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
-//  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
+  //  commsSave(towerNodeID[0]); // write to EEPROM. Select towerNodeID[0..3].
   //  commsSave(towerNodeID[1]); // write to EEPROM. Select towerNodeID[0..3].
   //  commsSave(towerNodeID[2]); // write to EEPROM. Select towerNodeID[0..3].
   //  commsSave(towerNodeID[3]); // write to EEPROM. Select towerNodeID[0..3].
-//  commsDefault(config, I_ALL, I_ALL); // get a default configuration.
-//  commsSave(config); // write to EEPROM.
+  //  commsDefault(config, I_ALL, I_ALL); // get a default configuration.
+  //  commsSave(config); // write to EEPROM.
   // end boostrap
 
   myNodeID = commsStart(); // assume that EEPROM has been used to correctly set values
@@ -137,8 +136,6 @@ void setup() {
 
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
   // SAFETY: do not move this code after any other code.
   if ( flameOnTime.check() ) { // time to turn the flame off
     flameOff();
@@ -146,83 +143,89 @@ void loop() {
 
   // check system enable state
   if ( systemReset.update() ) { // reset state change
+    flameOff(); // just in case.  note that the while() loop prevents flameOnTime.check(), above.
     while ( systemReseted() ) {
       // in RST mode.
-       // ramp the lights 
+      // ramp the lights
       updateResetTestPattern();
     }
   }
 
+  // check for comms traffic
+  if ( radio.receiveDone() ) {
+    // process it.
+    if ( radio.DATALEN == sizeof(inst) ) {
+      // save instruction for lights/flame
+      inst = *(towerInstruction*)radio.DATA;
+      // do it.
+      performInstruction();
+      
+      // note network activity
+      networkTimeout.reset();
+      
+      Serial << F("i") << endl;
+    }
+    else if ( radio.DATALEN == sizeof(config) ) {
+      // configuration for tower
+      Serial << F("Configuration from Console.") << endl;
+
+      // check to see if the instructions have changed?
+      if ( memcmp((void*)(&config), (void*)radio.DATA, sizeof(config)) != 0 ) {
+        // yes, so grab it.
+        config = *(towerConfiguration*)radio.DATA;
+        // save it
+        commsSave(config);
+      }
+
+      // show it
+      commsPrint(config, myNodeID);
+
+      // set flame cooldown from config
+      flameCoolDownTime.interval(config.flameCoolDownTime);
+
+      // note we're configured
+      amConfigured = true;
+    }
+    else if ( radio.DATALEN == sizeof(inst) + 1 ) {
+      // ping received.
+      Serial << F("p");
+    }
+  }
+
   // check system enable state
-  static boolean gameEnableFlag = true;
+  static boolean gameEnableFlag = gameEnabled();
   if ( gameEnable.update() ) { // gameplay enable state change
     Serial << F("Gameplay state change.  State: ");
     gameEnableFlag = gameEnabled();
     Serial << gameEnableFlag << endl;
   }
-
-  if ( gameEnableFlag ) {
-    // NORMAL OPERATION
-
-    // check for comms traffic
-    if ( radio.receiveDone() ) {
-      // process it.
-      if ( radio.DATALEN == sizeof(inst) ) {
-        // save instruction for lights/flame
-        inst = *(towerInstruction*)radio.DATA;
-        // do it.
-        performInstruction();
-        // note network activity
-        networkTimeout.reset();
-        doTestPatterns = false;
-        Serial << F("i") << endl;
+  
+  if ( networkTimeout.check() ) { // if the comms are quiet
+    // run some test patterns/attractants
+    if ( gameEnableFlag ) {
+      // the game's afoot.
+      if ( amConfigured ) 
+        updateNetworkTestPattern(); // breathing pattern, indicates configuration received from Console
+      else 
+        updateSoloTestPattern(); // rotating lights, indicates configuration not received from Console (yet?)    
+    } else {
+      // not in gameplay mode, bring up the lights
+      lightsAllOn();
+       // ramp the lights peridically
+      if ( setupModeLightTimer.check() ) {
+        Serial << F("Not in Gameplay mode.  Ramping lights...") << endl;
+        updateResetTestPattern();
+        setupModeLightTimer.reset();
       }
-      else if ( radio.DATALEN == sizeof(config) ) {
-        // configuration for tower
-        Serial << F("Configuration from Console.") << endl;
-
-        // check to see if the instructions have changed?
-        if ( memcmp((void*)(&config), (void*)radio.DATA, sizeof(config)) != 0 ) {
-          // yes, so grab it.
-          config = *(towerConfiguration*)radio.DATA;
-          // save it
-          commsSave(config);
-        }
-
-        // show it
-        commsPrint(config, myNodeID);
-
-        // set flame cooldown from config
-        flameCoolDownTime.interval(config.flameCoolDownTime);
-
-        // note we're configured
-        amConfigured = true;
-      }
-      else if ( radio.DATALEN == sizeof(inst) + 1 ) {
-        // ping received.
-        Serial << F("p");
-      }
-    }
-
-    if ( networkTimeout.check() ) { // comms are quiet
-      doTestPatterns = true;
-    }
-
-    if ( doTestPatterns ) {
-      if ( amConfigured ) updateNetworkTestPattern(); // if we need to update the test pattern, do so.
-      else updateSoloTestPattern(); // if we need to update the test pattern, do so.
-    }
-  } else {
-    // not in gameplay mode
-    if( setupModeLightTimer.check() ) {
-      Serial << F("Not in Gameplay mode.  Bringing up lights...") << endl;
-      // ramp the lights
-      updateResetTestPattern();
-      setupModeLightTimer.interval(SETUP_LIGHT_CYCLE_INTERVAL);
-      setupModeLightTimer.reset();
     }
   }
 
+}
+
+void lightsAllOn() {
+   lightSet(LED_R, RED_MAX);
+   lightSet(LED_G, GRN_MAX);
+   lightSet(LED_B, BLU_MAX);
 }
 
 void updateResetTestPattern() {

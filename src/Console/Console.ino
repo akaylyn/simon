@@ -139,11 +139,44 @@ void loop() {
     //touchUnitTest(50UL);
   } else {
     // assume we're setting up the project on-site, so this is a good time to run unit tests, calibration activities, etc.
-    // maybe cycle the lights with commsSend(inst).
-    // maybe when a button is pressed, send the colors out and make some fire (drum machine mode?)
-    // maybe when buttons are pressed in a certain way, change the play mode and/or difficulty "level"?
-    // maybe when buttons are pressed in a certain way, change what towers respond to what indexes?
+    // when a button is pressed, send the colors out and make some fire (drum machine mode?)
+    
+    if( touchAnyChanged() || buttonAnyChanged() ) {
+
+      // this is where the lights and fire instructions to Towers are placed
+      extern towerInstruction inst;    
+      // clear out instructions
+      commsDefault(inst);
+    
+      // if anything's pressed, pack the instructions 
+      byte index = I_NONE;
+      if( touchPressed(I_RED) || buttonPressed(I_RED) ) index = I_RED;
+      if( touchPressed(I_GRN) || buttonPressed(I_GRN) ) index = I_GRN;
+      if( touchPressed(I_BLU) || buttonPressed(I_BLU) ) index = I_BLU;
+      if( touchPressed(I_YEL) || buttonPressed(I_YEL) ) index = I_YEL;
+        
+      // Lights on Console
+      // Sound on Console and Tower
+      // Light on Towers
+      // Fire on Towers
+      if( index == I_NONE) {
+        lightStart();
+        musicStop();
+        // no Tower instructions needed.  commsDefault zeros it out, but let's be pedantic
+        inst.lightLevel[index] = 0;
+        inst.fireLevel[index] = 0;
+      } else  {
+        lightSet(index, LIGHT_ON);  
+        musicTone(index);
+        inst.lightLevel[index] = 255;
+        if( fireMode ) inst.fireLevel[index] = 255;
+      }
+
+      // send to Towers
+      towerSend(0); // no resend
+    }
   }
+
 }
 
 boolean fireEnabled() {
