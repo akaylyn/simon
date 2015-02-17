@@ -108,17 +108,15 @@ void loop() {
 }
 
 const char * getDirectory(int messageType) {
-    //if (messageType == TYPE_BAFF) { return dirBaff; }
-    return dirBaff;
-    /*
+    if (messageType == TYPE_BAFF) { return dirBaff; }
+    //return dirBaff;
     switch (messageType) {
-        case TYPE_BAFF: currDir = dirBaff; break;
-        case TYPE_WIN: currDir = dirWins; break;
-        case TYPE_LOSE: currDir = dirLose; break;
-        case TYPE_ROCK: currDir = dirRock; break;
+        case TYPE_BAFF: return dirBaff;
+        case TYPE_WIN: return dirWins;
+        case TYPE_LOSE: return dirLose;
+        case TYPE_ROCK: return dirRock;
         //case 5: musicUnitTest(); break;
     }
-    */
 }
 
 void playRandomTrack(const char *dirName, int totalTracks) {
