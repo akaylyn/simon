@@ -131,7 +131,9 @@ void setup() {
   // initialize instructions (i.e. none).
   commsDefault(inst);
   performInstruction();
-
+  
+  // ramp up lights.
+  lightsAllOn();  
 }
 
 
@@ -223,18 +225,18 @@ void loop() {
 }
 
 void lightsAllOn() {
-   lightSet(LED_R, RED_MAX);
-   lightSet(LED_G, GRN_MAX);
-   lightSet(LED_B, BLU_MAX);
+   lightSet(LED_R, RED_MAX/2);
+   lightSet(LED_G, GRN_MAX/2);
+   lightSet(LED_B, BLU_MAX/2);
 }
 
 void updateResetTestPattern() {
   // ramp up lights to white quickly.
   for (byte i = 0; i < 255; i++) {
     // set them, apping a final scaling to keep brightness roughly equivalent.
-    lightSet(LED_R, map(i, 0, 255, 0, RED_MAX));
-    lightSet(LED_G, map(i, 0, 255, 0, GRN_MAX));
-    lightSet(LED_B, map(i, 0, 255, 0, BLU_MAX));
+    lightSet(LED_R, map(i, 0, 255, 0, RED_MAX/2));
+    lightSet(LED_G, map(i, 0, 255, 0, GRN_MAX/2));
+    lightSet(LED_B, map(i, 0, 255, 0, BLU_MAX/2));
     delay(5);
     // check for state changes.
     systemReset.update();
