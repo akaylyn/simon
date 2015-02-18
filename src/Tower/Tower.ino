@@ -27,9 +27,10 @@ RFM69 radio;
 byte myNodeID;
 // keep track of activity to note network drop out
 #define D_NETWORK_TIMOUT 10000UL
-Metro networkTimeout(D_NETWORK_TIMOUT, 0);
+Metro networkTimeout(D_NETWORK_TIMOUT);
 
 boolean amConfigured = false; // ask for config once after startup.
+boolean networkTimedOut = true; // flip this false with traffic.
 
 // track how long we need to have the flame on for.
 Metro flameOnTime(100UL);
@@ -41,6 +42,7 @@ Metro flameCoolDownTime(2000UL);
 
 // when we're in the network and idle, update the lights on this interval
 #define NETWORK_TEST_PATTERN_UPDATE 20UL // ms
+Metro boredUpdateInterval(NETWORK_TEST_PATTERN_UPDATE);
 
 // pin locations for outputs
 #define LED_R 3 // the PWM pin which drives the red LED
@@ -61,7 +63,7 @@ Metro flameCoolDownTime(2000UL);
 // remote control
 #define RESET_PIN A0
 #define GAME_ENABLE_PIN A1
-#define DEBOUNCE_TIME 10UL
+#define DEBOUNCE_TIME 50UL // need a long debounce b/c electrical noise from solenoid.
 Bounce systemReset = Bounce(RESET_PIN, DEBOUNCE_TIME);
 Bounce gameEnable = Bounce(GAME_ENABLE_PIN, DEBOUNCE_TIME);
 // track states here
@@ -83,7 +85,7 @@ void setup() {
   Serial.begin(115200);
 
   // random seed.
-  randomSeed(analogRead(0));
+  randomSeed(analogRead(A3)); // or some other unconected pin
 
   // see: http://jeelabs.org/2011/11/09/fixing-the-arduinos-pwm-2/
   bitSet(TCCR1B, WGM12);
@@ -157,15 +159,21 @@ void loop() {
   if ( radio.receiveDone() ) {
     // process it.
     if ( radio.DATALEN == sizeof(inst) ) {
-      // save instruction for lights/flame
-      inst = *(towerInstruction*)radio.DATA;
-      // do it.
-      performInstruction();
+       // check to see if the instructions have changed?
+      if ( memcmp((void*)(&inst), (void*)radio.DATA, sizeof(inst)) != 0 ) {
+        // save instruction for lights/flame
+        inst = *(towerInstruction*)radio.DATA;
+        // do it.
+        performInstruction();
       
-      // note network activity
-      networkTimeout.reset();
+        // note network activity
+        networkTimeout.reset();
+        networkTimedOut = false;
       
-      Serial << F("i") << endl;
+        Serial << F("I") << endl;
+      } else {
+        Serial << F("i") << endl;
+      }
     }
     else if ( radio.DATALEN == sizeof(config) ) {
       // configuration for tower
@@ -202,23 +210,26 @@ void loop() {
     Serial << gameEnableFlag << endl;
   }
   
-  if ( networkTimeout.check() ) { // if the comms are quiet
+  if ( networkTimeout.check() ) networkTimedOut = true;
+  
+  if ( networkTimedOut ) { // if the comms are quiet
     // run some test patterns/attractants
     if ( gameEnableFlag ) {
       // the game's afoot.
-      if ( amConfigured ) 
+      if ( amConfigured ) {
         updateNetworkTestPattern(); // breathing pattern, indicates configuration received from Console
-      else 
+      } else { 
         updateSoloTestPattern(); // rotating lights, indicates configuration not received from Console (yet?)    
+      }
     } else {
       // not in gameplay mode, bring up the lights
       lightsAllOn();
        // ramp the lights peridically
-      if ( setupModeLightTimer.check() ) {
-        Serial << F("Not in Gameplay mode.  Ramping lights...") << endl;
-        updateResetTestPattern();
-        setupModeLightTimer.reset();
-      }
+//      if ( setupModeLightTimer.check() ) {
+//        Serial << F("Not in Gameplay mode.  Ramping lights...") << endl;
+//        updateResetTestPattern();
+//        setupModeLightTimer.reset();
+//      }
     }
   }
 
@@ -245,7 +256,7 @@ void updateResetTestPattern() {
 }
 
 // generate a random number on the interval [a, b] with mode c.
-unsigned long trandom(int a, int c, int b) {
+long trandom(long a, long c, long b) {
   // using a triangular pdf
   // http://en.wikipedia.org/wiki/Triangular_distribution#Generating_Triangular-distributed_random_variates
 
@@ -268,12 +279,12 @@ void updateSoloTestPattern() {
   // track the time
   static Metro onTime(SOLO_TEST_PATTERN_UPDATE);
 
-  if ( onTime.check() ) { // enter a new cycle
+  if ( onTime.check() ) { // enter a new cycle    
     // set to zero.
     commsDefault(inst);
 
     currInd = ++currInd % 4; // select the next color
-    Serial << F("Tower Test Pattern.  Color: ") << currInd << endl;;
+    Serial << F("Test pattern (not configured).  Color: ") << currInd << endl;;
 
     inst.lightLevel[currInd] = 255;
     performInstruction();
@@ -288,20 +299,39 @@ void updateSoloTestPattern() {
 // update lighting on an interval when there's nobody playing
 void updateNetworkTestPattern() {
   // only update on an interval, or we're spamming the comms and using up a lot of CPU power with float operations
-  static Metro boredUpdateInterval(NETWORK_TEST_PATTERN_UPDATE);
   if ( !boredUpdateInterval.check() ) return;
   boredUpdateInterval.reset(); // for next loop
 
   // set to zero.
   commsDefault(inst);
 
+  // track the time
+  static unsigned long cycleTime = 1000;
+  static unsigned long tic=millis();
+  static Metro cycleTimer(0);
+  static byte currInd = random(0, N_COLORS);
+
+  if ( cycleTimer.check() ) { // enter a new cycle    
+    currInd = random(0, N_COLORS);
+    cycleTime = random(1000, 7001);
+    Serial << F("Test pattern (configured).  Color: ") << currInd << F(" cycle time: ") << cycleTime << endl;
+    cycleTimer.interval(cycleTime);
+    cycleTimer.reset();
+    tic = millis();
+  }
+
   // use a breathing function.
-  float ts = millis() / 1000.0 / 2.0 * PI ;
-  // put the colors out of phase, and turn off fire.
-  inst.lightLevel[I_RED] = (exp(sin(ts + 0.00 * 2.0 * PI)) - 0.36787944) * 108.0;
-  inst.lightLevel[I_GRN] = (exp(sin(ts + 0.25 * 2.0 * PI)) - 0.36787944) * 108.0;
-  inst.lightLevel[I_BLU] = (exp(sin(ts + 0.50 * 2.0 * PI)) - 0.36787944) * 108.0;
-  inst.lightLevel[I_YEL] = (exp(sin(ts + 0.75 * 2.0 * PI)) - 0.36787944) * 108.0;
+//  float ts = millis() / 1000.0 / 2.0 * PI ;
+  float ts = float(millis()-tic) / float(cycleTime) * 2.0 * PI ;
+  // start 3/4 phase out, at zero
+  inst.lightLevel[currInd] = (exp(sin(ts + 0.75 * 2.0 * PI)) - 0.36787944) * 108.0;
+  
+  Serial << currInd << ": " << ts << " " << inst.lightLevel[currInd] << endl;
+  
+//  inst.lightLevel[I_RED] = (exp(sin(ts + 0.00 * 2.0 * PI)) - 0.36787944) * 108.0;
+//  inst.lightLevel[I_GRN] = (exp(sin(ts + 0.25 * 2.0 * PI)) - 0.36787944) * 108.0;
+//  inst.lightLevel[I_BLU] = (exp(sin(ts + 0.50 * 2.0 * PI)) - 0.36787944) * 108.0;
+//  inst.lightLevel[I_YEL] = (exp(sin(ts + 0.75 * 2.0 * PI)) - 0.36787944) * 108.0;
 
   // do the instructions
   performInstruction();

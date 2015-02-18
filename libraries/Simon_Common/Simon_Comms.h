@@ -49,7 +49,7 @@ const byte towerNodeID[N_TOWERS] = {2,3,4,5};
 
 // default minimum and maximum solenoid opening time
 #define D_MIN_FLAME 50UL // ms
-#define D_MAX_FLAME 50UL // ms
+#define D_MAX_FLAME 500UL // ms
 // default interval between the flame solenoid closing and reopening again
 #define D_FLAME_COOLDOWN 1000UL // ms
 
