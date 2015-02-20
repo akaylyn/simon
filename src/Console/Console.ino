@@ -41,6 +41,7 @@
 #include <EEPROM.h> // saving and loading radio settings
 #include <SPI.h> // radio transmitter is a SPI device
 #include <RFM12B.h> // RFM12b radio transmitter module
+
 #include <Simon_Comms.h> // comms between Towers and Console
 
 // Music subunit.  Responsible for UX (sound) output.

@@ -7,16 +7,16 @@
 #include <Streaming.h> // <<-style printing
 
 #include <SPI.h>
-#include <RFM12B.h> // Console
-#include <RFM69.h> // Towers, others
 
 // radio class depends on the transmitter we're using.
 #if defined(__AVR_ATmega2560__)  
-	// janky as hell!  I can't find another way for the preprocessor to pull its head out of its ass.
-	// the Mega is the only system using the RFM12b radio
+#include <RFM12B.h> // Console
+// janky as hell!  I can't find another way for the preprocessor to pull its head out of its ass.
+// the Mega is the only system using the RFM12b radio
 extern RFM12B radio;
 #else
-	// the rest are using RFM69HW
+#include <RFM69.h> // Towers, others
+// the rest are using RFM69HW
 extern RFM69 radio;
 #endif
 
