@@ -1,4 +1,7 @@
+
 // Compile for Uno.
+
+// minor change, to see if RPi2 can commit.
 
 // The IDE requires all libraries to be #include’d in the main (.ino) file.  Clutter.
 #include <Streaming.h> // <<-style printing
@@ -7,6 +10,7 @@
 #include <Simon_Indexes.h> // sizes, indexing and comms common to Towers and Console
 #include <EEPROM.h> // saving and loading radio settings
 #include <SPI.h> // for radio board 
+#include <RFM12B.h> // shouldn't need this, but Simon_Comms won't compile.
 #include <RFM69.h> // RFM69HW radio transmitter module
 #include <Simon_Comms.h>  // Tower<=>Console
 
