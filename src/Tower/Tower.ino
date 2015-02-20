@@ -31,7 +31,9 @@ Metro flameOnTime(100UL);
 // but only fire this often.
 Metro flameCoolDownTime(1000UL);
 // there's quite a bit of EMI from the solenoid firing, so we add a cooldown on reading sensors
-Metro sensorEmiCooldown(1000UL);
+#define EMI_COOLDOWN 1000UL
+Metro sensorEmiCooldown(EMI_COOLDOWN);
+boolean emiInterference = true;
 
 // when we're out of the network, update the lights on this interval (approx)
 #define SOLO_TEST_PATTERN_UPDATE 3000UL // ms
@@ -53,6 +55,8 @@ Metro sensorEmiCooldown(1000UL);
 #define DEBOUNCE_TIME 50UL // need a long debounce b/c electrical noise from solenoid.
 Bounce systemReset = Bounce(RESET_PIN, DEBOUNCE_TIME);
 Bounce gameEnable = Bounce(GAME_ENABLE_PIN, DEBOUNCE_TIME);
+boolean gameEnableFlag = true;
+boolean systemResetFlag = false;
 
 // luminosity is not equal among LEDs
 #define RED_MAX 255 // entry 255 in the gamma lookup
@@ -120,14 +124,15 @@ void loop() {
   // SAFETY: do not move this code after any other code.
   if ( flameOnTime.check() ) { // time to turn the flame off
     flameOff();
-    sensorEmiCooldown.reset(); // sensing needs to pause.
   }
 
-  static boolean gameEnableFlag = gameEnabled();
-  static boolean systemResetFlag = systemReseted();
-  
+  // check to see if we can read sensors again after EMI burst.
+  if( sensorEmiCooldown.check() && emiInterference==true ){ 
+    Serial << F("EMI cooldown ended.") << endl;
+    emiInterference = false;
+  }
   // put all sensor code inside of this cooldown check.
-  if( sensorEmiCooldown.check() ) {
+  if( !emiInterference ) {
     // check system enable state
     if ( systemReset.update() ) { // reset state change
       Serial << F("Reset state change.  State: ");
@@ -186,11 +191,17 @@ void loop() {
     }
   }
 
-  if ( networkTimeout.check() ) networkTimedOut = true;
+  if ( networkTimeout.check() ) {
+    Serial << F("Network timeout.") << endl;
+    networkTimedOut = true;
+  }
 
   if ( systemResetFlag ) {
     // if the reset pin is held, turn to red lighting
     redTestPattern();
+    delay(500);
+    whiteTestPattern();
+    delay(500);
   } else if ( networkTimedOut ) {
     // comms are quiet, so some test patterns are appropriate
     if( !gameEnableFlag ) {
@@ -433,6 +444,11 @@ void flameOn(int fireLevel) {
 
     // start cooldown counter
     flameCoolDownTime.reset();
+
+    // when the solenoid closes, there's a lot of EMI that disrupts sensors.  Ignore the sensors for a period of time.
+    sensorEmiCooldown.interval( config.flameCoolDownTime + EMI_COOLDOWN ); // add a little more time.
+    sensorEmiCooldown.reset(); // sensing needs to pause.
+    emiInterference = true;
 
     Serial << F("Flame on! ") << fireLevel << F(" mapped [") << config.minFireTime << F(",") << config.maxFireTime << F("]");
     Serial << F(" -> ") << flameTime << F("ms.  Cooldown: ") << config.flameCoolDownTime << F("ms.") << endl;
