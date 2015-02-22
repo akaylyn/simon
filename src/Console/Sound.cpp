@@ -1,7 +1,7 @@
 #include "Sound.h"
 
 bool Sound::begin(){
-    Serial << F("Sound: startup.") << endl;
+    Serial << "Sound: startup." << endl;
 
     // setup speaker
     pinMode(SPEAKER_WIRE, OUTPUT);
@@ -9,12 +9,14 @@ bool Sound::begin(){
     // setup comms to Music
     Music.begin(MUSIC_COMMS_RATE);
 
+    // setup EasyTransfer
+    Serial << "EasyTransfer: pre-startup." << endl;
+    easyTransfer.begin(details(message), &Music);
+    Serial << "EasyTransfer: startup." << endl;
+
     // set the default volume
     setVolume(MUSIC_DEFAULT_VOL);
     stop();
-
-    // setup EasyTransfer
-    easyTransfer.begin(details(message), &Music);
 
     return( Music ); // if there was an error with Serial connection to Music, return false.
 }
@@ -92,55 +94,13 @@ void Sound::stop() {
 }
 
 void Sound::sendData() {
-    Serial << F("sendData: sending ") << endl;
+    Serial << "sendData: sending" << endl;
     easyTransfer.sendData();
-    Serial << F("sendData: complete") << endl;
+    Serial << "sendData: complete" << endl;
 
     // reset message parameters
     // not every usage of the message structure sets all values
     message.type = TYPE_DEFAULT;
     message.playCount = PLAY_COUNT_DEFAULT;
-}
-
-// unit test for sound module
-void testSound() {
-/*
-    Serial << F("Music: tone test...") << endl;
-
-    musicTone(I_RED);
-    delay(500);
-
-    musicTone(I_GRN);
-    delay(500);
-
-    musicTone(I_BLU);
-    delay(500);
-
-    musicTone(I_YEL);
-    delay(500);
-
-    // send STOP
-    musicStop();
-
-    // up volume
-    musicVolumeSet(MUSIC_MAX_VOL);
-
-    // start a unit test.
-    musicSend('w');
-
-    Serial << F("from Music: ");
-    while( volumeSetting > 0 ) {
-        while( Music.available() > 0) {
-            Serial.print( char(Music.read()) );
-        }
-        delay(1000);
-        musicVolumeDown();
-    }
-    Serial << endl;
-
-    musicStop();
-
-    Serial << F("Music: unit test stopped playback.") << endl;
-    */
 }
 

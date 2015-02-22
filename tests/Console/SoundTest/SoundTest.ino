@@ -8,6 +8,8 @@
 #include <SoundMessage.h> // sound message structure and consts
 #include "Sound.h"
 
+#define DELAY_TIME 5000
+
 EasyTransfer easyTransfer;
 Sound sound;
 
@@ -31,28 +33,41 @@ void setup() {
 void loop() {
     Serial << "~~ loop ~~" << endl;
     // just to make sure not to overload the console
-    delay(100);
+    sound.setVolume(0);
+    delay(DELAY_TIME);
 
     Serial << "Playing WIN" << endl;
-    sound.playWin();
-    delay(500);
+    sound.playWin(2);
+    delay(DELAY_TIME);
 
     Serial << "Playing LOSE" << endl;
     sound.playLose();
-    delay(500);
+    delay(DELAY_TIME);
 
     Serial << "Playing BAFF" << endl;
     sound.playBaff();
-    delay(500);
+    delay(DELAY_TIME);
 
     Serial << "Playing ROCK" << endl;
     sound.playRock();
-    delay(500);
-
+    delay(DELAY_TIME);
+/*
     Serial << "Playing TONE: RED" << endl;
     sound.playTone(I_RED, 1000);
-    delay(500);
+    delay(DELAY_TIME);
 
+    Serial << "Playing TONE: BLU" << endl;
+    sound.playTone(I_BLU, 1000);
+    delay(DELAY_TIME);
+
+    Serial << "Playing TONE: GRN" << endl;
+    sound.playTone(I_GRN, 1000);
+    delay(DELAY_TIME);
+
+    Serial << "Playing TONE: YEL" << endl;
+    sound.playTone(I_YEL, 1000);
+    delay(DELAY_TIME);
+    */
 
     Serial << "Tests complete." << endl;
 }

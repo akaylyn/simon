@@ -24,7 +24,7 @@
 #define CHEATY_PANTS_MODE false
 
 // disable fanfare - originally used for speeding up debugging
-#define FANFARE_ENABLED false
+#define FANFARE_ENABLED true
 
 // define the minimum time between fanfares in kiosk mode  <- influenced by knob 1
 #define KIOSK_FANFARE_MIN 30000UL  // 30 seconds

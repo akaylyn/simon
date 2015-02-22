@@ -7,6 +7,7 @@
 #define TYPE_WIN 2
 #define TYPE_LOSE 3
 #define TYPE_ROCK 4
+#define TYPE_VOLUME 5
 
 #define TYPE_DEFAULT TYPE_STOP
 #define PLAY_COUNT_DEFAULT 1

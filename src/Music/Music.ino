@@ -90,9 +90,12 @@ void loop() {
     // check playing state, and report if we've stopped
     if ( message.type > TYPE_STOP && !musicPlayer.playingMusic) {
         Serial << endl; // TODO: what does this line do?
+        musicPlayer.setVolume(message.volume, message.volume);
         playRandomTrack(getDirectory(message.type), message.playCount);
-    } else if( message.type == TYPE_STOP && musicPlayer.playingMusic ) {
+    } else if ( message.type == TYPE_STOP && musicPlayer.playingMusic ) {
         musicPlayer.stopPlaying();
+    } else if ( message.type == TYPE_VOLUME ) {
+        musicPlayer.setVolume(message.volume, message.volume);
     }
 
     // put your main code here, to run repeatedly:
@@ -194,7 +197,7 @@ void musicStart() {
     Serial << dirRock << F(": ") << tracksRock << endl;
 
     // Set volume for left, right channels. lower numbers == louder volume!
-    musicPlayer.setVolume(MIN_MP3_VOL / 2, MIN_MP3_VOL / 2);
+    musicPlayer.setVolume(0, 0);
 
     // wait for it.
     Serial.flush();
