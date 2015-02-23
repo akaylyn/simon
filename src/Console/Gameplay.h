@@ -8,7 +8,9 @@
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
 #include <FiniteStateMachine.h>
-#include <Simon_Indexes.h> // sizes, indexing defines.
+
+//------ sizes, indexing and inter-unit data structure definitions.
+#include <Simon_Common.h> 
 
 // makes heavy use of the modules.
 #include "Touch.h"

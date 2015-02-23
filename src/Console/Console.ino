@@ -5,6 +5,9 @@
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
 
+//------ sizes, indexing and inter-unit data structure definitions.
+#include <Simon_Common.h> 
+
 //------ Input units.
 
 // Touch subunit. Responsible for UX input.
@@ -37,12 +40,9 @@
 
 // Tower subunit.  Responsible for UX (light/fire) output at the Tower.
 #include "Tower.h"
-#include <Simon_Indexes.h> // sizes, indexing and
 #include <EEPROM.h> // saving and loading radio settings
 #include <SPI.h> // radio transmitter is a SPI device
 #include <RFM12B.h> // RFM12b radio transmitter module
-
-#include <Simon_Comms.h> // comms between Towers and Console
 
 // Music subunit.  Responsible for UX (sound) output.
 #include "Music.h"
@@ -55,9 +55,6 @@
 #define FIRE_ENABLE_PIN 47
 Bounce gameEnable = Bounce(GAME_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
 Bounce fireEnable = Bounce(FIRE_ENABLE_PIN, BUTTON_DEBOUNCE_TIME);
-
-extern towerConfiguration config[N_TOWERS];
-extern byte towerFire[N_TOWERS];
 
 void setup() {
   // put your setup code here, to run once:
@@ -82,29 +79,11 @@ void setup() {
   gameplayStart();
   externStart();
 
-commsPrint(config[0], 2);
   Serial << F("STARTUP: complete.") << endl;
-
-  
-
 }
 
 // main loop for the core.
 void loop() {
-  if( towerFire[0]!=I_ALL ) {
-    Serial << "! towerFire[0] changed from I_ALL !" << endl;
-    configureNetwork();
-    while(1);
-  }
-  if( config[0].fireIndex!=I_ALL ) {
-    
-    Serial << "! config[0].fireIndex changed from I_ALL !" << endl;
-    commsPrint(config[0], 2);
-    commsPrint(config[1], 3);
-    commsPrint(config[2], 4);
-    commsPrint(config[3], 5);
-    while(1);
-  }
 
   // remote control.  There's a relay that will pull FIRE_ENABLE_PIN to LOW when pressed (enable fire).
   // goes to HIGH when pressed again (disable fire).
@@ -168,7 +147,7 @@ void loop() {
       // this is where the lights and fire instructions to Towers are placed
       extern towerInstruction inst;    
       // clear out instructions
-      commsDefault(inst);
+      towerClearInstructions();
           
      // if anything's pressed, pack the instructions 
       byte index = I_NONE;
@@ -191,12 +170,12 @@ void loop() {
         Serial << F("Pressed: ") << index;
         lightSet(index, LIGHT_ON);  
         musicTone(index);
-        inst.lightLevel[index] = 255;
-        if( fireMode ) inst.fireLevel[index] = 255;
+        towerLightSet(index, 255);
+        towerFireSet(index, 255, fireMode);
       }
       
       // send to Towers
-      towerSend(0); // no resend
+      towerSendAll(); 
 
     } else {
       

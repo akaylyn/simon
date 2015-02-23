@@ -3,8 +3,16 @@
 // Need an instance of the Radio Module
 RFM12B radio;
 
+// but wait an interval of time before resending
+Metro resendCounter(SEND_INTERVAL);
+// and countdown the remaining sends
+int sendCount = 0;
+
+// structure stores how Towers acts on those towerInstructions
+towerConfiguration config[N_TOWERS];
+
 // time before we reconfig the network
-#define CONFIG_SEND_INTERVAL 30000UL // ms.  check Tower module code for network timeout interval, and set this lower than that.
+#define CONFIG_SEND_INTERVAL 30000UL // ms. 
 Metro networkConfigUpdate(CONFIG_SEND_INTERVAL);
 
 // try to use these nodes:
@@ -14,89 +22,201 @@ Metro networkConfigUpdate(CONFIG_SEND_INTERVAL);
 byte towerColor[N_TOWERS] = {I_ALL, I_ALL, I_ALL, I_ALL};
 byte towerFire[N_TOWERS] = {I_ALL, I_ALL, I_ALL, I_ALL};
 
-// but wait an interval of time before resending
-Metro resendCounter(SEND_INTERVAL);
-// and countdown the remaining sends
-int sendCount = 0;
+// minimum accumulator opening time.
+unsigned long minFireTime = 50UL;
+// maximum accumulator opening time.
+unsigned long maxFireTime = 500UL;
+// won't re-open the accumulator within this interval.
+unsigned long flameCoolDownTime = 1000UL;
 
 // this is where the lights and fire instructions to Towers are placed
 towerInstruction inst;
 // from Simon_Comms.h:
 // typedef struct {
-//	byte lightLevel[N_COLORS]; // 0..255.  maps to analogWrite->light level
-//	byte fireLevel[N_COLORS]; // 0..255.  maps to timer->fire duration
+//	byte lightLevel[N_COLORS]; // 0..255.  PWM light level is map(lightLevel, 0, 255, 0, 255)
+//	byte fireLevel[N_COLORS]; // 0..255.  accumulator open time is map(fireLevel, 0, 255, minFireTime, maxFireTime)
 // } towerInstruction;
-// structure stores how Towers acts on those towerInstructions
-towerConfiguration config[N_TOWERS];
 
+// startup Tower communications.
 void towerStart() {
   Serial << F("Tower: startup.") << endl;
 
-  // shouldn't need to run this once the memory is saved.
-//  commsSave(consoleNodeID); // write to EEPROM. Select consoleNodeID.
-  // start RFM12b radio
-  if ( commsStart() != consoleNodeID  ) {
-    Serial << F("Tower: unable to start RFM as consoleNodeID.  Halting!") << endl;
-    while (1);
-  }
+  // start radio
+  networkStart();
   // ping the network
-  pingNetwork();
+  networkPing();
   // configure network
-  configureNetwork();
-  // update network
-  sendConfiguration();
+  networkConfig();
+  // clear instructions
+  towerClearInstructions();
 }
 
-// set lights on Tower with immediate send.  leaves previous instructions in-place!
-void towerLightSet(byte colorIndex, byte level) {
+// instantiates radio communications
+byte networkStart() {
+
+  // check that the tower payloads aren't the same size.
+  int size1 = sizeof(towerInstruction);
+  int size2 = sizeof(towerConfiguration);
+  if ( size1 == size2 ) {
+    Serial << F("Tower: radio instructions are indistinguishable by size!") << endl;
+    while (1); // halt
+  }
+
+  Serial << F("Tower: Reading radio settings from EEPROM.") << endl;
+
+  // EEPROM location for radio settings.
+  const byte radioConfigLocation = 42;
+
+  // try to recover settings from EEPROM
+  byte offset = 0;
+  byte nodeID = EEPROM.read(radioConfigLocation + (offset++));
+  byte groupID = EEPROM.read(radioConfigLocation + (offset++));
+  byte band = EEPROM.read(radioConfigLocation + (offset++));
+  byte csPin = EEPROM.read(radioConfigLocation + (offset++));
+
+  if ( groupID != D_GROUP_ID ) {
+    Serial << F("Tower: EEPROM not configured.  Doing so.") << endl;
+    // then EEPROM isn't configured correctly.
+    offset = 0;
+    EEPROM.write(radioConfigLocation + (offset++), consoleNodeID);
+    EEPROM.write(radioConfigLocation + (offset++), D_GROUP_ID);
+    EEPROM.write(radioConfigLocation + (offset++), RF12_915MHZ);
+    EEPROM.write(radioConfigLocation + (offset++), D_CS_PIN);
+
+    return ( networkStart() ); // go again after EEPROM save
+    
+  } else {
+    Serial << F("Tower: Startup RFM12b radio module. ");
+    Serial << F(" NodeID: ") << nodeID;
+    Serial << F(" GroupID: ") << groupID;
+    Serial << F(" Band: ") << band;
+    Serial << F(" csPin: ") << csPin;
+    Serial << endl;
+
+    radio.Initialize(nodeID, band, groupID);
+    Serial << F("Tower: RFM12b radio module startup complete. ");
+    return (radio.nodeID);
+  }
+
+}
+
+// ping network for quality
+void networkPing(int count) {
+  Serial << F("Tower: ping network....") << endl;
+
+  // use the instruction payload size+1.  It's contents are irrelevant.
+  byte payload[sizeof(towerInstruction) + 1];
+
+  // check ping quality and use that to figure out how many Towers can be used.
+  for ( byte ni = 0; ni < N_TOWERS; ni ++ ) {
+    Serial << F("Tower: ping node: ") << towerNodeID[ni]  << endl;
+
+    // ping count times
+    for ( int i = 0; i < count; i++ ) {
+      radio.Send(towerNodeID[ni], (const void*)(&payload), sizeof(payload));
+      Serial << F("+");
+    }
+    Serial << endl;
+  }
+}
+
+// configure network
+void networkConfig() {
+  Serial << F("Tower: configuring network.") << endl;
+
+  for ( byte ni = 0; ni < N_TOWERS; ni ++ ) {
+    config[ni].colorIndex = towerColor[ni];
+    config[ni].fireIndex = towerFire[ni];
+    config[ni].minFireTime = minFireTime;
+    config[ni].maxFireTime = maxFireTime;
+    config[ni].flameCoolDownTime = flameCoolDownTime;
+    towerConfig(config[ni], towerNodeID[ni]);
+  }
+
+  // take a breather
+  networkConfigUpdate.reset();
+
+}
+
+// configure a single tower
+void towerConfig(towerConfiguration & config, byte nodeID) {
+  radio.Send(nodeID, (const void*)(&config), sizeof(config));
+  Serial << F("Tower: sending config: ");
+  Serial << F("Tower (") << nodeID << F(") config: ");
+  Serial << F("Color(") << config.colorIndex << F(") Fire(") << config.fireIndex << F(") ");
+  Serial << F("Flame min(") << config.minFireTime << F(") max(") << config.maxFireTime << F(").") << endl;
+}
+
+// set lights on Tower with optional immediate send.  
+void towerLightSet(byte colorIndex, byte level, boolean sendNow, byte nodeID) {
   // set instructions
   inst.lightLevel[colorIndex] = level;
-  // send it.
-  towerSend();
+  // send it?
+  if( sendNow ) {
+    if( nodeID == 0 ) {
+      towerSendAll();
+    } else {
+      towerSendOne(nodeID);
+    }
+  }
 }
 
-// set fire on Tower with immediate send.  leaves previous instructions in-place!
-void towerFireSet(byte colorIndex, byte level) {
+// set fire on Tower with optional immediate send.  
+void towerFireSet(byte fireIndex, byte level, boolean fireAllowed, boolean sendNow, byte nodeID) {
   // set instructions
-  inst.fireLevel[colorIndex] = level;
-  // send it.
-  towerSend();
+  inst.fireLevel[fireIndex] = fireAllowed ? level : 0;
+  // send it?
+  if( sendNow ) {
+    if( nodeID == 0 ) {
+      towerSendAll();
+    } else {
+      towerSendOne(nodeID);
+    }
+  }
 }
 
-// turns off light and fire on Tower with immediate send.
-void towerQuiet() {
-  // zero out
-  commsDefault(inst);
+// clears all of the instructions 
+void towerClearInstructions() {
+  for (int i = 0; i < N_COLORS; i++ ) {
+    inst.lightLevel[i] = 0;
+    inst.fireLevel[i] = 0;
+  }
+}
+
+// turns off light and fire on Towers with immediate send.
+void towerQuiet(int sendN) {
+  towerClearInstructions();
   // send it.
-  towerSend();
+  towerSendAll(sendN);
 }
 
 // sends the current value of inst to the Towers, and tries again in an interval by towerComms.
-void towerSend(int sendN) {
-  // send now
-  commsSend(inst);
-  // try again in an interval
+void towerSendAll(int sendN) {
+  // send now, broadcase mode (all Towers)
+  radio.Send(0, (const void*)(&inst), sizeof(inst));
+  // maybe try again in an interval, but only if we're in bread
   sendCount = sendN - 1;
   resendCounter.reset();
+}
+
+// sends the current value of inst to a specific Tower, with no retries.
+void towerSendOne(byte nodeID) {
+  // send now
+  radio.Send(nodeID, (const void*)(&inst), sizeof(inst));
+  sendCount = 0;
 }
 
 // check for inbound comms, resend instructions (if needed) periodically, send configuration periodically.
 void towerUpdate() {
 
-  // important that we check the buffer before sending, or we'll overwrite stuff
+  // important that we check the buffer before sending, or we'll overwrite stuff.
+  // while we don't (currently) do anything with inbound Tower traffic, the radio FSM needs a ReceiveComplete check frequently to advance states.
   if ( radio.ReceiveComplete() && radio.CRCPass() ) {
     // we have radio comms
 
     // check cases
 
-    // join request.
-    if ( radio.GetDataLen() == sizeof(towerConfiguration) ) {
-
-      byte senderNodeID = radio.GetSender();
-      Serial << F("Tower: join request from node ") << senderNodeID << endl;
-      sendConfiguration();  // send network configuration settings
-    }
-
+    // we don't do anything with inbound traffic from the towers.
   }
 
   // then we process outbound traffic
@@ -104,59 +224,12 @@ void towerUpdate() {
     sendCount--; // one less time
     resendCounter.reset();
 
-    commsSend(inst);
+    // NOTE: it is assumed retries are going out to all Towers.
+    radio.Send(0, (const void*)(&inst), sizeof(inst));
+
   } else if ( networkConfigUpdate.check() ) { // update network
-    sendConfiguration();
+    networkConfig();
   }
-
-}
-
-
-// ping network for quality
-void pingNetwork(int count) {
-  Serial << F("Tower: ping network....") << endl;
-
-  // check ping quality and use that to figure out how many Towers can be used.
-  for ( byte ni = 0; ni < N_TOWERS; ni ++ ) {
-    if ( towerColor[ni] != I_NONE || towerFire[ni] != I_NONE ) {
-      Serial << F("Tower: ping node: ") << towerNodeID[ni]  << endl;
-
-      // ping count times
-      for ( int i = 0; i < count; i++ ) {
-        commsSendPing(towerNodeID[ni]);
-        Serial << F("+");
-      }
-      Serial << endl;
-    }
-  }
-}
-
-// configure network
-void configureNetwork() {
-  Serial << F("Tower: configuring network....") << endl;
-
-  // check ping quality and use that to figure out how many Towers can be used.
-  for ( byte ni = 0; ni < N_TOWERS; ni ++ ) {
-    commsDefault(config[ni], towerColor[ni], towerFire[ni]);
-    commsPrint(config[ni], towerNodeID[ni]);
-  }
-}
-
-// send configuration to Towers
-void sendConfiguration() {
-  Serial << F("Tower: updating network....") << endl;
-
-  // send the configuration to the network.
-  // will be saved in EEPROM if new.
-  for ( byte ni = 0; ni < N_TOWERS; ni ++ ) {
-    Serial << F("Tower: sending configuration: ");
-    commsPrint(config[ni], towerNodeID[ni]);
-    commsSend(config[ni], towerNodeID[ni]);
-  }
-
-  // take a breather
-  networkConfigUpdate.reset();
-
 }
 
 
