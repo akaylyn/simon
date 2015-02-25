@@ -32,10 +32,6 @@ boolean networkTimedOut = true; // flip this false with traffic.
 Metro flameOnTime(100UL);
 // but only fire this often.
 Metro flameCoolDownTime(1000UL);
-// there's quite a bit of EMI from the solenoid firing, so we add a cooldown on reading sensors
-#define EMI_COOLDOWN 1000UL
-Metro sensorEmiCooldown(EMI_COOLDOWN);
-boolean emiInterference = true;
 
 // when we're out of the network, update the lights on this interval (approx)
 #define SOLO_TEST_PATTERN_UPDATE 3000UL // ms
@@ -57,7 +53,7 @@ boolean emiInterference = true;
 // remote control
 #define RESET_PIN A0
 #define GAME_ENABLE_PIN A1
-#define DEBOUNCE_TIME 50UL // need a long debounce b/c electrical noise from solenoid.
+#define DEBOUNCE_TIME 100UL // need a long debounce b/c electrical noise from solenoid.
 Bounce systemReset = Bounce(RESET_PIN, DEBOUNCE_TIME);
 Bounce gameEnable = Bounce(GAME_ENABLE_PIN, DEBOUNCE_TIME);
 boolean gameEnableFlag = true;
@@ -111,26 +107,19 @@ void loop() {
   if ( flameOnTime.check() ) { // time to turn the flame off
     flameOff();
   }
-
-  // check to see if we can read sensors again after EMI burst.
-  if ( sensorEmiCooldown.check() && emiInterference == true ) {
-    Serial << F("EMI cooldown ended.") << endl;
-    emiInterference = false;
+  
+  // check system enable state
+  if ( systemReset.update() ) { // reset state change
+    Serial << F("Reset state change.  State: ");
+    systemResetFlag = systemReseted();
+    Serial << systemResetFlag << endl;
   }
-  // put all sensor code inside of this cooldown check.
-  if ( !emiInterference ) {
-    // check system enable state
-    if ( systemReset.update() ) { // reset state change
-      Serial << F("Reset state change.  State: ");
-      systemResetFlag = systemReseted();
-      Serial << systemResetFlag << endl;
-    }
-    // check system enable state
-    if ( gameEnable.update() ) { // gameplay enable state change
-      Serial << F("Gameplay state change.  State: ");
-      gameEnableFlag = gameEnabled();
-      Serial << gameEnableFlag << endl;
-    }
+  
+  // check system enable state
+  if ( gameEnable.update() ) { // gameplay enable state change
+    Serial << F("Gameplay state change.  State: ");
+    gameEnableFlag = gameEnabled();
+    Serial << gameEnableFlag << endl;
   }
 
   // check for comms traffic
@@ -205,11 +194,21 @@ void loop() {
 }
 
 boolean systemReseted() {
+  // with EMI, be very sure.
+  Metro readTime(DEBOUNCE_TIME);
+  readTime.reset();
+  while( !readTime.check() ) systemReset.update();
+  
   // at system power up, relay is open, meaning pin will read HIGH.
   return ( systemReset.read() == LOW );
 }
 
 boolean gameEnabled() {
+  // with EMI, be very sure.
+  Metro readTime(DEBOUNCE_TIME);
+  readTime.reset();
+  while( !readTime.check() ) gameEnable.update();
+
   // at system power up, relay is open, meaning pin will read HIGH.
   return ( gameEnable.read() == HIGH );
 }
@@ -431,11 +430,6 @@ void flameOn(int fireLevel) {
 
     // start cooldown counter
     flameCoolDownTime.reset();
-
-    // when the solenoid closes, there's a lot of EMI that disrupts sensors.  Ignore the sensors for a period of time.
-    sensorEmiCooldown.interval( config.flameCoolDownTime + EMI_COOLDOWN ); // add a little more time.
-    sensorEmiCooldown.reset(); // sensing needs to pause.
-    emiInterference = true;
 
     Serial << F("Flame on! ") << fireLevel << F(" mapped [") << config.minFireTime << F(",") << config.maxFireTime << F("]");
     Serial << F(" -> ") << flameTime << F("ms.  Cooldown: ") << config.flameCoolDownTime << F("ms.") << endl;
