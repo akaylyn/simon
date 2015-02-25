@@ -41,20 +41,24 @@ Adafruit_VS1053_FilePlayer( // use hardware SPI with these commented out: MP3_MO
         MP3_RST, MP3_CS, MP3_XDCS, MP3_DREQ,
         MP3_SDCS);
 
-// holds the number of possible tracks to play in each gesture
-int tracksBaff = 0;
-int tracksWins = 0;
-int tracksLose = 0;
-int tracksRock = 0;
+const int NUM_DIRECTORIES = 4;
 // holds the location of the tracks
 const char dirBaff[] = "BAFF";
 const char dirWins[] = "WINS";
 const char dirLose[] = "LOSE";
 const char dirRock[] = "ROCK";
 
+// holds the number of possible tracks to play in each gesture
+// also holds the location
+typedef struct
+{
+    char *loc;
+    int count;
+} DirInfo;
+
 EasyTransfer easyTransfer;
 SoundMessage message;
-char currDir[] = {4};
+DirInfo musicDir[NUM_DIRECTORIES];
 
 void setup() {
     Serial.begin(SERIAL_SPEED);
@@ -81,7 +85,7 @@ void toggleLED() {
 void serialEvent() {
     if (easyTransfer.receiveData()) {
 
-        playRandomTrack(getDirectory(message.type), message.playCount);
+        playRandomTrack(musicDir[message.type]);
     }
 }
 
@@ -91,7 +95,7 @@ void loop() {
     if ( message.type > TYPE_STOP && !musicPlayer.playingMusic) {
         Serial << endl; // TODO: what does this line do?
         musicPlayer.setVolume(message.volume, message.volume);
-        playRandomTrack(getDirectory(message.type), message.playCount);
+        playRandomTrack(musicDir[message.type]);
     } else if ( message.type == TYPE_STOP && musicPlayer.playingMusic ) {
         musicPlayer.stopPlaying();
     } else if ( message.type == TYPE_VOLUME ) {
@@ -110,31 +114,19 @@ void loop() {
     }
 }
 
-const char * getDirectory(int messageType) {
-    if (messageType == TYPE_BAFF) { return dirBaff; }
-    //return dirBaff;
-    switch (messageType) {
-        case TYPE_BAFF: return dirBaff;
-        case TYPE_WIN: return dirWins;
-        case TYPE_LOSE: return dirLose;
-        case TYPE_ROCK: return dirRock;
-        //case 5: musicUnitTest(); break;
-    }
-}
-
-void playRandomTrack(const char *dirName, int totalTracks) {
+void playRandomTrack(DirInfo &dirInfo) {
     // soft reset.  hate to have this here, but when I flip btw codec types, I get static w/o this.
     musicPlayer.stopPlaying();
     musicPlayer.sciWrite(VS1053_REG_MODE, VS1053_MODE_SM_SDINEW | VS1053_MODE_SM_RESET);
 
-    File dir = SD.open(dirName);
+    File dir = SD.open(dirInfo.loc);
     if ( ! dir.isDirectory() ) {
         Serial << F("Error! not a directory: ") << dirName << endl;
     }
     dir.rewindDirectory(); // can't seem to cleanly get the SD card file handlers to start at the top of the dir!!!!
 
     // pick a track
-    int track = random(0, totalTracks);
+    int track = random(0, dirInfo.count);
 
     // seek file
     File entry = dir.openNextFile(); // have to open a file simply to get it's name!!
@@ -183,11 +175,10 @@ void musicStart() {
     }
     Serial << F("SD OK!") << endl;
 
-    // get track counts
-    tracksBaff = countTracks(dirBaff);
-    tracksWins = countTracks(dirWins);
-    tracksLose = countTracks(dirLose);
-    tracksRock = countTracks(dirRock);
+    configMusicDir(musicDir[TYPE_BAFF], dirBaff);
+    configMusicDir(musicDir[TYPE_WIN], dirWins);
+    configMusicDir(musicDir[TYPE_LOSE], dirLose);
+    configMusicDir(musicDir[TYPE_ROCK], dirRock);
 
     // show counts
     Serial << F("Track counts:") << endl;
@@ -201,6 +192,11 @@ void musicStart() {
 
     // wait for it.
     Serial.flush();
+}
+
+void configMusicDir(DirInfo &dirInfo, const char &loc) {
+    dirInfo.count = countTracks(loc);
+    dirInfo.loc = loc;
 }
 
 void musicUnitTest() {
@@ -220,10 +216,10 @@ void musicUnitTest() {
 }
 
 // File listing helper
-int countTracks(const char *dirName) {
+int countTracks(const char &dirInfo) {
     int count = 0; // track number
 
-    File dir = SD.open(dirName);
+    File dir = SD.open(dirInfo);
 
     while (true) {
 
