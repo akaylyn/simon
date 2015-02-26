@@ -63,5 +63,11 @@ boolean touchPressed(byte touchIndex);
 // runs a unit test on Touch
 void touchUnitTest();
 
+// returns "distance" an object is to the sensor
+int touchDistance(byte touchIndex=I_ALL); // defaults to 13th "virtual" sensor.
+
+// power transformation for nonlinear map() function
+float fscale( float originalMin, float originalMax, float newBegin, float newEnd, float inputValue, float curve);
+
 #endif
 
