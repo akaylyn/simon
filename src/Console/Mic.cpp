@@ -13,6 +13,8 @@ void micStart() {
   pinMode(MSGEQ7_RESET_PIN, OUTPUT);
   digitalWrite(MSGEQ7_RESET_PIN, LOW);
   digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
+  
+  Serial << F("Mic: startup complete.") << endl;
 }
 
 void micPrint() {
@@ -66,19 +68,20 @@ void micReadAll() {
 // it needs to be continually called to trace the volume level.
 boolean micIsBeat() {
   // stores the running average of volume.
-  static unsigned int avgVol=150; // dunno.  
+  static unsigned long avgVol=10000; // dunno.  
   
   // take advantage of the likelihood that "beats" are all in the lower band.
   getLowEndVolume(); // volume data now in bandVolume[0]
 
-  const unsigned int th = 150; // if the current reading exceeds the average by this percent, we've found a beat.
+  const unsigned long th = 175; // if the current reading exceeds the average by this percent, we've found a beat.
   boolean isBeat = bandVolume[0] > (avgVol*th)/100;
 
-  const unsigned int wt = 10; // new volume levels are averaged with historical with this weighting.
+  const unsigned long wt = 10; // new volume levels are averaged with historical with this weighting.
   avgVol = (avgVol*wt + bandVolume[0])/(wt+1);
 
-  //  Serial << avgVol << bandVolume[0] << endl;
-  
+//  Serial << avgVol << bandVolume[0] << endl;
+//  delay(5);
+   
   return(isBeat);
 
 }

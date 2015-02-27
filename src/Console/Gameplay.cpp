@@ -75,10 +75,8 @@ void idleState() {
     // stubbing in microphone pickup activity.  
     // doesn't do anything useful; just makes a tone that should be synchronized with the beat.
     if( micIsBeat() ) {
-      tone( SPEAKER_WIRE, 63 ); // 63 Hz tone, which is the center of the bin used to detect beats.
-    } else {
-      noTone( SPEAKER_WIRE );
-    }
+      tone( SPEAKER_WIRE, 63, 100UL ); // 63 Hz tone, which is the center of the bin used to detect beats.
+    } 
     
 }
 
