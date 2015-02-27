@@ -120,12 +120,6 @@ void loop() {
     }
   }
 
-  if( micIsBeat() ) {
-    tone( SPEAKER_WIRE, 25 ); // 500 Hz tone
-    delay( 100UL ); // wait 0.25 seconds
-    noTone( SPEAKER_WIRE );
-  }
-
   // remote control.  There's a relay that will pull GAME_ENABLE_PIN to LOW when pressed (disable gameplay).
   // goes to HIGH when pressed again (enable gameplay).
   static boolean gamePlayMode = gameEnabled();

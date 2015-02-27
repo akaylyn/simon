@@ -61,20 +61,24 @@ void micReadAll() {
   }
 }
 
+// this function will likely return false positives when it's initially called after startup
+// TODO: place avgVol in EEPROM for quicker restart.
+// it needs to be continually called to trace the volume level.
 boolean micIsBeat() {
+  // stores the running average of volume.
+  static unsigned int avgVol=150; // dunno.  
+  
   // take advantage of the likelihood that "beats" are all in the lower band.
-  getLowEndVolume();
+  getLowEndVolume(); // volume data now in bandVolume[0]
 
-  static float avgVol=50; // dunno
-  const float wt = 0.1;
-  const float th = 1.5;
+  const unsigned int th = 150; // if the current reading exceeds the average by this percent, we've found a beat.
+  boolean isBeat = bandVolume[0] > (avgVol*th)/100;
 
-  boolean isBeat = bandVolume[0] > avgVol*th;
-
-  avgVol = avgVol*(1.0-wt) + float(bandVolume[0])*wt;
+  const unsigned int wt = 10; // new volume levels are averaged with historical with this weighting.
+  avgVol = (avgVol*wt + bandVolume[0])/(wt+1);
 
   //  Serial << avgVol << bandVolume[0] << endl;
-
+  
   return(isBeat);
 
 }

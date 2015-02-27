@@ -18,6 +18,7 @@
 #include "Light.h"
 #include "Music.h"
 #include "Tower.h"
+#include "Mic.h"
 
 // when playing, a player can wait this interval between button presses before losing.
 #define PLAYER_TIMEOUT 2000UL // 2 seconds
