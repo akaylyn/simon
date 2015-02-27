@@ -1,46 +1,18 @@
-// compile for Mega
+// Mic
+#include "Mic.h"
 
-// MSGEQ7 datasheet: https://www.sparkfun.com/datasheets/Components/General/MSGEQ7.pdf
-
-#include <Metro.h>
-#include <Streaming.h>
-
-// pin locations
-#define MSGEQ7_STROBE_PIN      24
-#define MSGEQ7_RESET_PIN       22
-#define MSGEQ7_ANALOG_PIN      A15
-
-#define NUM_FREQUENCY_BANDS    7
 int bandVolume[NUM_FREQUENCY_BANDS];
 const int bandCenter[NUM_FREQUENCY_BANDS] = {
   63, 160, 400, 1000, 2500, 6250, 16000
 }; // in Hz.
 
-// see this discussion on what instruments appear in what band:
-// http://homerecording.com/bbs/general-discussions/mixing-techniques/frequency-charts-50110/
-
-void setup() {
-  Serial.begin(115200);
-  Serial << F("Mic: startup.") << endl;
-
-  micStart();
-
-  Serial << F("Mic startup complete.") << endl;
-}
-
-void loop() {
-  // couple of options for testing
-
-  // just show the entire frequency band.
-//  micPrint();
-//  delay(50);
-
-  boolean isBeat = micIsBeat();
-
-  if( isBeat ) {
-    Serial << F("beat: ") << millis() << endl;
-  }
-
+void micStart() {
+  // Set up the MSGEQ7 IC
+  pinMode(MSGEQ7_ANALOG_PIN, INPUT);
+  pinMode(MSGEQ7_STROBE_PIN, OUTPUT);
+  pinMode(MSGEQ7_RESET_PIN, OUTPUT);
+  digitalWrite(MSGEQ7_RESET_PIN, LOW);
+  digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
 }
 
 void micPrint() {
@@ -92,19 +64,19 @@ void micReadAll() {
 boolean micIsBeat() {
   // take advantage of the likelihood that "beats" are all in the lower band.
   getLowEndVolume();
-  
+
   static float avgVol=50; // dunno
   const float wt = 0.1;
   const float th = 1.5;
-  
+
   boolean isBeat = bandVolume[0] > avgVol*th;
- 
+
   avgVol = avgVol*(1.0-wt) + float(bandVolume[0])*wt;
-  
-//  Serial << avgVol << bandVolume[0] << endl;
-  
+
+  //  Serial << avgVol << bandVolume[0] << endl;
+
   return(isBeat);
-  
+
 }
 
 int getLowEndVolume() {
@@ -119,14 +91,4 @@ int getLowEndVolume() {
 
   // only updating the low end.
 }
-
-void micStart() {
-  // Set up the MSGEQ7 IC
-  pinMode(MSGEQ7_ANALOG_PIN, INPUT);
-  pinMode(MSGEQ7_STROBE_PIN, OUTPUT);
-  pinMode(MSGEQ7_RESET_PIN, OUTPUT);
-  digitalWrite(MSGEQ7_RESET_PIN, LOW);
-  digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
-}
-
 
