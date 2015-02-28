@@ -8,62 +8,62 @@
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
 
-// RFM12b radio:
-/* JeeLibs RFM12b radio comms:
-  See: http://jeelabs.org/2011/02/02/meet-the-rfm12b-board/
-  
-  +5V -> 5V
-  Ground -> GND
-  SPI clock (SCK) –> Uno digital 13 (Mega 52)
-  SPI data out (SDO) –> Uno digital 12 (Mega 50)
-  SPI data in (SDI) –> Uno digital 11 (Mega 51)
-  SPI select (SEL) –> Uno digital 10
-  IRQ –> Uno digital 2
-  +3.3V -> (unused, but a regulated 3.3 source if we need it)
-*/
+
+//------ sizes, indexing and inter-unit data structure definitions.
+#include <Simon_Common.h> 
+
 // SPI library requirements: http://arduino.cc/en/Reference/SPI
 #define RADIO_SCK 52 // SPI CLK
 #define RADIO_SDO 50 // SPI MISO
 #define RADIO_SDI 51 // SPI MOSI
 #define RADIO_SEL 53 // SPI SS
 #define RADIO_IRQ 2 // IRQ 0
+#define D_CS_PIN 10 // default SS pin for RFM module
 
-#include <Simon_Indexes.h> // sizes, indexing
 #include <SPI.h> // radio transmitter is a SPI device
 #include <EEPROM.h> // saving and loading radio settings
 #include <RFM12B.h> // RFM12b radio transmitter module
-#include <Simon_Comms.h> // comms between Towers and Console
+
+// startup Tower communications.
+void towerStart();
+  
+// instantiates radio communications
+byte networkStart();
+
+// ping network for quality
+#define D_PING_COUNT 10
+void networkPing(int count=D_PING_COUNT);
+
+// configure network
+void networkConfig();
+
+// configure a single tower
+void towerConfig(towerConfiguration & config, byte nodeID);
+
+// set lights on Tower with optional immediate send.  
+void towerLightSet(byte colorIndex, byte level, boolean sendNow=false, byte nodeID=0);
+
+// set fire on Tower with optional immediate send.  
+void towerFireSet(byte fireIndex, byte level, boolean fireAllowed, boolean sendNow=false, byte nodeID=0);
+
+// clears all of the instructions 
+void towerClearInstructions();
 
 // reissue gameplay packets this many times
 #define TOWER_ECHO_COUNT 3
-// but pause between this long
-#define SEND_INTERVAL 5UL
 
-// tower startup
-void towerStart();
+// turns off light and fire on Towers with immediate send.
+void towerQuiet(int sendN=TOWER_ECHO_COUNT);
 
-// set lights on Tower with immediate send.  leaves previous instructions in-place!
-void towerLightSet(byte colorIndex, byte level);
+// sends the current value of inst to the Towers, and tries again in an interval by towerComms.
+void towerSendAll(int sendN=TOWER_ECHO_COUNT);
 
-// set fire on Tower with immediate send.  leaves previous instructions in-place!
-void towerFireSet(byte colorIndex, byte level);
-
-// turns off light and fire on Tower with immediate send.
-void towerQuiet();
-
-// sends the current value of inst to the Towers, and tries again in an interval by towerUpdate.
-void towerSend(int sendN=TOWER_ECHO_COUNT);
+// sends the current value of inst to a specific Tower, with no retries.
+void towerSendOne(byte nodeID);
 
 // check for inbound comms, resend instructions (if needed) periodically, send configuration periodically.
+// but pause between this long
+#define SEND_INTERVAL 5UL
 void towerUpdate();
-
-// ping network for quality
-void pingNetwork(int count=10);
-
-// configure network
-void configureNetwork();
-
-// send configuration to Towers
-void sendConfiguration();
 
 #endif

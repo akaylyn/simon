@@ -16,7 +16,9 @@
 #define LED_RED 11 // can move, PWM
 
 #include <Arduino.h>
-#include <Simon_Indexes.h> // sizes, indexing defines.
+
+//------ sizes, indexing and inter-unit data structure definitions.
+#include <Simon_Common.h> 
 
 #include <LED.h> // with LED abstraction
 

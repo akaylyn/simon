@@ -8,9 +8,10 @@
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers.
 
-#include <Simon_Indexes.h> // indexing.
+//------ sizes, indexing and inter-unit data structure definitions.
+#include <Simon_Common.h> 
+
 #include <RFM12B.h> // Console
-#include <Simon_Comms.h> // towerInstruction definition.
 
 // once we get radio comms, wait this long  before returning false from externUpdate.
 #define EXTERNAL_COMMS_TIMEOUT 10000UL

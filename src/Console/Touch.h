@@ -32,7 +32,9 @@
 
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
-#include <Simon_Indexes.h> // sizes, indexing
+
+//------ sizes, indexing and inter-unit data structure definitions.
+#include <Simon_Common.h> 
 
 //----- capsense touch: soft capsense buttons
 #include <MPR121.h> // MPR121 capsense board
@@ -57,6 +59,9 @@ boolean touchChanged(byte touchIndex);
 
 // returns true if a specific button is pressed
 boolean touchPressed(byte touchIndex);
+
+// runs a unit test on Touch
+void touchUnitTest();
 
 #endif
 
