@@ -45,7 +45,7 @@ radioPacket packet;
 #define N_PACKETS 100
 
 // APA102 led strip.  Note, this is only used on the Rx side.
-#define APA_NLED 66
+#define APA_NLED 200
 #define APA_DATA_PIN 4 // DI. JeeNode DO on Port 1. at the end of JeeNode LN.
 #define APA_CLOCK_PIN 7 // CI.  JeeNode DO on Port 4. mid-span of JeeNode LN.
 Adafruit_DotStar APAleds = Adafruit_DotStar(APA_NLED, APA_DATA_PIN, APA_CLOCK_PIN);
@@ -56,7 +56,7 @@ const uint32_t aBlu = APAleds.Color(0, 0, 255);
 const uint32_t aBlack = APAleds.Color(0, 0, 0);
 
 // WS2812B led strip.  Note, this is only used on the Rx side.
-#define WS_NLED 66
+#define WS_NLED 200
 #define WS_DATA_PIN A0 // AI. JeeNode AO on Port 4. at the end of JeeNode LN.
 Adafruit_NeoPixel WSleds = Adafruit_NeoPixel(WS_NLED, WS_DATA_PIN, NEO_GRB + NEO_KHZ800);
 const uint32_t wRed = WSleds.Color(255, 0, 0);
@@ -106,7 +106,7 @@ void loop() {
       doRx(); // receive radio traffic
       
       static boolean showAPA=true;
-      static boolean showWS=true;
+      static boolean showWS=false;
       doLeds(showAPA, showWS); // update the leds
       
       break;
@@ -144,7 +144,7 @@ void doTx() {
     radio.SendWait(); // wait for completion
     
     // wait for next send.
-    delay(sendInterval);
+ //   delay(sendInterval);
   }
 
   Serial << F("Packet sending complete at ") << millis() / 1000 << F(" sec.") << endl;
