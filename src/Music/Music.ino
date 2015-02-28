@@ -7,33 +7,10 @@
 #include <Metro.h> // timers
 #include <EasyTransfer.h> // data transfer between arduinos
 #include <SoundMessage.h> // message structure (used with EasyTransfer)
-
-// Serial speed.  match on the other side.
-#define SERIAL_SPEED 19200 // baud
-
-// LED pin to show we're playing
-#define LED_PIN 13
-
-// minimum volume to set [0-255].  0 is loudest
-#define MIN_MP3_VOL 100
+#include "Music.h"
 
 // track playing status
 byte playingWhat = 0;
-
-// See: https://learn.adafruit.com/adafruit-vs1053-mp3-aac-ogg-midi-wav-play-and-record-codec-tutorial/simple-audio-player-wiring
-// and player_interrupts example
-
-// VS1053 mp3:
-// SPI library requirements: http://arduino.cc/en/Reference/SPI
-#define MP3_CLK 13 // SPI CLK
-#define MP3_MISO 12 // SPI MISO
-#define MP3_MOSI 11 // SPI MOSI
-#define MP3_DREQ 2 // IRQ 1; set to 3 in the example; VS1053 Data request, ideally an Interrupt pin; called DREQ in the example
-#define MP3_XDCS 3 // can move; set to 8 in the example; VS1053 Data/command select pin (output); called BREAKOUT_DCS in the example
-#define MP3_SDCS 4 // can move; set to 4 in the example;  Card chip select pin; called CARDCS in the example
-#define MP3_CS 5 // can move; set to 10 in example; VS1053 chip select pin (output); called BREAKOUT_CS in the example
-#define MP3_RST 6 // can move; set to 9 in the example; VS1053 reset pin (output); called BREAKOUT_RESET in the example
-
 // instantiate
 Adafruit_VS1053_FilePlayer musicPlayer =
 //  Adafruit_VS1053_FilePlayer(MP3_RST, MP3_CS, MP3_XDCS, MP3_DREQ, MP3_SDCS);
@@ -41,20 +18,13 @@ Adafruit_VS1053_FilePlayer( // use hardware SPI with these commented out: MP3_MO
         MP3_RST, MP3_CS, MP3_XDCS, MP3_DREQ,
         MP3_SDCS);
 
-const int NUM_DIRECTORIES = 4;
 // holds the location of the tracks
 const char dirBaff[] = "BAFF";
 const char dirWins[] = "WINS";
 const char dirLose[] = "LOSE";
 const char dirRock[] = "ROCK";
 
-// holds the number of possible tracks to play in each gesture
-// also holds the location
-typedef struct
-{
-    char *loc;
-    int count;
-} DirInfo;
+const int NUM_DIRECTORIES = 4;
 
 EasyTransfer easyTransfer;
 SoundMessage message;
@@ -92,8 +62,8 @@ void serialEvent() {
 void loop() {
 
     // check playing state, and report if we've stopped
-    if ( message.type > TYPE_STOP && !musicPlayer.playingMusic) {
-        Serial << endl; // TODO: what does this line do?
+    if (message.type > TYPE_STOP && !musicPlayer.playingMusic) {
+        Serial << endl; // it adds carriage return after a string of dots, see loop below
         musicPlayer.setVolume(message.volume, message.volume);
         playRandomTrack(musicDir[message.type]);
     } else if ( message.type == TYPE_STOP && musicPlayer.playingMusic ) {
@@ -121,7 +91,7 @@ void playRandomTrack(DirInfo &dirInfo) {
 
     File dir = SD.open(dirInfo.loc);
     if ( ! dir.isDirectory() ) {
-        Serial << F("Error! not a directory: ") << dirName << endl;
+        Serial << F("Error! not a directory: ") << dirInfo.loc << endl;
     }
     dir.rewindDirectory(); // can't seem to cleanly get the SD card file handlers to start at the top of the dir!!!!
 
@@ -142,7 +112,7 @@ void playRandomTrack(DirInfo &dirInfo) {
 
     dir.close();
 
-    Serial << endl << F(" -> ") << dir.name() << F("/") << entry.name() << F(" [") << track + 1 << F("/") << totalTracks << F("]") << endl;
+    Serial << endl << F(" -> ") << dir.name() << F("/") << entry.name() << F(" [") << track + 1 << F("/") << dirInfo.count << F("]") << endl;
 
     // make sure we've stopped.
     while (! musicPlayer.stopped() );
@@ -175,17 +145,13 @@ void musicStart() {
     }
     Serial << F("SD OK!") << endl;
 
+    Serial << F("Track counts:") << endl;
     configMusicDir(musicDir[TYPE_BAFF], dirBaff);
     configMusicDir(musicDir[TYPE_WIN], dirWins);
     configMusicDir(musicDir[TYPE_LOSE], dirLose);
     configMusicDir(musicDir[TYPE_ROCK], dirRock);
 
     // show counts
-    Serial << F("Track counts:") << endl;
-    Serial << dirBaff << F(": ") << tracksBaff << endl;
-    Serial << dirWins << F(": ") << tracksWins << endl;
-    Serial << dirLose << F(": ") << tracksLose << endl;
-    Serial << dirRock << F(": ") << tracksRock << endl;
 
     // Set volume for left, right channels. lower numbers == louder volume!
     musicPlayer.setVolume(0, 0);
@@ -194,7 +160,7 @@ void musicStart() {
     Serial.flush();
 }
 
-void configMusicDir(DirInfo &dirInfo, const char &loc) {
+void configMusicDir(DirInfo &dirInfo, const char *loc) {
     dirInfo.count = countTracks(loc);
     dirInfo.loc = loc;
 }
@@ -216,10 +182,10 @@ void musicUnitTest() {
 }
 
 // File listing helper
-int countTracks(const char &dirInfo) {
+int countTracks(const char *loc) {
     int count = 0; // track number
 
-    File dir = SD.open(dirInfo);
+    File dir = SD.open(loc);
 
     while (true) {
 
@@ -237,6 +203,7 @@ int countTracks(const char &dirInfo) {
     }
 
     dir.close();
+    Serial << loc << F(": ") << count << endl;
     return (count);
 }
 

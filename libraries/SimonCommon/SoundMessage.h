@@ -9,14 +9,14 @@
 #define TYPE_ROCK 4
 #define TYPE_VOLUME 5
 
-#define TYPE_DEFAULT TYPE_STOP
+#define TYPE_DEFAULT 0
 #define PLAY_COUNT_DEFAULT 1
 
 // Used for instructing the music module on what to play.
-struct SoundMessage {
+typedef struct {
     int type;
     int playCount;
     int volume;
-};
+} SoundMessage;
 #endif
 
