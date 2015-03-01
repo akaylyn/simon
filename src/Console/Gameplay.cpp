@@ -1,4 +1,5 @@
 #include "Gameplay.h"
+#include "Sound.h"
 
 // during idle, do a fanfare of light, music and fire
 Metro kioskTimer(KIOSK_FANFARE_MAX);
@@ -24,9 +25,12 @@ State player = State(playerState);
 // the state machine controls which of the states get attention and execution time
 FSM simon = FSM(idle); //initialize state machine, start in state: idle
 
+Sound sound;
+
 // startup
-void gameplayStart() {
+void gameplayStart(Sound &currSound) {
     Serial << F("Gameplay: startup.") << endl;
+    sound = currSound;
 }
 
 // call this from loop()
@@ -108,6 +112,7 @@ void playerState() {
         // if so, show the correct next button
         play(correctSequence[correctLength], false);
         // wait
+        sound.playBaff();
         Metro delayNow(2000);
         while (! delayNow.check() ) {
             towerUpdate();
@@ -147,7 +152,8 @@ void playerState() {
         } else {
             Serial << F("Gameplay: Player incorrect.  currentLength = ") << currentLength << endl;
             // if so, show the correct next button
-            play(correctSequence[correctLength], false);
+            //play(correctSequence[correctLength], false);
+            animateFailure();
             // wait
             Metro delayNow(3000);
             while (! delayNow.check() ) {
@@ -189,7 +195,7 @@ void setSoundLights(byte colorIndex, boolean correctTone) {
     towerLightSet(colorIndex, LIGHT_ON);
 
     // Sound on Console and Tower
-    musicTone(correctTone? colorIndex : I_NONE);
+    sound.playTone(correctTone? colorIndex : I_NONE);
 
     // Lights on Console
     lightSet(colorIndex, LIGHT_ON);
@@ -213,13 +219,31 @@ void play(char color, boolean correctTone) {
     }
 }
 
+void animateFailure()
+{
+    Serial << "AnimateFailure!" << endl;
+    sound.setVolume(0);
+    sound.playLose();
+    for (int i = 0; i < 6; i++) {
+        towerLightSet(I_ALL, LIGHT_ON);
+        lightSet(I_ALL, LIGHT_ON);
+
+        delay(300);
+
+        lightSet(I_ALL, LIGHT_OFF);
+        delay(300);
+    }
+
+    quiet();
+}
+
 // turn off lights and music
 void quiet() {
     // Lights and Fire on Tower
     towerQuiet();
 
     // Sound on Console and Tower
-    musicStop();
+    sound.stop();
 
     // Lights on Console
     lightSet(I_ALL, LIGHT_OFF);
@@ -329,10 +353,10 @@ void playerFanfare() {
 
     // turn up the music
     byte volume = MUSIC_DEFAULT_VOL;
-    musicVolumeSet(volume);
+    sound.setVolume(volume);
 
     // make sweet fire/light/music.
-    musicWins();
+    sound.playWin();
     while( ! fanfareDuration.check() ) {
         // should calculate Light and Fire on Towers here.
 
@@ -346,7 +370,7 @@ void playerFanfare() {
         if( volumeRampTime.check() ) {
             volumeRampTime.reset();
             volume--;
-            musicVolumeDown();
+            sound.decVolume();
         }
 
         // resend tower commands

@@ -16,7 +16,7 @@
 #include "Touch.h"
 #include "Button.h"
 #include "Light.h"
-#include "Music.h"
+#include "Sound.h"
 #include "Tower.h"
 
 // when playing, a player can wait this interval between button presses before losing.
@@ -26,7 +26,7 @@
 #define CHEATY_PANTS_MODE false
 
 // disable fanfare - originally used for speeding up debugging
-#define FANFARE_ENABLED false
+#define FANFARE_ENABLED true
 
 // define the minimum time between fanfares in kiosk mode  <- influenced by knob 1
 #define KIOSK_FANFARE_MIN 30000UL  // 30 seconds
@@ -53,7 +53,7 @@
 #define MUSIC_RAMP_DOWN_TIME 2000UL // ms
 
 // startup the Simon game
-void gameplayStart();
+void gameplayStart(Sound &currSound);
 
 // call this from to upate the FSM.  returns true if state in [game, player], false if [idle].
 boolean gameplayUpdate();
@@ -71,6 +71,9 @@ void setSoundLights(byte colorIndex, boolean correctTone);
 
 // decode color character and setSoundLights
 void play(char color, boolean correctTone);
+
+// play failure animation
+void animateFailure();
 
 // setSoundLights off.
 void quiet();
