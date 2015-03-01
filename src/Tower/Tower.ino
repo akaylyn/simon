@@ -173,10 +173,10 @@ void loop() {
 
   if ( systemResetFlag ) {
     // if the reset pin is held, turn to red lighting
-    redTestPattern();
-    delay(500);
+//    redTestPattern();
+//    delay(500);
     whiteTestPattern();
-    delay(500);
+//    delay(500);
   } else if ( networkTimedOut ) {
     // comms are quiet, so some test patterns are appropriate
     if ( !gameEnableFlag ) {
@@ -216,9 +216,9 @@ boolean gameEnabled() {
 void whiteTestPattern() {
   instClear(inst);
 
-  inst.lightLevel[I_RED] = 128;
-  inst.lightLevel[I_GRN] = 128;
-  inst.lightLevel[I_BLU] = 128;
+  inst.lightLevel[I_RED] = RED_MAX;
+  inst.lightLevel[I_GRN] = GRN_MAX;
+  inst.lightLevel[I_BLU] = BLU_MAX;
 
   performInstruction();
 }
@@ -226,7 +226,7 @@ void whiteTestPattern() {
 void redTestPattern() {
   instClear(inst);
 
-  inst.lightLevel[I_RED] = 255;
+  inst.lightLevel[I_RED] = RED_MAX;
 
   performInstruction();
 }

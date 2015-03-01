@@ -29,7 +29,7 @@
 #define BLU_PIN A2 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 #define YEL_PIN A3 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 // geometry
-#define BUTTON_N 45 // wrapped around each button
+#define BUTTON_N 49 // wrapped around each button
 
 // LED indicator to ack button presses
 #define LED_PIN 13
