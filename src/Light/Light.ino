@@ -154,7 +154,8 @@ void loop() {
   if ( stripUpdateInterval.check() ) {
     // compute the next step and flag for show.
     updateRule90(rimJob, PIXEL_TTL); rimUpdated = true;
-
+    
+    // if we wanted the buttons to animate differently than the rim, this would be the place to do it.
     updateRule90(redL, PIXEL_TTL); redUpdated = true;
     updateRule90(grnL, PIXEL_TTL); grnUpdated = true;
     updateRule90(bluL, PIXEL_TTL); bluUpdated = true;
@@ -403,7 +404,6 @@ void updateRule90(Adafruit_NeoPixel &strip, unsigned long ttl) {
     } else {
       color = mergeColor(adjustColor(ps, ttl), adjustColor(ns, ttl));
     }
-
 
     // set the pixel
     strip.setPixelColor(i, color);
