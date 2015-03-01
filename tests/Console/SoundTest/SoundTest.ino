@@ -33,7 +33,6 @@ void setup() {
 void loop() {
     Serial << "~~ loop ~~" << endl;
     // just to make sure not to overload the console
-    sound.setVolume(0);
     delay(DELAY_TIME);
 
     Serial << "Playing WIN" << endl;

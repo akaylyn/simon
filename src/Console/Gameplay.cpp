@@ -112,6 +112,7 @@ void playerState() {
         // if so, show the correct next button
         play(correctSequence[correctLength], false);
         // wait
+        sound.playBaff();
         Metro delayNow(2000);
         while (! delayNow.check() ) {
             towerUpdate();
@@ -221,16 +222,18 @@ void play(char color, boolean correctTone) {
 void animateFailure()
 {
     Serial << "AnimateFailure!" << endl;
+    sound.setVolume(0);
+    sound.playLose();
     for (int i = 0; i < 6; i++) {
         towerLightSet(I_ALL, LIGHT_ON);
         lightSet(I_ALL, LIGHT_ON);
-        sound.playTone(I_ALL);
 
-        delay(50);
-        quiet();
+        delay(300);
+
+        lightSet(I_ALL, LIGHT_OFF);
+        delay(300);
     }
-    sound.playBaff();
-    delay(2000);
+
     quiet();
 }
 

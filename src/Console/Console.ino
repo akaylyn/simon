@@ -166,13 +166,13 @@ void loop() {
       if( index == I_NONE ) {
         Serial << F("\tReleased.") << endl;
         lightStart();
-        musicStop();
+        sound.stop();
         // no Tower instructions needed.  commsDefault zeros it out, but let's be pedantic
 
       } else  {
         Serial << F("Pressed: ") << index;
         lightSet(index, LIGHT_ON);
-        musicTone(index);
+        sound.playTone(index);
         towerLightSet(index, 255);
         towerFireSet(index, 255, fireMode);
       }

@@ -11,7 +11,7 @@
 #define SPEAKER_WIRE 3 // can move, PWM needed
 
 #include <Arduino.h>
-#include <Simon_Indexes.h> // sizes, indexing defines.
+#include <Simon_Common.h> // sizes, indexing defines.
 #include <Streaming.h> // <<-style printing
 #include <EasyTransfer.h> // data transfer between arduinos
 #include <SoundMessage.h> // sound message structure and consts
@@ -32,9 +32,9 @@
 #define MUSIC_COMMS_RATE 19200
 
 // default sound level on Music module [0,9]
-#define MUSIC_MAX_VOL 9
-#define MUSIC_DEFAULT_VOL 7
-#define MUSIC_MIN_VOL 0
+#define MUSIC_MAX_VOL 0
+#define MUSIC_DEFAULT_VOL 100
+#define MUSIC_MIN_VOL 255
 
 class Sound {
     byte volume;
