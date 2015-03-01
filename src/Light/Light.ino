@@ -122,17 +122,17 @@ void setup() {
 
   // Initialize all pixels to 'sweet love makin'
   setupStrip(rimJob, Dead);
-  theaterChase(rimJob, SweetLoveMakin, 10); 
-  
+  theaterChase(rimJob, SweetLoveMakin, 10);
+
   setupStrip(redL, Dead);
-  theaterChase(redL, Red, 10); 
+  theaterChase(redL, Red, 10);
   setupStrip(grnL, Dead);
-  theaterChase(grnL, Grn, 10); 
+  theaterChase(grnL, Grn, 10);
   setupStrip(bluL, Dead);
-  theaterChase(bluL, Blu, 10); 
+  theaterChase(bluL, Blu, 10);
   setupStrip(yelL, Dead);
-  theaterChase(yelL, Yel, 10); 
-  
+  theaterChase(yelL, Yel, 10);
+
   Serial << F("Light: startup complete.") << endl;
 }
 
@@ -230,24 +230,25 @@ boolean buttonCheck() {
   bluButton.update();
   yelButton.update();
 
+  digitalWrite(LED_PIN, LOW);
+
   // check for pressed (LOW), and trigger pixels if pressed.
   if ( redButton.read() == LOW ) {
     buttonPressPattern(0);
     digitalWrite(LED_PIN, HIGH);
-  } else if ( grnButton.read() == LOW ) {
+  }
+  if ( grnButton.read() == LOW ) {
     buttonPressPattern(1);
     digitalWrite(LED_PIN, HIGH);
-  } else if ( bluButton.read() == LOW ) {
+  }
+  if ( bluButton.read() == LOW ) {
     buttonPressPattern(2);
     digitalWrite(LED_PIN, HIGH);
-  } else if ( yelButton.read() == LOW ) {
+  }
+  if ( yelButton.read() == LOW ) {
     buttonPressPattern(3);
     digitalWrite(LED_PIN, HIGH);
-  } else {
-    digitalWrite(LED_PIN, LOW);
-    return ( false ); // signal no buttons pressed.
   }
-
   return ( true );
 }
 

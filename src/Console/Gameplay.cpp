@@ -227,11 +227,10 @@ void animateFailure()
     for (int i = 0; i < 6; i++) {
         towerLightSet(I_ALL, LIGHT_ON);
         lightSet(I_ALL, LIGHT_ON);
-
         delay(300);
 
         lightSet(I_ALL, LIGHT_OFF);
-        delay(300);
+        delay(100);
     }
 
     quiet();
