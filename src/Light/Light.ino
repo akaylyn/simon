@@ -122,17 +122,17 @@ void setup() {
 
   // Initialize all pixels to 'sweet love makin'
   setupStrip(rimJob, Dead);
-  theaterChase(rimJob, SweetLoveMakin, 10); 
-  
+  theaterChase(rimJob, SweetLoveMakin, 10);
+
   setupStrip(redL, Dead);
-  theaterChase(redL, Red, 10); 
+  theaterChase(redL, Red, 10);
   setupStrip(grnL, Dead);
-  theaterChase(grnL, Grn, 10); 
+  theaterChase(grnL, Grn, 10);
   setupStrip(bluL, Dead);
-  theaterChase(bluL, Blu, 10); 
+  theaterChase(bluL, Blu, 10);
   setupStrip(yelL, Dead);
-  theaterChase(yelL, Yel, 10); 
-  
+  theaterChase(yelL, Yel, 10);
+
   Serial << F("Light: startup complete.") << endl;
   
   Serial << F("Waiting for Console...") << endl;
