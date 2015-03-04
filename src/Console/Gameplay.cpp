@@ -75,6 +75,13 @@ void idleState() {
         // let's do some light, music and fire
         idleFanfare();
     }
+    
+    // stubbing in microphone pickup activity.  
+    // doesn't do anything useful; just makes a tone that should be synchronized with the beat.
+    if( micIsBeat() ) {
+      tone( SPEAKER_WIRE, 63, 100UL ); // 63 Hz tone, which is the center of the bin used to detect beats.
+    } 
+    
 }
 
 // when the player has played, or at the start of the game, we're in this state

@@ -20,6 +20,9 @@
 #include "Button.h"
 #include <Bounce.h> // with debounce routine.
 
+// Mic
+#include "Mic.h"
+
 //------ "This" units.
 
 // Game Play subunit.  Responsible for Simon game.
@@ -75,6 +78,7 @@ void setup() {
   //------ Input units.
   if ( !touchStart() && RUN_UNIT_ON_ERROR || 0) touchUnitTest();
   if ( !buttonStart() && RUN_UNIT_ON_ERROR || 0) buttonUnitTest();
+  micStart();
   //------ Output units.
   lightStart();
   towerStart();
@@ -104,7 +108,8 @@ void loop() {
       Serial << "Fire ENABLED!" << endl;
       // fire is ENABLED.  make three "klaxons"
       freq = 100; // boops
-    } else {
+    } 
+    else {
       Serial << "Fire disabled!" << endl;
       // fire is disabled.  make three "cheeps"
       freq = 500; // cheeps
@@ -127,7 +132,8 @@ void loop() {
     gamePlayMode = gameEnabled();
     if( gamePlayMode ) {
       Serial << "Game enabled!" << endl;
-    } else {
+    } 
+    else {
       Serial << "Game DISABLED!" << endl;
     }
   }
@@ -141,7 +147,8 @@ void loop() {
       }
     }
     //touchUnitTest(50UL);
-  } else {
+  } 
+  else {
     // assume we're setting up the project on-site, so this is a good time to run unit tests, calibration activities, etc.
     // when a button is pressed, send the colors out and make some fire (drum machine mode?)
 
@@ -169,7 +176,8 @@ void loop() {
         sound.stop();
         // no Tower instructions needed.  commsDefault zeros it out, but let's be pedantic
 
-      } else  {
+      } 
+      else  {
         Serial << F("Pressed: ") << index;
         lightSet(index, LIGHT_ON);
         sound.playTone(index);
@@ -201,11 +209,12 @@ boolean gameEnabled() {
 }
 
 /* possible IRQ pins (for attachInterrupt):
-  pin 2 (IRQ 0) taken by RFM12b
-  pin 3 (IRQ 1) taken by VS1023
-  pin 21 (IRQ 2) taken by MPR121 (Wire library!)
-  pin 20 (IRQ 3) taken by MPR121 (Wire library!)
-  pin 19 (IRQ 4) reserved for MPR121
-  pin 18 (IRQ 5)
-*/
+ pin 2 (IRQ 0) taken by RFM12b
+ pin 3 (IRQ 1) taken by VS1023
+ pin 21 (IRQ 2) taken by MPR121 (Wire library!)
+ pin 20 (IRQ 3) taken by MPR121 (Wire library!)
+ pin 19 (IRQ 4) reserved for MPR121
+ pin 18 (IRQ 5)
+ */
+
 

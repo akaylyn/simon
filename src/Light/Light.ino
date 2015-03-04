@@ -29,7 +29,7 @@
 #define BLU_PIN A2 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 #define YEL_PIN A3 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 // geometry
-#define BUTTON_N 45 // wrapped around each button
+#define BUTTON_N 49 // wrapped around each button
 
 // LED indicator to ack button presses
 #define LED_PIN 13
@@ -134,6 +134,19 @@ void setup() {
   theaterChase(yelL, Yel, 10);
 
   Serial << F("Light: startup complete.") << endl;
+  
+  Serial << F("Waiting for Console...") << endl;
+  // put a lockout function here.  If we try to program with the other components powered off,
+  // the buttons all report pressed, and Light goes crazy with Serial spam which prevents upload.
+  // so we wait for all of the button pins to be pulled high.
+  while( redButton.read() == LOW && grnButton.read() == LOW && bluButton.read() == LOW && yelButton.read() == LOW) {
+    redButton.update();
+    grnButton.update();
+    bluButton.update();
+    yelButton.update();
+  }
+  
+  Serial << F("Console checked in.  Proceeding...") << endl;
 }
 
 void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
@@ -154,7 +167,8 @@ void loop() {
   if ( stripUpdateInterval.check() ) {
     // compute the next step and flag for show.
     updateRule90(rimJob, PIXEL_TTL); rimUpdated = true;
-
+    
+    // if we wanted the buttons to animate differently than the rim, this would be the place to do it.
     updateRule90(redL, PIXEL_TTL); redUpdated = true;
     updateRule90(grnL, PIXEL_TTL); grnUpdated = true;
     updateRule90(bluL, PIXEL_TTL); bluUpdated = true;
@@ -231,25 +245,21 @@ boolean buttonCheck() {
   yelButton.update();
 
   digitalWrite(LED_PIN, LOW);
-
+  boolean buttonPressed = false;
+  
   // check for pressed (LOW), and trigger pixels if pressed.
-  if ( redButton.read() == LOW ) {
-    buttonPressPattern(0);
+  if ( redButton.read() == LOW ) buttonPressPattern(0);
+  if ( grnButton.read() == LOW ) buttonPressPattern(1);
+  if ( bluButton.read() == LOW ) buttonPressPattern(2);
+  if ( yelButton.read() == LOW ) buttonPressPattern(3);
+  
+  if( buttonPressed ) {
     digitalWrite(LED_PIN, HIGH);
+    return( true ); // signal buttons pressed.
+  } else {     
+    digitalWrite(LED_PIN, LOW);
+    return( false ); // signal no buttons pressed.
   }
-  if ( grnButton.read() == LOW ) {
-    buttonPressPattern(1);
-    digitalWrite(LED_PIN, HIGH);
-  }
-  if ( bluButton.read() == LOW ) {
-    buttonPressPattern(2);
-    digitalWrite(LED_PIN, HIGH);
-  }
-  if ( yelButton.read() == LOW ) {
-    buttonPressPattern(3);
-    digitalWrite(LED_PIN, HIGH);
-  }
-  return ( true );
 }
 
 void buttonPressPattern(uint8_t button) {
@@ -404,7 +414,6 @@ void updateRule90(Adafruit_NeoPixel &strip, unsigned long ttl) {
     } else {
       color = mergeColor(adjustColor(ps, ttl), adjustColor(ns, ttl));
     }
-
 
     // set the pixel
     strip.setPixelColor(i, color);
