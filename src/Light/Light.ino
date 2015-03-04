@@ -134,6 +134,19 @@ void setup() {
   theaterChase(yelL, Yel, 10); 
   
   Serial << F("Light: startup complete.") << endl;
+  
+  Serial << F("Waiting for Console...") << endl;
+  // put a lockout function here.  If we try to program with the other components powered off,
+  // the buttons all report pressed, and Light goes crazy with Serial spam which prevents upload.
+  // so we wait for all of the button pins to be pulled high.
+  while( redButton.read() == LOW && grnButton.read() == LOW && bluButton.read() == LOW && yelButton.read() == LOW) {
+    redButton.update();
+    grnButton.update();
+    bluButton.update();
+    yelButton.update();
+  }
+  
+  Serial << F("Console checked in.  Proceeding...") << endl;
 }
 
 void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
@@ -231,25 +244,22 @@ boolean buttonCheck() {
   bluButton.update();
   yelButton.update();
 
+  digitalWrite(LED_PIN, LOW);
+  boolean buttonPressed = false;
+  
   // check for pressed (LOW), and trigger pixels if pressed.
-  if ( redButton.read() == LOW ) {
-    buttonPressPattern(0);
+  if ( redButton.read() == LOW ) buttonPressPattern(0);
+  if ( grnButton.read() == LOW ) buttonPressPattern(1);
+  if ( bluButton.read() == LOW ) buttonPressPattern(2);
+  if ( yelButton.read() == LOW ) buttonPressPattern(3);
+  
+  if( buttonPressed ) {
     digitalWrite(LED_PIN, HIGH);
-  } else if ( grnButton.read() == LOW ) {
-    buttonPressPattern(1);
-    digitalWrite(LED_PIN, HIGH);
-  } else if ( bluButton.read() == LOW ) {
-    buttonPressPattern(2);
-    digitalWrite(LED_PIN, HIGH);
-  } else if ( yelButton.read() == LOW ) {
-    buttonPressPattern(3);
-    digitalWrite(LED_PIN, HIGH);
-  } else {
+    return( true ); // signal buttons pressed.
+  } else {     
     digitalWrite(LED_PIN, LOW);
-    return ( false ); // signal no buttons pressed.
+    return( false ); // signal no buttons pressed.
   }
-
-  return ( true );
 }
 
 void buttonPressPattern(uint8_t button) {
