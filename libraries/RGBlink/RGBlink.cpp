@@ -246,6 +246,9 @@ RGB HSBtoRGB(HSB from_color)
 	RGB result;
  	from_color.bri = pgm_read_byte(&dim_curve[from_color.bri]);
  	from_color.sat = 255-pgm_read_byte(&dim_curve[255-from_color.sat]);
+	
+	// MGD: modified to not go below LED_MIN
+//	if( from_color.bri > 0 ) from_color.bri = max(from_color.bri, LED_MIN);
 
 	uint8_t r, b, g, base;
 

@@ -36,7 +36,9 @@ const HSB green 	= {hstep*2,255,255};
 const HSB blue 		= {hstep*4,255,255};
 const HSB yellow 	= {hstep  ,255,255};
 
-PROGMEM const prog_uint8_t dim_curve[256] = {
+// MGD added a minimum
+#define LED_MIN 10
+PROGMEM const uint8_t dim_curve[256] = {
     0,   1,   1,   2,   2,   2,   2,   2,   2,   3,   3,   3,   3,   3,   3,   3,
     3,   3,   3,   3,   3,   3,   3,   4,   4,   4,   4,   4,   4,   4,   4,   4,
     4,   4,   4,   5,   5,   5,   5,   5,   5,   5,   5,   5,   5,   6,   6,   6,

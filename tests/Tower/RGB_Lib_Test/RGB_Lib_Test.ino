@@ -31,6 +31,9 @@ void setup()
 {
   Serial.begin(115200);
 
+  // see: http://jeelabs.org/2011/11/09/fixing-the-arduinos-pwm-2/
+  bitSet(TCCR1B, WGM12); // puts Timer1 in Fast PWM mode to match Timer0.
+
   // random seed.
   randomSeed(analogRead(A3)); // or some other unconected pin
 
@@ -47,12 +50,15 @@ void loop()
   if ( switchTimer.check() ) {
 
     // set update intervals randomly
-    unsigned long onTime = random(TESTTIME / 4, (TESTTIME * 3) / 4);
-    unsigned long offTime = TESTTIME - onTime;
+//    unsigned long onTime = random(TESTTIME / 4, (TESTTIME * 3) / 4);
+//    unsigned long offTime = TESTTIME - onTime;
+    unsigned long onTime = TESTTIME/2;
+    unsigned long offTime = TESTTIME/2;
 
     // track the color we're on
     static int colorInd = NCOLORS;
 
+/*
     // determine if we going to SOLID or FADE
     if ( lightMode == SOLID ) {
       
@@ -75,7 +81,10 @@ void loop()
       Serial << "Solid " << colorInd << endl;
 
     }
-
+*/
+    colorInd = (colorInd + 1) % NCOLORS; // wrap
+    lightMode = FADE;
+    
     // update the lighting mode
     light.setMode(lightMode);
 
