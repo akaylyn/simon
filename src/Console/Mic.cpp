@@ -66,27 +66,30 @@ void micReadAll() {
 // this function will likely return false positives when it's initially called after startup
 // TODO: place avgVol in EEPROM for quicker restart.
 // it needs to be continually called to trace the volume level.
-boolean micIsBeat() {
-  // stores the running average of volume.
-  static unsigned long avgVol=10000; // dunno.  
-  
+
+byte micIsBeat(float th) {
   // take advantage of the likelihood that "beats" are all in the lower band.
-  getLowEndVolume(); // volume data now in bandVolume[0]
-
-  const unsigned long th = 175; // if the current reading exceeds the average by this percent, we've found a beat.
-  boolean isBeat = bandVolume[0] > (avgVol*th)/100;
-
-  const unsigned long wt = 10; // new volume levels are averaged with historical with this weighting.
-  avgVol = (avgVol*wt + bandVolume[0])/(wt+1);
-
-//  Serial << avgVol << bandVolume[0] << endl;
-//  delay(5);
-   
-  return(isBeat);
-
+//  getLowEndVolume();
+  micReadAll();
+  
+  const int sV = 60;
+  static float avgVol[NUM_FREQUENCY_BANDS]={ sV, sV, sV, sV, sV, sV, sV }; // dunno
+  byte isBeat = 0;
+  
+  const float wt = 0.10; // 1/wt weighting for updating average
+  
+  for( int i=0; i<NUM_FREQUENCY_BANDS; i++ ) {
+    if( float(bandVolume[i])/avgVol[i] >= th ) 
+      bitSet(isBeat, i);
+    
+    avgVol[i] = avgVol[i]*(1.0-wt) + float(bandVolume[i])*wt;
+  }
+  
+  return( isBeat );
+  
 }
 
-int getLowEndVolume() {
+void getLowEndVolume() {
   // Toggle the RESET pin of the MSGEQ7 to start reading from the lowest frequency band
   digitalWrite(MSGEQ7_RESET_PIN, HIGH); // HIGH for >= 100 nS; easy
   digitalWrite(MSGEQ7_RESET_PIN, LOW);
@@ -94,6 +97,11 @@ int getLowEndVolume() {
   digitalWrite(MSGEQ7_STROBE_PIN, LOW);
   delayMicroseconds(30); // Allow the output to settle
   bandVolume[0] = analogRead(MSGEQ7_ANALOG_PIN);
+  digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
+
+  digitalWrite(MSGEQ7_STROBE_PIN, LOW);
+  delayMicroseconds(30); // Allow the output to settle
+  bandVolume[1] = analogRead(MSGEQ7_ANALOG_PIN);
   digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
 
   // only updating the low end.
