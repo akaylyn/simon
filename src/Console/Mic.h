@@ -19,8 +19,8 @@
 void micStart();
 void micPrint();
 void micReadAll();
-boolean micIsBeat();
-int getLowEndVolume();
+byte micIsBeat(float threshold); // volumeNow/volumeAvg required to call it a "beat"
+void getLowEndVolume();
 
 
 #endif

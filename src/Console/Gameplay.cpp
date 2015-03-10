@@ -63,12 +63,14 @@ void idleState() {
     if ( buttonAnyPressed() || touchAnyPressed() ) {
         Serial << F("Gameplay: Idle->Game") << endl;
         quiet();
+        /* MGD removed this en lieu of anypresed.  The logic, below, doesn't exit with an abberant press.
         while (1) {
             if (buttonAnyChanged())
                 break;
             if (touchAnyChanged())
                 break;
-        }
+        }*/
+        while ( buttonAnyPressed() || touchAnyPressed() ) ;
         // let's play a game
         simon.transitionTo(game);
     } else if ( kioskTimer.check() ) {
@@ -78,10 +80,13 @@ void idleState() {
     
     // stubbing in microphone pickup activity.  
     // doesn't do anything useful; just makes a tone that should be synchronized with the beat.
-    if( micIsBeat() ) {
-      tone( SPEAKER_WIRE, 63, 100UL ); // 63 Hz tone, which is the center of the bin used to detect beats.
-    } 
-    
+    byte beatBits = micIsBeat(1.25); // 125% of basal level seems about right.
+    if( bitRead(beatBits,0) || bitRead(beatBits,1) ) { // probably just want 63Hz and 160Hz bands
+      Serial << F("beat at ") << millis() << endl;
+      tone( SPEAKER_WIRE, 200 ); 
+    } else {
+      noTone( SPEAKER_WIRE );
+    }   
 }
 
 // when the player has played, or at the start of the game, we're in this state

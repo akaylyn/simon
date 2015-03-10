@@ -20,7 +20,7 @@
 //----- manual buttons: hard buttons on a PCB. 
 #include <Bounce.h> 
 // debounce the hardware buttons on the console
-#define BUTTON_DEBOUNCE_TIME 10UL // ms
+#define BUTTON_DEBOUNCE_TIME 50UL // ms
 
 // note that the buttons are wired to ground with a pullup resistor.
 #define PRESSED_BUTTON LOW 

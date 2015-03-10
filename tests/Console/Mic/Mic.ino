@@ -19,10 +19,14 @@ const int bandCenter[NUM_FREQUENCY_BANDS] = {
 // see this discussion on what instruments appear in what band:
 // http://homerecording.com/bbs/general-discussions/mixing-techniques/frequency-charts-50110/
 
+#define LED 13
+
 void setup() {
   Serial.begin(115200);
   Serial << F("Mic: startup.") << endl;
 
+  pinMode(LED, OUTPUT);
+  
   micStart();
 
   Serial << F("Mic startup complete.") << endl;
@@ -33,13 +37,14 @@ void loop() {
 
   // just show the entire frequency band.
 //  micPrint();
-//  delay(50);
 
-  boolean isBeat = micIsBeat();
-
-  if( isBeat ) {
-    Serial << F("beat: ") << millis() << endl;
-  }
+  byte beatBits = micIsBeat(1.20);
+  if( bitRead( beatBits, 0) || bitRead( beatBits, 1) ) {
+    //Serial << F("beat: ") << millis() << endl;
+    digitalWrite(LED, HIGH);
+  } else {
+    digitalWrite(LED, LOW);
+  }    
 
 }
 
@@ -89,25 +94,30 @@ void micReadAll() {
   }
 }
 
-boolean micIsBeat() {
+
+byte micIsBeat(float th) {
   // take advantage of the likelihood that "beats" are all in the lower band.
-  getLowEndVolume();
+//  getLowEndVolume();
+  micReadAll();
   
-  static float avgVol=50; // dunno
-  const float wt = 0.1;
-  const float th = 1.5;
+  const int sV = 60;
+  static float avgVol[NUM_FREQUENCY_BANDS]={ sV, sV, sV, sV, sV, sV, sV }; // dunno
+  byte isBeat = 0;
   
-  boolean isBeat = bandVolume[0] > avgVol*th;
- 
-  avgVol = avgVol*(1.0-wt) + float(bandVolume[0])*wt;
+  const float wt = 0.10; // 1/wt weighting for updating average
   
-//  Serial << avgVol << bandVolume[0] << endl;
+  for( int i=0; i<NUM_FREQUENCY_BANDS; i++ ) {
+    if( float(bandVolume[i])/avgVol[i] >= th ) 
+      bitSet(isBeat, i);
+    
+    avgVol[i] = avgVol[i]*(1.0-wt) + float(bandVolume[i])*wt;
+  }
   
-  return(isBeat);
+  return( isBeat );
   
 }
 
-int getLowEndVolume() {
+void getLowEndVolume() {
   // Toggle the RESET pin of the MSGEQ7 to start reading from the lowest frequency band
   digitalWrite(MSGEQ7_RESET_PIN, HIGH); // HIGH for >= 100 nS; easy
   digitalWrite(MSGEQ7_RESET_PIN, LOW);
@@ -115,6 +125,11 @@ int getLowEndVolume() {
   digitalWrite(MSGEQ7_STROBE_PIN, LOW);
   delayMicroseconds(30); // Allow the output to settle
   bandVolume[0] = analogRead(MSGEQ7_ANALOG_PIN);
+  digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
+
+  digitalWrite(MSGEQ7_STROBE_PIN, LOW);
+  delayMicroseconds(30); // Allow the output to settle
+  bandVolume[1] = analogRead(MSGEQ7_ANALOG_PIN);
   digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
 
   // only updating the low end.

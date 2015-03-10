@@ -1,0 +1,34 @@
+/*
+ * Classes & Structs
+ */
+
+LED		KEYWORD1
+HSB		KEYWORD1
+RGB		KEYWORD1
+
+/*
+ * Functions
+ */
+
+on		KEYWORD2
+off		KEYWORD2
+update	KEYWORD2
+
+setMode	KEYWORD2
+getMode	KEYWORD2
+
+setBlink	KEYWORD2
+setColor	KEYWORD2
+writeRGB	KEYWORD2
+writeHSB	KEYWORD2
+
+initDefaults	KEYWORD2
+
+/*
+ * Constants
+ */
+
+red		LITERAL1
+green	LITERAL1
+blue	LITERAL1
+yellow	LITERAL1
