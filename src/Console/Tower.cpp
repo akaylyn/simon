@@ -150,7 +150,14 @@ void towerConfig(towerConfiguration & config, byte nodeID) {
 // set lights on Tower with optional immediate send.  
 void towerLightSet(byte colorIndex, byte level, boolean sendNow, byte nodeID) {
   // set instructions
-  inst.lightLevel[colorIndex] = level;
+  if( colorIndex == I_ALL ) {
+    inst.lightLevel[I_RED] = level;
+    inst.lightLevel[I_GRN] = level;
+    inst.lightLevel[I_BLU] = level;
+    inst.lightLevel[I_YEL] = level;
+  } else if( colorIndex >= I_RED && colorIndex <= I_YEL ) {
+    inst.lightLevel[colorIndex] = level;
+  }
   // send it?
   if( sendNow ) {
     if( nodeID == 0 ) {
@@ -165,6 +172,14 @@ void towerLightSet(byte colorIndex, byte level, boolean sendNow, byte nodeID) {
 void towerFireSet(byte fireIndex, byte level, boolean fireAllowed, boolean sendNow, byte nodeID) {
   // set instructions
   inst.fireLevel[fireIndex] = fireAllowed ? level : 0;
+  if( fireIndex == I_ALL ) {
+    inst.fireLevel[I_RED] = level;
+    inst.fireLevel[I_GRN] = level;
+    inst.fireLevel[I_BLU] = level;
+    inst.fireLevel[I_YEL] = level;
+  } else if( fireIndex >= I_RED && fireIndex <= I_YEL ) {
+    inst.fireLevel[fireIndex] = level;
+  }
   // send it?
   if( sendNow ) {
     if( nodeID == 0 ) {
