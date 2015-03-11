@@ -55,10 +55,13 @@ class Sound {
         void incVolume();
         void decVolume();
 
-        void playTone(byte colorIndex, unsigned long duration=0);
+        void playTone(byte colorIndex, boolean correctTone=true, unsigned long duration=0);
 
         // Stop playing sounds
         void stop();
+        
+        // unit test for Music
+        void unitTest();
 
     private:
         // Send request to play a sound (using EasyTransfer)
@@ -66,8 +69,7 @@ class Sound {
 
 };
 
-// unit test for Music
-void soundTest();
+extern Sound sound;
 
 #endif
 

@@ -14,10 +14,8 @@
 
 // makes heavy use of the modules.
 #include "Touch.h"
-#include "Button.h"
 #include "Light.h"
 #include "Sound.h"
-#include "Tower.h"
 #include "Mic.h"
 
 // when playing, a player can wait this interval between button presses before losing.

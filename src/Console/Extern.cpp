@@ -13,6 +13,9 @@ extern towerInstruction inst;
 // Need an instance of the Radio Module.  Instantiated in Tower.cpp.
 extern RFM12B radio;
 
+// storage for instructions
+towerInstruction inst;
+
 // sets up external interface
 void externStart() {
   Serial << F("Extern: startup.") << endl;
@@ -36,7 +39,7 @@ boolean externUpdate() {
       // save instruction for lights/flame
       inst = *(towerInstruction*)radio.GetData();
       // do it.
-      externDoInstruction();
+      light.sendInstruction(inst);
 
     }
 
@@ -49,13 +52,4 @@ boolean externUpdate() {
   return ( !externTimeout.check() );
 }
 
-// takes a towerInstruction and plays that out on the Console.  meh.
-void externDoInstruction() {
-  // very straight-forward.  Emulates button presses on the Console according to towerInstruction light settings.
-  pixelSet(I_RED, inst.lightLevel[I_RED]);
-  pixelSet(I_GRN, inst.lightLevel[I_GRN]);
-  pixelSet(I_BLU, inst.lightLevel[I_BLU]);
-  pixelSet(I_YEL, inst.lightLevel[I_YEL]);
 
-  // towerInstruction fireLevel is ignored on the Console.
-}

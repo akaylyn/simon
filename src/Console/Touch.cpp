@@ -2,16 +2,16 @@
 
 #include "Touch.h"
 
-// Walkthrough: https://learn.adafruit.com/adafruit-mpr121-12-key-capacitive-touch-sensor-breakout-tutorial/wiring
-// MPR121 Datasheet: http://www.adafruit.com/datasheets/MPR121.pdf
+// buttons
+Bounce redButton = Bounce(BUTTON_RED, BUTTON_DEBOUNCE_TIME);
+Bounce grnButton = Bounce(BUTTON_GRN, BUTTON_DEBOUNCE_TIME);
+Bounce bluButton = Bounce(BUTTON_BLU, BUTTON_DEBOUNCE_TIME);
+Bounce yelButton = Bounce(BUTTON_YEL, BUTTON_DEBOUNCE_TIME);
 
-#define MPR121_I2CADDR_DEFAULT 0x5A
-#define DEBUG true
+// MPR121 object instantiated in the library.
 
-boolean touchStart() {
-  // some reasonable defaults are set.
-  // expect this to be called after startup
-  // and again between games.
+boolean Touch::begin() {
+
   Serial << F("Touch: startup.") << endl;
 
   // following Examples->BareConductive_MPR->SimpleTouch
@@ -21,151 +21,138 @@ boolean touchStart() {
     Serial << F("Touch: error setting up MPR121");
     switch (MPR121.getError()) {
       case ADDRESS_UNKNOWN:
-        Serial << F("Touch: incorrect address") << endl;
+        Serial << F("MPR121: incorrect address") << endl;
         return ( false );
         break;
       case READBACK_FAIL:
-        Serial << F("readback failure") << endl;
+        Serial << F("MPR121: readback failure") << endl;
         return ( false );
         break;
       case OVERCURRENT_FLAG:
-        Serial << F("overcurrent on REXT pin") << endl;
+        Serial << F("MPR121: overcurrent on REXT pin") << endl;
         return ( false );
         break;
       case OUT_OF_RANGE:
-        Serial << F("electrode out of range") << endl;
+        Serial << F("MPR121: electrode out of range") << endl;
         return ( false );
         break;
       case NOT_INITED:
-        Serial << F("not initialised") << endl;
+        Serial << F("MPR121: not initialised") << endl;
         return ( false );
         break;
       default:
-        Serial << F("unknown error") << endl;
+        Serial << F("MPR121: unknown error") << endl;
         return ( false );
         break;
     }
   }
   else {
-    Serial << F("Touch: no error") << endl;
+    Serial << F("MPR121: no error") << endl;
     // set the interrupt handler.
     MPR121.setInterruptPin(TOUCH_IRQ);
-    
+
     // enable 13-th virtual proximity electrode, tying electrodes 0..3 together.
     MPR121.setProxMode(PROX0_3);
-    
-    // initial data update
-    touchCalibrate();
-    MPR121.updateTouchData();
 
-    return (true);
+    // initial data update
+    MPR121.updateAll();
   }
 
-}
+  Serial << F("Touch: setting up hard buttons.") << endl;
+  pinMode(BUTTON_RED, INPUT_PULLUP);
+  pinMode(BUTTON_GRN, INPUT_PULLUP);
+  pinMode(BUTTON_BLU, INPUT_PULLUP);
+  pinMode(BUTTON_YEL, INPUT_PULLUP);
 
-// calibrates the Touch interface
-void touchCalibrate() {
-  // also gets baseline, proxity, etc.
-  MPR121.updateAll();
+  button[I_RED] = &redButton;
+  button[I_GRN] = &grnButton;
+  button[I_BLU] = &bluButton;
+  button[I_YEL] = &yelButton;
+  
+  Serial << F("Button: startup complete.") << endl;
 
-  Serial << "Touch: calibrate." << endl;
-  Serial << "Red:";
-  Serial << " data(" << MPR121.getTouchData(I_RED) << ")";
-  Serial << " touch(" << MPR121.getTouchThreshold(I_RED) << ")";
-  Serial << " release(" << MPR121.getReleaseThreshold(I_RED) << ")";
-  Serial << " filtered(" << MPR121.getFilteredData(I_RED) << ")";
-  Serial << " base(" << MPR121.getBaselineData(I_RED) << ")";
-  Serial << endl;
-}
-
-// returns true if any of the buttons have switched states.
-// avoid short-circuit eval so that each button gets an update
-boolean touchAnyPressed() {
-  return (
-           touchPressed(I_RED) ||
-           touchPressed(I_GRN) ||
-           touchPressed(I_BLU) ||
-           touchPressed(I_YEL)
-         );
-}
-
-// returns true if any of the buttons are pressed.
-boolean touchAnyChanged() {
-  return (
-           touchChanged(I_RED) ||
-           touchChanged(I_GRN) ||
-           touchChanged(I_BLU) ||
-           touchChanged(I_YEL)
-         );
-}
-
-// returns true WHILE a specific sensor IS PRESSED
-// this function will be called after touchChanged() asserts a change.
-boolean touchPressed(byte touchIndex) {
-  if (touchIndex == I_ALL) return touchAnyPressed();
-
-  MPR121.updateTouchData();
-  return MPR121.getTouchData(touchIndex);
+  return ( true );
 }
 
 // Returns true if the state of a specific button has changed
 // based on what it was previously.
-boolean touchChanged(byte touchIndex) {
-  if (touchIndex == I_ALL) return touchAnyChanged();
+boolean Touch::changed(byte index) {
+  boolean ret = false;
+
+  // capsense
+  static boolean previousState[N_COLORS];
 
   MPR121.updateTouchData();
-  static boolean previousState[N_COLORS];
-  boolean currentState = MPR121.getTouchData(touchIndex);
-  if (previousState[touchIndex] != currentState) {
-    previousState[touchIndex] = currentState;
-    return true;
+  boolean currentState = MPR121.getTouchData(index);
+
+  if (previousState[index] != currentState) {
+    previousState[index] = currentState;
+    ret |= true;
   }
-  return false;
+
+  // hard buttons
+  ret |= button[index]->update();
+
+  // return
+  return ( ret );
+
+}
+// returns true if any of the buttons are pressed.
+boolean Touch::anyChanged() {
+  return (
+           changed(I_RED) ||
+           changed(I_GRN) ||
+           changed(I_BLU) ||
+           changed(I_YEL)
+         );
 }
 
-// runs a unit test on Touch
-// hold all buttons down to exit
-void touchUnitTest() {
-  static boolean keepRunning = true;
-  while ( keepRunning ) {
 
-    // also gets baseline, proxity, etc.
-    MPR121.updateAll();
+// returns true WHILE a specific sensor IS PRESSED
+// this function will be called after touchChanged() asserts a change.
+boolean Touch::pressed(byte index) {
+  boolean ret = false;
 
-    boolean red = touchPressed(I_RED);
-    boolean grn = touchPressed(I_GRN);
-    boolean blu = touchPressed(I_BLU);
-    boolean yel = touchPressed(I_YEL);
+  // capsense
+  MPR121.updateTouchData();
+  ret |= MPR121.getTouchData(index);
 
-    Serial << "R: " << red;
-    Serial << " G: " << grn;
-    Serial << " B: " << blu;
-    Serial << " Y: " << yel;
-    Serial << endl;
+  // hard buttons
+  // call the updater for debouncing first.
+  boolean toss = button[index]->update();
 
-    delay(100);
-    keepRunning = !(red && grn && blu && yel);
-  }
+  ret |= button[index]->read() == PRESSED_BUTTON;
+
+  // return
+  return ( ret );
 }
 
+// returns true if any of the buttons have switched states.
+// avoid short-circuit eval so that each button gets an update
+boolean Touch::anyPressed() {
+  return (
+           pressed(I_RED) ||
+           pressed(I_GRN) ||
+           pressed(I_BLU) ||
+           pressed(I_YEL)
+         );
+}
 // for distance/proximity, see http://cache.freescale.com/files/sensors/doc/app_note/AN3893.pdf
 
-// returns "distance" an object is to the sensor, scaled [0, 32767] 
+// returns "distance" an object is to the sensor, scaled [0, 32767]
 // realistically, we have 10-bit resolution?
-int touchDistance(byte touchIndex) {
-  
+int Touch::distance(byte sensorIndex) {
+
   // for this, we need the baseline and filtered data
   boolean foo = MPR121.updateBaselineData();
   boolean bar = MPR121.updateFilteredData();
 
   // save the maximum delta we note
-  static int maxDelta[13]={0,0,0,0,0,0,0,0,0,0,0,0,0};
-  for(int i=0; i<13; i++ ) {
+  static int maxDelta[13] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  for (int i = 0; i < 13; i++ ) {
     maxDelta[i] = max(maxDelta[i], MPR121.getBaselineData(i) - MPR121.getFilteredData(i));
   }
-  
-  // which sensor are we interested in?
-  byte sensorIndex = touchIndex == I_ALL ? 12 : touchIndex;
+
   // the larger the delta, the closer the object
   int sensorDelta = MPR121.getBaselineData(sensorIndex) - MPR121.getFilteredData(sensorIndex);
 
@@ -177,7 +164,7 @@ int touchDistance(byte touchIndex) {
 
   float distance = fscale(0, maxDelta[sensorIndex], maxInt, 0, sensorDelta, calibrant);
 
-  return( int(distance) );
+  return ( int(distance) );
 
 }
 
@@ -202,7 +189,7 @@ float fscale( float originalMin, float originalMax, float newBegin, float newEnd
   curve = pow(10, curve); // convert linear scale into lograthimic exponent for other pow function
 
   /*
-   Serial.println(curve * 100, DEC);   // multply by 100 to preserve resolution  
+   Serial.println(curve * 100, DEC);   // multply by 100 to preserve resolution
    Serial.println();
    */
 
@@ -217,7 +204,7 @@ float fscale( float originalMin, float originalMax, float newBegin, float newEnd
   // Zero Refference the values
   OriginalRange = originalMax - originalMin;
 
-  if (newEnd > newBegin){
+  if (newEnd > newBegin) {
     NewRange = newEnd - newBegin;
   }
   else
@@ -230,12 +217,12 @@ float fscale( float originalMin, float originalMax, float newBegin, float newEnd
   normalizedCurVal  =  zeroRefCurVal / OriginalRange;   // normalize to 0 - 1 float
 
   /*
-  Serial.print(OriginalRange, DEC);  
-   Serial.print("   ");  
-   Serial.print(NewRange, DEC);  
-   Serial.print("   ");  
-   Serial.println(zeroRefCurVal, DEC);  
-   Serial.println();  
+  Serial.print(OriginalRange, DEC);
+   Serial.print("   ");
+   Serial.print(NewRange, DEC);
+   Serial.print("   ");
+   Serial.println(zeroRefCurVal, DEC);
+   Serial.println();
    */
 
   // Check for originalMin > originalMax  - the math for all other cases i.e. negative numbers seems to work out fine
@@ -243,14 +230,16 @@ float fscale( float originalMin, float originalMax, float newBegin, float newEnd
     return 0;
   }
 
-  if (invFlag == 0){
+  if (invFlag == 0) {
     rangedValue =  (pow(normalizedCurVal, curve) * NewRange) + newBegin;
 
   }
   else     // invert the ranges
-  {  
+  {
     rangedValue =  newBegin - (pow(normalizedCurVal, curve) * NewRange);
   }
 
   return rangedValue;
 }
+
+Touch touch;

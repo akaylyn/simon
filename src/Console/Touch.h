@@ -1,70 +1,75 @@
-// Touch subunit. Responsible for UX input.
-
-// This file should match src/Console/Touch.h
+/*
+ * Touch subunit. Responsible for UX input (buttons and touch sensors).
+ *
+ */
 
 #ifndef Touch_h
 #define Touch_h
 
 #include <Arduino.h>
 
-// MPR121 touch:
-/* AdaFruit MPR121 capsense touch:
-  See: https://learn.adafruit.com/adafruit-mpr121-12-key-capacitive-touch-sensor-breakout-tutorial/wiring
+//----- capsense touch: soft capsense buttons
+#include <MPR121.h> // MPR121 capsense board
+// Walkthrough: https://learn.adafruit.com/adafruit-mpr121-12-key-capacitive-touch-sensor-breakout-tutorial/wiring
+// MPR121 Datasheet: http://www.adafruit.com/datasheets/MPR121.pdf
 
-  Vin -> 5V
-  3Vo -> (unused, but a regulated 3.3 source if we need it)
-  GND -> GND
-  SCL -> Uno A5 (Mega 21)
-  SDA -> Uno A4 (Mega 20)
-  IRQ -> (unused, but could be added to generate an interrupt on touch and released
-  ADDR ->
-
-    ADDR not connected: 0x5A
-    ADDR tied to 3V: 0x5B
-    ADDR tied to SDA: 0x5C
-    ADDR tied to SCL: 0x5D
-
-*/
+#include <Wire.h> // capsense is an I2C device
 // Wire library requirements: http://arduino.cc/en/Reference/Wire
 #define TOUCH_SCL 21 // Wire SCL
 #define TOUCH_SDA 20 // Wire SDA
 #define TOUCH_IRQ 19 // IRQ 4, but could move if we don't implement an interrupt
+#define NUM_ELECTRODES 4
+#define MPR121_I2CADDR_DEFAULT 0x5A
+
+//----- manual buttons: hard buttons on a PCB.
+#include <Bounce.h>
+// debounce the hardware buttons on the console
+#define BUTTON_DEBOUNCE_TIME 50UL // ms
+
+// note that the buttons are wired to ground with a pullup resistor.
+#define PRESSED_BUTTON LOW
+// Manual Buttons
+// button switches.  wire to Arduino (INPUT_PULLUP) and GND.
+#define BUTTON_YEL 4 // can move, digital
+#define BUTTON_GRN 5 // can move, digital
+#define BUTTON_BLU 6 // can move, digital
+#define BUTTON_RED 7 // can move, digital
 
 #include <Streaming.h> // <<-style printing
-#include <Metro.h> // timers
 
 //------ sizes, indexing and inter-unit data structure definitions.
-#include <Simon_Common.h> 
+#include <Simon_Common.h>
 
-//----- capsense touch: soft capsense buttons
-#include <MPR121.h> // MPR121 capsense board
-#include <Wire.h> // capsense is an I2C device
+class Touch {
+  public:
+    // intialization; returns true if ok.
+    boolean begin();
 
-#define NUM_ELECTRODES 4
+    // state change checks
+    boolean changed(byte index); // returns true if state changed
+    boolean anyChanged(); // convenience function; returns true if any index is changed
 
-// starts the Touch interface; returns true if all good.
-boolean touchStart();
+    // pressed state checks
+    boolean pressed(byte index); // returns true if pressed
+    boolean anyPressed(); // convenience function; returns true if any index is pressed
 
-// calibrates the Touch interface
-void touchCalibrate();
+    // proximity/distance sensor
+    // returns "distance" an object is to the sensor
+    int distance(byte touchIndex = 12); // defaults to 13th "virtual" sensor.
 
-// returns true if any of the buttons have switched states.
-boolean touchAnyChanged();
+    // unit test
+    void unitTest();
 
-// returns true if any of the buttons are pressed.
-boolean touchAnyPressed();
+  private:
+    // update function; returns true if there's a state change
+    boolean update();
 
-// returns true if a specific button has changed
-boolean touchChanged(byte touchIndex);
+    // hardware buttons
+    Bounce *button[N_COLORS];  // messy, but I can't figure out how to declare without instantiation, which the compiler requires.
 
-// returns true if a specific button is pressed
-boolean touchPressed(byte touchIndex);
+};
 
-// runs a unit test on Touch
-void touchUnitTest();
-
-// returns "distance" an object is to the sensor
-int touchDistance(byte touchIndex=I_ALL); // defaults to 13th "virtual" sensor.
+extern Touch touch;
 
 // power transformation for nonlinear map() function
 float fscale( float originalMin, float originalMax, float newBegin, float newEnd, float inputValue, float curve);

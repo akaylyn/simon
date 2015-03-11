@@ -8,19 +8,25 @@
 #define I_GRN 1
 #define I_BLU 2
 #define I_YEL 3
-#define I_ALL N_COLORS // special case: react to requests on all channels
-#define I_NONE N_COLORS+1 // special case: react to NO requests of any kind.
 
 // during startup, Console defines which Tower(s) respond to color and fire signals in towerInstruction:
 typedef struct {
-	byte colorIndex; // what color(s) should a tower respond to?
-	byte fireIndex;  // what color(s) should a tower respond to?
-	// I_RED, I_GRN, I_BLU, I_YEL for specific color. 
-	// I_ALL for all.
-	// I_NONE for none.
-	unsigned long minFireTime; // maps fireLevel to ms
-	unsigned long maxFireTime; // maps fireLevel to ms
-	unsigned long flameCoolDownTime; // enforce a flame shutdown of this interval between poofs
+	// what color(s) should a tower respond to?
+	// e.g. lightListen={true, true, true, true} means the tower will show all colors
+	// e.g. lightListen={false, true, false, true} means the tower will show green and yellow
+	boolean lightListen[N_COLORS]; 
+	// what fires(s) should a tower respond to?
+	// e.g. as above
+	boolean fireListen[N_COLORS];  
+	// lighting instructions require no rescaling
+	// fire instructions need to rescale [0,255] to [min solenoid opening time, max solenoid opening time]
+	// e.g. opening time = map(inst.fireLevel, 0, 255, minFireTime, maxFireTime);
+	unsigned long minFireTime; 
+	unsigned long maxFireTime; 
+	// once the accumulator recloses, don't reopen for a time span which is the prior opening time
+	// divided by this number.
+	// e.g if the solenoid was just open for 50 ms, it won't open again for 50ms/flameCoolDownDivisor
+	unsigned int flameCoolDownDivisor; // enforce a flame shutdown of this interval between poofs
 } towerConfiguration;
 // EEPROM location for towerConfiguration settings.
 const byte towerConfigLocation = 69;
