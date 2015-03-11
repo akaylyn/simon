@@ -1,49 +1,60 @@
 // Mic
 #include "Mic.h"
 
-int bandVolume[NUM_FREQUENCY_BANDS];
 const int bandCenter[NUM_FREQUENCY_BANDS] = {
   63, 160, 400, 1000, 2500, 6250, 16000
 }; // in Hz.
 
-void micStart() {
+void Mic::begin() {
+  Serial << "Mic: startup." << endl;
+
   // Set up the MSGEQ7 IC
   pinMode(MSGEQ7_ANALOG_PIN, INPUT);
   pinMode(MSGEQ7_STROBE_PIN, OUTPUT);
   pinMode(MSGEQ7_RESET_PIN, OUTPUT);
   digitalWrite(MSGEQ7_RESET_PIN, LOW);
   digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
-  
+
+  // set threshold
+  for ( int i = 0; i < NUM_FREQUENCY_BANDS; i++ ) setThreshold(i, DEFAULT_THRESHOLD);
+
+  // start sampling
+  sampleIndex = 0;
+  for ( int i = 0; i < NUM_SAMPLES; i++ ) update();
+
   Serial << F("Mic: startup complete.") << endl;
 }
 
-void micPrint() {
-  // gets everthing
-  micReadAll();
+// read the current volume levels, computes some additional information
+void update();
+// band volume as-of last update()
+int bandVol[NUM_FREQUENCY_BANDS];
 
-  // save a copy and only print on "significant" delta
-  static int lastBandVolume[NUM_FREQUENCY_BANDS];
-  boolean showVolume = false;
-  const int sigDelta = 25; // dunno
+// convenience extraction functions
+int getVol(byte band);
+bool getBeat(byte band);
+
+float getAvg(byte band);
+float getSD(byte band);
+
+// show the volume levels
+void Mic::print() {
+
+  Serial << millis() << F(":\t");
   for (int i = 0; i < NUM_FREQUENCY_BANDS; i++) {
-    showVolume = showVolume || abs(lastBandVolume[i] - bandVolume[i]) >= sigDelta;
+    Serial << bandCenter[i] << F(":") << bandVol[i][sampleIndex] << F("\t");
   }
-  if ( showVolume ) {
-    // save it
-    memcpy(&lastBandVolume, &bandVolume, sizeof(bandVolume));
+  Serial << endl;
 
-    Serial << millis() << F(":\t\t");
-    for (int i = 0; i < NUM_FREQUENCY_BANDS; i++) {
-      Serial << bandVolume[i] << F("\t\t");
-    }
-    Serial << endl;
-  }
-
+  delay(5); // just in case
 }
 
-void micReadAll() {
+void Mic::update() {
   // This whole loop looks like it's ~504 us or 0.5 ms.  A clock instruction at 16 MHz takes
   // 0.0625 us, for reference.
+
+  // current values
+  float currVol[NUM_FREQUENCY_BANDS];
 
   // Toggle the RESET pin of the MSGEQ7 to start reading from the lowest frequency band
   digitalWrite(MSGEQ7_RESET_PIN, HIGH); // HIGH for >= 100 nS; easy
@@ -55,55 +66,69 @@ void micReadAll() {
     digitalWrite(MSGEQ7_STROBE_PIN, LOW);
     delayMicroseconds(30); // Allow the output to settle, and get >=72 us btw LOW strobe-strobe
 
-    bandVolume[i] = analogRead(MSGEQ7_ANALOG_PIN);    // LOW strobe-strobe delay needs to be >=72 us
+    currVol[i] = analogRead(MSGEQ7_ANALOG_PIN);    // LOW strobe-strobe delay needs to be >=72 us
 
     digitalWrite(MSGEQ7_STROBE_PIN, HIGH); // HIGH for >= 18 us.
     //    delayMicroseconds(15);
 
   }
-}
 
-// this function will likely return false positives when it's initially called after startup
-// TODO: place avgVol in EEPROM for quicker restart.
-// it needs to be continually called to trace the volume level.
+  // ok, we have the data.
 
-byte micIsBeat(float th) {
-  // take advantage of the likelihood that "beats" are all in the lower band.
-//  getLowEndVolume();
-  micReadAll();
-  
-  const int sV = 60;
-  static float avgVol[NUM_FREQUENCY_BANDS]={ sV, sV, sV, sV, sV, sV, sV }; // dunno
-  byte isBeat = 0;
-  
-  const float wt = 0.10; // 1/wt weighting for updating average
-  
-  for( int i=0; i<NUM_FREQUENCY_BANDS; i++ ) {
-    if( float(bandVolume[i])/avgVol[i] >= th ) 
-      bitSet(isBeat, i);
-    
-    avgVol[i] = avgVol[i]*(1.0-wt) + float(bandVolume[i])*wt;
+  // increment current counter
+  sampleIndex = (sampleIndex + 1) % NUM_SAMPLES;
+
+  // flag a beat in the band if currVol >= volAvg + threshold*volSD.
+  for (int i = 0; i < NUM_FREQUENCY_BANDS; i++) {
+    isBeat[i] = currVol[i] >= bandAvg[i] + bandTh[i] * bandSD[i];
   }
-  
-  return( isBeat );
-  
+
+  // recompute average and SD.
+  for (int b = 0; b < NUM_FREQUENCY_BANDS; b++) {
+    // store the new data
+    bandVol[b][sampleIndex] = currVol[b];
+
+    // sum
+    float sum = 0;
+    for (int s = 0; s < NUM_SAMPLES; s++) {
+      sum += bandVol[b][s];
+    }
+
+    // average
+    bandAvg[b] = sum / float(NUM_SAMPLES);
+
+    // squared difference from avg
+    float diff = 0;
+    for (int s = 0; s < NUM_SAMPLES; s++) {
+      diff += pow(bandVol[b][s] - bandAvg[b], 2.0);
+    }
+
+    // SD
+    bandSD[b] = sqrt(diff / float(NUM_SAMPLES));
+  }
+
 }
 
-void getLowEndVolume() {
-  // Toggle the RESET pin of the MSGEQ7 to start reading from the lowest frequency band
-  digitalWrite(MSGEQ7_RESET_PIN, HIGH); // HIGH for >= 100 nS; easy
-  digitalWrite(MSGEQ7_RESET_PIN, LOW);
-
-  digitalWrite(MSGEQ7_STROBE_PIN, LOW);
-  delayMicroseconds(30); // Allow the output to settle
-  bandVolume[0] = analogRead(MSGEQ7_ANALOG_PIN);
-  digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
-
-  digitalWrite(MSGEQ7_STROBE_PIN, LOW);
-  delayMicroseconds(30); // Allow the output to settle
-  bandVolume[1] = analogRead(MSGEQ7_ANALOG_PIN);
-  digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
-
-  // only updating the low end.
+int Mic::getVol(byte b) {
+  return ( bandVol[b][sampleIndex] );
 }
+
+bool Mic::getBeat(byte b) {
+  return ( isBeat[b] );
+}
+
+float Mic::getAvg(byte b) {
+  return ( bandAvg[b] );
+}
+
+float Mic::getSD(byte b) {
+  return ( bandSD[b] );
+}
+
+void Mic::setThreshold(byte b, float threshold) {
+  bandTh[b] = threshold;
+}
+
+Mic mic;
+
 

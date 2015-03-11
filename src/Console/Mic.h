@@ -13,14 +13,47 @@
 
 #define NUM_FREQUENCY_BANDS    7
 
+#define NUM_SAMPLES 10
+
+#define DEFAULT_THRESHOLD 2.0
+
 // see this discussion on what instruments appear in what band:
 // http://homerecording.com/bbs/general-discussions/mixing-techniques/frequency-charts-50110/
 
-void micStart();
-void micPrint();
-void micReadAll();
-byte micIsBeat(float threshold); // volumeNow/volumeAvg required to call it a "beat"
-void getLowEndVolume();
-
+class Mic {
+  public:
+    // startup
+    void begin();
+    
+    // show the volume levels 
+    void print();
+    
+    // read the current volume levels, computes some additional information
+    void update();
+     
+    // convenience extraction functions
+    int getVol(byte band);
+    bool getBeat(byte band);
+    
+    float getAvg(byte band);
+    float getSD(byte band);
+    void setThreshold(byte band, float threshold);
+      
+  private:
+    // index for last read
+    int sampleIndex;
+    // track the volume
+    float bandVol[NUM_FREQUENCY_BANDS][NUM_SAMPLES];
+     // band volume running average
+    float bandAvg[NUM_FREQUENCY_BANDS];
+    // band volume standard deviation
+    float bandSD[NUM_FREQUENCY_BANDS];
+    // threshold settings, by band, for beat detection
+    float bandTh[NUM_FREQUENCY_BANDS];
+    // beat tracking
+    bool isBeat[NUM_FREQUENCY_BANDS];
+};
+    
+extern Mic mic;
 
 #endif

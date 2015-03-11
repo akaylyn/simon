@@ -78,8 +78,8 @@ void idleState() {
 
   // stubbing in microphone pickup activity.
   // doesn't do anything useful; just makes a tone that should be synchronized with the beat.
-  byte beatBits = micIsBeat(1.25); // 125% of basal level seems about right.
-  if ( bitRead(beatBits, 0) || bitRead(beatBits, 1) ) { // probably just want 63Hz and 160Hz bands
+  mic.update();
+  if ( mic.getBeat(0) || mic.getBeat(1) ) { // probably just want 63Hz and 160Hz bands
     Serial << F("beat at ") << millis() << endl;
     tone( SPEAKER_WIRE, 200 );
   } else {

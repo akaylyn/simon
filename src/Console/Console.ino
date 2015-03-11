@@ -44,7 +44,7 @@ void setup() {
   //------ Input units.
   touch.begin();
   sensor.begin();
-  micStart();
+  mic.begin();
   //------ Output units.
   light.begin();
   if ( !sound.begin() && RUN_UNIT_ON_ERROR || 0) sound.unitTest();
