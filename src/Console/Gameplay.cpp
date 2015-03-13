@@ -62,16 +62,17 @@ void idleState() {
     Serial << F("Gameplay: Idle->Game") << endl;
     quiet();
     /* MGD removed this en lieu of anypresed.  The logic, below, doesn't exit with an abberant press.
-    while (1) {
-        if (buttonAnyChanged())
-            break;
-        if (touchAnyChanged())
-            break;
-    }*/
+     while (1) {
+     if (buttonAnyChanged())
+     break;
+     if (touchAnyChanged())
+     break;
+     }*/
     while ( touch.anyPressed()) ;
     // let's play a game
     simon.transitionTo(game);
-  } else if ( kioskTimer.check() ) {
+  } 
+  else if ( kioskTimer.check() ) {
     // let's do some light, music and fire
     idleFanfare();
   }
@@ -79,12 +80,34 @@ void idleState() {
   // stubbing in microphone pickup activity.
   // doesn't do anything useful; just makes a tone that should be synchronized with the beat.
   mic.update();
-  if ( mic.getBeat(0) || mic.getBeat(1) ) { // probably just want 63Hz and 160Hz bands
-    Serial << F("beat at ") << millis() << endl;
-    tone( SPEAKER_WIRE, 200 );
-  } else {
-    noTone( SPEAKER_WIRE );
+  static Metro clearInterval(50);
+  byte level=0;
+  for(byte i = 0; i<NUM_FREQUENCY_BANDS; i++) {
+    if( mic.getBeat(i) ) bitSet(level, 7-i);
   }
+  if( level>0 ) { // got some kind of beat
+    //    byte b1 = map(mic.getVol(0), byte(mic.getAvg(0)), byte(mic.getAvg(0)+mic.getSD(0)*mic.getTh(0)), LIGHT_OFF, LIGHT_ON);
+    //    byte b2 = map(mic.getVol(1), byte(mic.getAvg(1)), byte(mic.getAvg(1)+mic.getSD(1)*mic.getTh(1)), LIGHT_OFF, LIGHT_ON);
+    //    byte b3 = map(mic.getVol(2), byte(mic.getAvg(2)), byte(mic.getAvg(2)+mic.getSD(2)*mic.getTh(2)), LIGHT_OFF, LIGHT_ON);
+    //    Serial << rl << endl; delay(25);
+    //    light.setLight(I_RED, b3);
+    //    light.setLight(I_GRN, b2);
+    //    light.setLight(I_BLU, b1);
+
+
+    light.setAllLight(level);
+    light.setAllFire(bitRead(level,6) ? 10 : 0); // just the 160 Hz band, and only a little fire
+    light.show();
+    delay(10); // need to let the transmission happen
+
+    clearInterval.reset();
+  } 
+
+  if( clearInterval.check() ) {
+    light.setAllOff(); // clear colors
+    clearInterval.reset();
+  }
+
 }
 
 // when the player has played, or at the start of the game, we're in this state
@@ -155,7 +178,8 @@ void playerState() {
       // reset timeout
       playerTimeout.reset();
       // keep going
-    } else {
+    } 
+    else {
       Serial << F("Gameplay: Player incorrect.  currentLength = ") << currentLength << endl;
       // if so, show the correct next button
       //play(correctSequence[correctLength], false);
@@ -186,10 +210,14 @@ char nextMove() {
   int move = random(1, 4 + 1);
   // 1=GRN, 2=RED, 3=BLU, 4=YEL
   switch ( move ) {
-    case 1: return ('G');
-    case 2: return ('R');
-    case 3: return ('B');
-    case 4: return ('Y');
+  case 1: 
+    return ('G');
+  case 2: 
+    return ('R');
+  case 3: 
+    return ('B');
+  case 4: 
+    return ('Y');
   }
 }
 
@@ -207,18 +235,18 @@ void setSoundLights(byte colorIndex, boolean correctTone) {
 // decode color character and set lights and music
 void play(char color, boolean correctTone) {
   switch ( color ) {
-    case 'G':
-      setSoundLights(I_GRN, correctTone);
-      break;
-    case 'R':
-      setSoundLights(I_RED, correctTone);
-      break;
-    case 'B':
-      setSoundLights(I_BLU, correctTone);
-      break;
-    case 'Y':
-      setSoundLights(I_YEL, correctTone);
-      break;
+  case 'G':
+    setSoundLights(I_GRN, correctTone);
+    break;
+  case 'R':
+    setSoundLights(I_RED, correctTone);
+    break;
+  case 'B':
+    setSoundLights(I_BLU, correctTone);
+    break;
+  case 'Y':
+    setSoundLights(I_YEL, correctTone);
+    break;
   }
 }
 
@@ -375,6 +403,7 @@ void playerFanfare() {
 
   Serial << F("Gameplay: Player fanfare ended") << endl;
 }
+
 
 
 

@@ -62,24 +62,10 @@ extern Sensor sensor;
 // it's possible we'd want to set LEDs to some intermediate brightness, but the Pixels are a binary affair.
 // use this cutoff for mapping [0,255] (ledValue) to [0,1] (pixelValue).
 // ledValue >= this value maps to pixelValue=1; pixelValue=0 otherwise.
-#define PIXEL_THRESHOLD LIGHT_ON/2
+#define PIXEL_THRESHOLD LIGHT_ON>>2
 
 // if we ask for resends, how many?
 #define RESEND_COUNT 3
-
-// configures lights at startup
-void lightStart();
-// configures lights for buttons at startup
-void ledStart();
-// configures lights on rim and buttons at startup
-void pixelsStart();
-
-// set pixel and LED (or I_ALL)  to a value
-void lightSet(byte lightIndex, byte ledValue);
-// set led light (or I_ALL) to a value
-void ledSet(byte lightIndex, byte ledValue);
-// set pixel light (or I_ALL) to a value
-void pixelSet(byte lightIndex, byte pixelValue);
 
 class Light {
   public:

@@ -25,18 +25,6 @@ void Mic::begin() {
   Serial << F("Mic: startup complete.") << endl;
 }
 
-// read the current volume levels, computes some additional information
-void update();
-// band volume as-of last update()
-int bandVol[NUM_FREQUENCY_BANDS];
-
-// convenience extraction functions
-int getVol(byte band);
-bool getBeat(byte band);
-
-float getAvg(byte band);
-float getSD(byte band);
-
 // show the volume levels
 void Mic::print() {
 
@@ -81,6 +69,10 @@ void Mic::update() {
   // flag a beat in the band if currVol >= volAvg + threshold*volSD.
   for (int i = 0; i < NUM_FREQUENCY_BANDS; i++) {
     isBeat[i] = currVol[i] >= bandAvg[i] + bandTh[i] * bandSD[i];
+//    if( isBeat[i] ) {
+//      Serial << "band " << i << ": vol=" << currVol[i] << " avg=" << bandAvg[i] << " sd=" << bandSD[i] << " th=" << bandTh[i] << endl;
+//      delay(5);
+//    }
   }
 
   // recompute average and SD.
@@ -125,10 +117,15 @@ float Mic::getSD(byte b) {
   return ( bandSD[b] );
 }
 
+float Mic::getTh(byte b) {
+  return ( bandTh[b] );
+}
+
 void Mic::setThreshold(byte b, float threshold) {
   bandTh[b] = threshold;
 }
 
 Mic mic;
+
 
 

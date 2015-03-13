@@ -15,7 +15,7 @@
 
 #define NUM_SAMPLES 10
 
-#define DEFAULT_THRESHOLD 2.0
+#define DEFAULT_THRESHOLD 4.0 // just a suggesting.  setThreshold can can tune this.  
 
 // see this discussion on what instruments appear in what band:
 // http://homerecording.com/bbs/general-discussions/mixing-techniques/frequency-charts-50110/
@@ -33,11 +33,12 @@ class Mic {
      
     // convenience extraction functions
     int getVol(byte band);
-    bool getBeat(byte band);
+    bool getBeat(byte band); // flag a beat in the band if currVol >= volAvg + threshold*volSD.
     
     float getAvg(byte band);
     float getSD(byte band);
-    void setThreshold(byte band, float threshold);
+    float getTh(byte band);
+    void setThreshold(byte band, float threshold); 
       
   private:
     // index for last read

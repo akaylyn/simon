@@ -118,9 +118,6 @@ void setup() {
   configLoad(config);
   configPrint(config, myNodeID);
 
-  // set flame cooldown from config
-  flameCoolDownTime.interval(config.flameCoolDownTime);
-
   // start with a HSV test
   light.setMode(SOLID);
 
@@ -302,16 +299,16 @@ void performInstruction(boolean isJustToMe) {
   HSB color = black;
 
   // check the settings
-  if ( isJustToMe || config.colorIndex == I_RED || config.colorIndex == I_ALL) {
+  if ( isJustToMe || config.lightListen[I_RED] ) {
     color=mix(color, red, inst.lightLevel[I_RED]);
   }
-  if ( isJustToMe || config.colorIndex == I_GRN || config.colorIndex == I_ALL) {
+  if ( isJustToMe || config.lightListen[I_GRN] ) {
     color=mix(color, green, inst.lightLevel[I_GRN]);
   }
-  if ( isJustToMe || config.colorIndex == I_BLU || config.colorIndex == I_ALL) {
+  if ( isJustToMe || config.lightListen[I_BLU] ) {
     color=mix(color, blue, inst.lightLevel[I_BLU]);
   }
-  if ( isJustToMe || config.colorIndex == I_YEL || config.colorIndex == I_ALL) {
+  if ( isJustToMe || config.lightListen[I_YEL] ) {
     color=mix(color, yellow, inst.lightLevel[I_YEL]);
   }
   // set the color
@@ -321,16 +318,16 @@ void performInstruction(boolean isJustToMe) {
   // assume we're not going to shoot fire.
   byte maxFireLevel = 0;
   // and then check for the longest requested fire length.
-  if ( isJustToMe || config.fireIndex == I_RED || config.fireIndex == I_ALL) {
+  if ( isJustToMe || config.fireListen[I_RED] ) {
     maxFireLevel = max(maxFireLevel, inst.fireLevel[I_RED]);
   }
-  if ( isJustToMe || config.fireIndex == I_GRN || config.fireIndex == I_ALL) {
+  if ( isJustToMe || config.fireListen[I_GRN] ) {
     maxFireLevel = max(maxFireLevel, inst.fireLevel[I_GRN]);
   }
-  if ( isJustToMe || config.fireIndex == I_BLU || config.fireIndex == I_ALL) {
+  if ( isJustToMe || config.fireListen[I_BLU] ) {
     maxFireLevel = max(maxFireLevel, inst.fireLevel[I_BLU]);
   }
-  if ( isJustToMe || config.fireIndex == I_YEL || config.fireIndex == I_ALL) {
+  if ( isJustToMe || config.fireListen[I_YEL] ) {
     maxFireLevel = max(maxFireLevel, inst.fireLevel[I_YEL]);
   }
   // execute on the longest requested flame length.
@@ -359,13 +356,14 @@ void flameOn(int fireLevel) {
     flameOnTime.reset();
 
     // set flame cooldown from config
-    flameCoolDownTime.interval(config.flameCoolDownTime);
+    unsigned long cooldown = flameTime/config.flameCoolDownDivisor;
+    flameCoolDownTime.interval(cooldown);
 
     // start cooldown counter
     flameCoolDownTime.reset();
 
     Serial << F("Flame on! ") << fireLevel << F(" mapped [") << config.minFireTime << F(",") << config.maxFireTime << F("]");
-    Serial << F(" -> ") << flameTime << F("ms.  Cooldown: ") << config.flameCoolDownTime << F("ms.") << endl;
+    Serial << F(" -> ") << flameTime << F("ms.  Cooldown: ") << cooldown << F("ms.") << endl;
   }
 }
 
@@ -443,8 +441,13 @@ void configLoad(towerConfiguration &config) {
 // and prints current configuration
 void configPrint(towerConfiguration &config, byte nodeID) {
   Serial << F("Tower (") << nodeID << F(") config: ");
-  Serial << F("Color(") << config.colorIndex << F(") Fire(") << config.fireIndex << F(") ");
-  Serial << F("Flame min(") << config.minFireTime << F(") max(") << config.maxFireTime << F(").") << endl;
+  Serial << F("Color(");
+  for(byte i=0; i<N_COLORS; i++) Serial << config.lightListen[i] << F(" ");
+  Serial << F(") Fire(");
+  for(byte i=0; i<N_COLORS; i++) Serial << config.fireListen[i] << F(" ");
+  Serial << F(") ");
+  Serial << F("Flame min(") << config.minFireTime << F(") max(") << config.maxFireTime << F(").");
+  Serial << F("Flame cooldown divisor: ") << config.flameCoolDownDivisor << endl;
 }
 // clears all of the instructions 
 void instClear(towerInstruction & inst) {

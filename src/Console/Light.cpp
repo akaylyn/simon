@@ -77,7 +77,7 @@ void Light::begin() {
 
 // set light level
 void Light::setLight(byte index, byte level, boolean showNow, byte nodeID) {
-  if ( index <= I_RED || index >= I_YEL ) {
+  if ( index < I_RED || index > I_YEL ) {
     Serial << F("ERROR: Light::setLight.  Index out of range: ") << index << endl;
     while (1);
   }
@@ -98,7 +98,7 @@ void Light::setAllLight(byte level, boolean showNow, byte nodeID) {
 
 // set fire level
 void Light::setFire(byte index, byte level, boolean showNow, byte nodeID) {
-  if ( index <= I_RED || index >= I_YEL ) {
+  if ( index < I_RED || index > I_YEL ) {
     Serial << F("ERROR: Light::setFire.  Index out of range: ") << index << endl;
     while (1);
   }
@@ -267,6 +267,7 @@ void Light::networkConfig() {
 // configure a single tower
 void Light::towerConfig(towerConfiguration & config, byte nodeID) {
   radio.Send(nodeID, (const void*)(&config), sizeof(config));
+  
   Serial << F("Tower: sending config: ");
   Serial << F("Tower (") << nodeID << F(") config: ");
   Serial << F("Color(");
@@ -274,7 +275,10 @@ void Light::towerConfig(towerConfiguration & config, byte nodeID) {
   Serial << F(") Fire(");
   for(byte i=0; i<N_COLORS; i++) Serial << config.fireListen[i] << F(" ");
   Serial << F(") ");
-  Serial << F("Flame min(") << config.minFireTime << F(") max(") << config.maxFireTime << F(").") << endl;
+  Serial << F("Flame min(") << config.minFireTime << F(") max(") << config.maxFireTime << F(").");
+  Serial << F(" Flame cooldown divisor: ") << config.flameCoolDownDivisor << endl;
+  
+  radio.SendWait(); // wait for the transmission to complete
 }
 
 Light light;
