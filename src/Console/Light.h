@@ -24,10 +24,10 @@ extern Sensor sensor;
 
 
 // Light module IO.  Pull LOW to active touch buttons and rim lighting.
-#define PIXELS_RED 31
-#define PIXELS_YEL 33
-#define PIXELS_GRN 35
-#define PIXELS_BLU 37
+#define PIXELS_RED 23
+#define PIXELS_YEL 25
+#define PIXELS_GRN 27
+#define PIXELS_BLU 29
 
 // Manual button lights, panels, under console.  wire to N-channel MOSFET + and any GND.
 #define LED_YEL 8 // can move, PWM
