@@ -3,9 +3,6 @@
 bool Sound::begin() {
   Serial << "Sound: startup." << endl;
 
-  // setup speaker
-  pinMode(SPEAKER_WIRE, OUTPUT);
-
   // setup comms to Music
   Music.begin(MUSIC_COMMS_RATE);
 
@@ -17,6 +14,23 @@ bool Sound::begin() {
   // set the default volume
   setVolume(MUSIC_DEFAULT_VOL);
   stop();
+
+  // Fx board
+  Serial << F("Fx: setup.") << endl;
+  
+  // setup pins
+  for(int i=0; i<N_TRIGGER; i++) {
+    digitalWrite(pin[i], HIGH);
+    pinMode(pin[i],OUTPUT);
+  }
+  
+  // reset the board
+  pinMode(FX_RESET, OUTPUT);
+  digitalWrite(FX_RESET, LOW);
+  delay(1);
+  digitalWrite(FX_RESET, HIGH);
+
+  Serial << "Sound: startup complete." << endl; 
 
   return ( Music ); // if there was an error with Serial connection to Music, return false.
 }
@@ -43,32 +57,31 @@ void Sound::playRock(int playCount) {
   sendData();
 }
 
-void Sound::playTone(byte colorIndex, boolean correctTone, unsigned long duration) {
-  unsigned int freq;
-
+void Sound::playTone(byte colorIndex, boolean correctTone) {
   if ( correctTone ) {
     switch ( colorIndex ) {
-      case I_RED:
-        freq = RED_TONE;
-        break;
-      case I_GRN:
-        freq = GRN_TONE;
-        break;
-      case I_BLU:
-        freq = BLU_TONE;
-        break;
-      case I_YEL:
-        freq = YEL_TONE;
-        break;
+      case I_RED: fxOn(TR_RED); break;
+      case I_GRN: fxOn(TR_GRN); break;
+      case I_BLU: fxOn(TR_BLU); break;
+      case I_YEL: fxOn(TR_YEL); break;
     }
   } else {
-    freq  = WRONG_TONE;
+    fxOn(TR_WRONG);
   }
+}
 
-  if ( duration > 0 ) {
-    tone(SPEAKER_WIRE, freq, duration); // not blocking??
-  } else {
-    tone(SPEAKER_WIRE, freq); // forever
+void Sound::fxOn(Trigger t) {
+  digitalWrite(pin[t], LOW);
+}
+
+void Sound::fxOff(Trigger t) {
+  digitalWrite(pin[t], HIGH);
+}
+
+void Sound::fxAllOff() {
+  // all off
+  for(int i=0; i<N_TRIGGER; i++) {
+    digitalWrite(pin[i], HIGH);
   }
 }
 
@@ -88,7 +101,9 @@ void Sound::decVolume() {
 }
 
 void Sound::stop() {
-  noTone(SPEAKER_WIRE);
+//  noTone(SPEAKER_WIRE);
+  fxAllOff();
+ 
   message.type = TYPE_STOP;
   sendData();
 }

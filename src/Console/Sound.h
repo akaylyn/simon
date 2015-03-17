@@ -8,7 +8,7 @@
 #define Sound_h
 
 // Speaker
-#define SPEAKER_WIRE 3 // can move, PWM needed
+//#define SPEAKER_WIRE 3 // can move, PWM needed
 
 #include <Arduino.h>
 #include <Simon_Common.h> // sizes, indexing defines.
@@ -26,6 +26,21 @@
 #define NOTE_B3  248
 #define YEL_TONE NOTE_B3    // Yellow 252 Hz B3 (true pitch 247.942 Hz)
 #define WRONG_TONE 42       // a losing tone of 42 Hz
+
+#define N_TRIGGER 11
+enum Trigger {
+  TR_BAFF=0,
+  TR_RED=1, TR_GRN=2, TR_BLU=3, TR_YEL=4, TR_WRONG=5,
+  // unused, currently, from here on out
+  TR_U1=6, TR_U2=7, TR_U3=8, TR_U4=9, TR_U5=10
+};
+const int pin[N_TRIGGER] = {
+  30,
+  31,32,33,34,35,
+  36,37,38,39,40
+};
+
+#define FX_RESET 41
 
 // communications with Music module via Serial port
 #define Music Serial2
@@ -55,7 +70,12 @@ class Sound {
         void incVolume();
         void decVolume();
 
-        void playTone(byte colorIndex, boolean correctTone=true, unsigned long duration=0);
+        // Control Fx board:
+        void fxOn(Trigger t);
+        void fxOff(Trigger t);
+        void fxAllOff();
+        // convience function for Fx board
+        void playTone(byte colorIndex, boolean correctTone=true);
 
         // Stop playing sounds
         void stop();
