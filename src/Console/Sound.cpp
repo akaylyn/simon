@@ -29,7 +29,15 @@ bool Sound::begin() {
   digitalWrite(FX_RESET, LOW);
   delay(10);
   digitalWrite(FX_RESET, HIGH);
+  delay(100);
 
+  // volume settings
+  digitalWrite(FX_VOL_UP, HIGH);  
+  pinMode(FX_VOL_UP, OUTPUT);
+  digitalWrite(FX_VOL_DOWN, HIGH);  
+  pinMode(FX_VOL_DOWN, OUTPUT);
+  fxVolFull();
+  
   Serial << "Sound: startup complete." << endl; 
 
   return ( Music ); // if there was an error with Serial connection to Music, return false.
@@ -84,6 +92,22 @@ void Sound::fxAllOff() {
   for(int i=0; i<N_TRIGGER; i++) {
     digitalWrite(pin[i], HIGH);
   }
+}
+
+void Sound::fxVolUp() {
+  digitalWrite(FX_VOL_UP, LOW);
+  delay(FX_PRESS_DELAY);
+  digitalWrite(FX_VOL_UP, HIGH);  
+  delay(FX_PRESS_DELAY);
+}
+void Sound::fxVolDown() {
+  digitalWrite(FX_VOL_DOWN, LOW);
+  delay(FX_PRESS_DELAY);
+  digitalWrite(FX_VOL_DOWN, HIGH);  
+  delay(FX_PRESS_DELAY);
+}
+void Sound::fxVolFull() {
+ for(int i=0;i<512;i++ ) fxVolUp();  
 }
 
 void Sound::setVolume(int level) {

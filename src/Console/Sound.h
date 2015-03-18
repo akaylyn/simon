@@ -41,6 +41,9 @@ const int pin[N_TRIGGER] = {
 };
 
 #define FX_RESET 41
+#define FX_VOL_UP 42
+#define FX_VOL_DOWN 43 
+#define FX_PRESS_DELAY 1UL
 
 // communications with Music module via Serial port
 #define Music Serial2
@@ -74,6 +77,9 @@ class Sound {
         void fxOn(Trigger t);
         void fxOff(Trigger t);
         void fxAllOff();
+        void fxVolUp();
+        void fxVolDown();
+        void fxVolFull();
         // convience function for Fx board
         void playTone(byte colorIndex, boolean correctTone=true);
 
