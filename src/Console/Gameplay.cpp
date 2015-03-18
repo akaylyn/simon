@@ -225,11 +225,14 @@ char nextMove() {
 
 // helper function to tie together Tower, Light, Sound
 void setSoundLights(byte colorIndex, boolean correctTone) {
+  // order is important: sound is slower than lights
+  
+  // Sound on Console and Tower
+  sound.playTone(colorIndex, correctTone);
+  
   // Lights on Tower
   light.setLight(colorIndex, LIGHT_ON, true);
 
-  // Sound on Console and Tower
-  sound.playTone(colorIndex, correctTone);
 }
 
 // decode color character and set lights and music
