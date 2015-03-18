@@ -59,7 +59,7 @@ class Sound {
 
         // Stop playing sounds
         void stop();
-        
+
         // unit test for Music
         void unitTest();
 

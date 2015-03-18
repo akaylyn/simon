@@ -71,7 +71,7 @@ void idleState() {
     while ( touch.anyPressed()) ;
     // let's play a game
     simon.transitionTo(game);
-  } 
+  }
   else if ( kioskTimer.check() ) {
     // let's do some light, music and fire
     idleFanfare();
@@ -101,7 +101,7 @@ void idleState() {
     delay(10); // need to let the transmission happen
 
     clearInterval.reset();
-  } 
+  }
 
   if( clearInterval.check() ) {
     light.setAllOff(); // clear colors
@@ -178,7 +178,7 @@ void playerState() {
       // reset timeout
       playerTimeout.reset();
       // keep going
-    } 
+    }
     else {
       Serial << F("Gameplay: Player incorrect.  currentLength = ") << currentLength << endl;
       // if so, show the correct next button
@@ -210,13 +210,13 @@ char nextMove() {
   int move = random(1, 4 + 1);
   // 1=GRN, 2=RED, 3=BLU, 4=YEL
   switch ( move ) {
-  case 1: 
+  case 1:
     return ('G');
-  case 2: 
+  case 2:
     return ('R');
-  case 3: 
+  case 3:
     return ('B');
-  case 4: 
+  case 4:
     return ('Y');
   }
 }
@@ -255,7 +255,7 @@ void animateFailure()
   Serial << "AnimateFailure!" << endl;
   sound.setVolume(0);
   sound.playLose();
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 4; i++) {
     light.setAllLight(LIGHT_ON, true);
     delay(300);
     light.setAllOff();

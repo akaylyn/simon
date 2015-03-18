@@ -2,7 +2,7 @@
 // included in several places.
 #include <Streaming.h> // <<-style printing
 #include <Arduino.h>
-#include <Simon_Indexes.h> // sizes, indexing defines.
+#include <Simon_Common.h> // sizes, indexing defines.
 #include <Streaming.h> // <<-style printing
 #include <EasyTransfer.h> // data transfer between arduinos
 #include <SoundMessage.h> // sound message structure and consts
@@ -11,7 +11,6 @@
 #define DELAY_TIME 5000
 
 EasyTransfer easyTransfer;
-Sound sound;
 
 void setup() {
 
@@ -33,7 +32,7 @@ void setup() {
 void loop() {
     Serial << "~~ loop ~~" << endl;
     // just to make sure not to overload the console
-    delay(DELAY_TIME);
+    sound.setVolume(0);
 
     Serial << "Playing WIN" << endl;
     sound.playWin(2);
@@ -50,23 +49,6 @@ void loop() {
     Serial << "Playing ROCK" << endl;
     sound.playRock();
     delay(DELAY_TIME);
-/*
-    Serial << "Playing TONE: RED" << endl;
-    sound.playTone(I_RED, 1000);
-    delay(DELAY_TIME);
-
-    Serial << "Playing TONE: BLU" << endl;
-    sound.playTone(I_BLU, 1000);
-    delay(DELAY_TIME);
-
-    Serial << "Playing TONE: GRN" << endl;
-    sound.playTone(I_GRN, 1000);
-    delay(DELAY_TIME);
-
-    Serial << "Playing TONE: YEL" << endl;
-    sound.playTone(I_YEL, 1000);
-    delay(DELAY_TIME);
-    */
 
     Serial << "Tests complete." << endl;
 }
