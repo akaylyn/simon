@@ -27,7 +27,7 @@ bool Sound::begin() {
   // reset the board
   pinMode(FX_RESET, OUTPUT);
   digitalWrite(FX_RESET, LOW);
-  delay(1);
+  delay(10);
   digitalWrite(FX_RESET, HIGH);
 
   Serial << "Sound: startup complete." << endl; 
@@ -72,6 +72,7 @@ void Sound::playTone(byte colorIndex, boolean correctTone) {
 
 void Sound::fxOn(Trigger t) {
   digitalWrite(pin[t], LOW);
+//  Serial << "Fx: " << t << " pin: " << pin[t] << endl;
 }
 
 void Sound::fxOff(Trigger t) {

@@ -48,7 +48,7 @@ void Fx::reset() {
   // reset the board
   pinMode(FX_RESET, OUTPUT);
   digitalWrite(FX_RESET, LOW);
-  delay(1);
+  delay(10);
   digitalWrite(FX_RESET, HIGH);
 }
 
