@@ -51,6 +51,25 @@
 // when we're done playing music, ramp the volume down to zero over this time
 #define MUSIC_RAMP_DOWN_TIME 2000UL // ms
 
+// Number of correct <= num that achieves the level
+#define FANFARE_NONE 0
+#define FANFARE_1 1
+#define FANFARE_2 2
+#define FANFARE_3 3
+#define FANFARE_4 4
+
+/* // Real levels
+#define FANFARE_LEVEL0 8
+#define FANFARE_LEVEL1 12
+#define FANFARE_LEVEL2 16
+#define FANFARE_LEVEL3 20
+*/
+// Testing levels
+#define FANFARE_LEVEL1 2
+#define FANFARE_LEVEL2 3
+#define FANFARE_LEVEL3 4
+#define FANFARE_LEVEL4 5
+
 // startup the Simon game
 void gameplayStart(Sound &currSound);
 
@@ -64,6 +83,8 @@ void idleState();
 void gameState();
 // game is being played, and the player is trying to presse the correct sequence.  BLOCKING CODE.
 void playerState();
+// game has ended and the uC is displaying an ending animation.  BLOCKING CODE.
+void exitingState();
 
 // helper function to tie together Tower, Light, Sound
 void setSoundLights(byte colorIndex, boolean correctTone);
@@ -93,6 +114,10 @@ void idleUpdate();
 void idleFanfare();
 
 // gratz Player 1, do some Music, Light, Sound, Fire.
-void playerFanfare();
+// level 0-4.  0 is low, 4 is amazing
+void playerFanfare(byte level);
+
+// Get the fanfare level to play.  Returns 0-4
+byte getLevel(int correct);
 
 #endif
