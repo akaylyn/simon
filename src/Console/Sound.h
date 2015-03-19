@@ -74,12 +74,14 @@ class Sound {
         void decVolume();
 
         // Control Fx board:
+        void fxReset();
         void fxOn(Trigger t);
         void fxOff(Trigger t);
         void fxAllOff();
         void fxVolUp();
         void fxVolDown();
-        void fxVolFull();
+        void fxVolMax();
+        void fxVolMin();
         // convience function for Fx board
         void playTone(byte colorIndex, boolean correctTone=true);
 

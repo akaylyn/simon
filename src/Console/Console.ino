@@ -7,7 +7,7 @@
 #include <Wire.h> // capsense is an I2C device
 #include <Bounce.h> // with debounce routine.
 #include <FiniteStateMachine.h> // using a FSM to run the game
-#include <LED.h>
+#include <LED.h> // led control abstraction
 #include <SPI.h> // radio transmitter is a SPI device
 #include <EEPROM.h> // saving and loading radio settings
 #include <RFM12B.h> // RFM12b radio transmitter module

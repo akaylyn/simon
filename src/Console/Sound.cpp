@@ -20,24 +20,20 @@ bool Sound::begin() {
   
   // setup pins
   for(int i=0; i<N_TRIGGER; i++) {
-    digitalWrite(pin[i], HIGH);
     pinMode(pin[i],OUTPUT);
+    digitalWrite(pin[i], HIGH);
   }
-  
-  // reset the board
-  pinMode(FX_RESET, OUTPUT);
-  digitalWrite(FX_RESET, LOW);
-  delay(10);
-  digitalWrite(FX_RESET, HIGH);
-  delay(100);
-
   // volume settings
-  digitalWrite(FX_VOL_UP, HIGH);  
   pinMode(FX_VOL_UP, OUTPUT);
-  digitalWrite(FX_VOL_DOWN, HIGH);  
+  digitalWrite(FX_VOL_UP, HIGH);
   pinMode(FX_VOL_DOWN, OUTPUT);
-  fxVolFull();
-  
+  digitalWrite(FX_VOL_UP, HIGH);
+
+  // reset the board
+  fxReset();
+  // turn the volume all the way up  
+  fxVolMax();
+
   Serial << "Sound: startup complete." << endl; 
 
   return ( Music ); // if there was an error with Serial connection to Music, return false.
@@ -78,6 +74,14 @@ void Sound::playTone(byte colorIndex, boolean correctTone) {
   }
 }
 
+void Sound::fxReset() {
+  // reset the board
+  digitalWrite(FX_RESET, LOW);
+  delay(FX_PRESS_DELAY);
+  digitalWrite(FX_RESET, HIGH);
+  delay(FX_PRESS_DELAY);
+  Serial << F("Fx: reset.") << endl;
+}
 void Sound::fxOn(Trigger t) {
   digitalWrite(pin[t], LOW);
 //  Serial << "Fx: " << t << " pin: " << pin[t] << endl;
@@ -95,19 +99,42 @@ void Sound::fxAllOff() {
 }
 
 void Sound::fxVolUp() {
+  // make sure DOWN isn't pegged
+  digitalWrite(FX_VOL_DOWN, HIGH);
+
+  // toggle the down pin
   digitalWrite(FX_VOL_UP, LOW);
   delay(FX_PRESS_DELAY);
   digitalWrite(FX_VOL_UP, HIGH);  
   delay(FX_PRESS_DELAY);
 }
 void Sound::fxVolDown() {
+  // make sure UP isn't pegged
+  digitalWrite(FX_VOL_UP, HIGH); 
+
+  // toggle the down pin
   digitalWrite(FX_VOL_DOWN, LOW);
   delay(FX_PRESS_DELAY);
   digitalWrite(FX_VOL_DOWN, HIGH);  
   delay(FX_PRESS_DELAY);
 }
-void Sound::fxVolFull() {
- for(int i=0;i<512;i++ ) fxVolUp();  
+void Sound::fxVolMax() {
+  // make sure DOWN isn't pegged
+  digitalWrite(FX_VOL_DOWN, HIGH); 
+
+  // leave the pin low to get +8dB/sec
+  digitalWrite(FX_VOL_UP, LOW);
+
+  Serial << F("Fx: maximum volume.") << endl;
+}
+void Sound::fxVolMin() {
+  // make sure UP isn't pegged
+  digitalWrite(FX_VOL_UP, HIGH); 
+
+  // leave the pin low to get -8dB/sec
+  digitalWrite(FX_VOL_DOWN, LOW);
+
+  Serial << F("Fx: minimum volume.") << endl;
 }
 
 void Sound::setVolume(int level) {
