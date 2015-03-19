@@ -1,0 +1,29 @@
+Files for the WAV Trigger board need to be in this format:
+
+WAV 16-bit endcoding
+44.1 kHz sample rate
+Stereo
+
+We need to do the following audio processing
+
+* Remove DC Offset 
+* Normalize maximum sound to -1 dB 
+* Remove leading and trailing silence 
+* Enforce 44100 sample bit rate
+* Stereo the tracks if they're mono
+* convert to a 16-bit WAV
+
+It looks like sox (http://sox.sourceforge.net/) can do this.  
+
+> sox infile outfile.wav -t wav -b 16 rate 44100 channels 2 norm -1 silence 1 1 0.01% reverse silence 1 1 0.01% reverse
+
+Breaking this down:
+
+"-t wav -b 16" explicity set 16-bit WAV output
+"rate 44100" 44.1kHz sample rate for output
+"channels 2" enforces stereo.  mono channel is duplicated into two channels.
+"norm -1" normalize to -1 dB to prevent clipping.
+"silence 1 1 0.01%" trim silence from the beginning.
+"reverse silence 1 1 0.01%" trim silence from the end by reversing the audio.
+"reverse" reverse the audio again, so we're back to normal.
+
