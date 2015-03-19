@@ -21,6 +21,7 @@ int correctLength = 0;
 State idle = State(idleState);
 State game = State(gameState);
 State player = State(playerState);
+State exiting = State(exitingState);
 
 // the state machine controls which of the states get attention and execution time
 FSM simon = FSM(idle); //initialize state machine, start in state: idle
@@ -45,11 +46,8 @@ boolean gameplayUpdate() {
 
 // when there's nobody playing, we're in this state.
 void idleState() {
-  //Serial << F("Current State: Idle") << endl;
+//  Serial << F("Current State: Idle") << endl;
   if ( currentLength > 0 ) {
-    // somebody played, so let's give them a show
-    playerFanfare();
-    // reset timers
     kioskTimer.reset();
   }
   // reset everything.
@@ -107,7 +105,6 @@ void idleState() {
     light.setAllOff(); // clear colors
     clearInterval.reset();
   }
-
 }
 
 // when the player has played, or at the start of the game, we're in this state
@@ -125,8 +122,7 @@ void gameState() {
 
   // reset timeout
   playerTimeout.reset();
-  // reset correct length
-  correctLength = 0;
+  
   // give it back to the player
   Serial << F("Gameplay: Game->Player") << endl;
   simon.transitionTo(player);
@@ -134,7 +130,7 @@ void gameState() {
 
 // waiting for the player to press a button.
 void playerState() {
-  //Serial << F("Current State: Player") << endl;
+  //Serial << F("Current State: Player.  correctLength: ") << correctLength << endl;
   // check if they waited too long
   if ( playerTimeout.check() ) {
     Serial << F("Gameplay: Player timeout.  currentLength = ") << currentLength << endl;
@@ -148,8 +144,8 @@ void playerState() {
     }
     quiet();
     // and exit game play
-    Serial << F("Gameplay: Player->Idle") << endl;
-    simon.transitionTo(idle);
+    Serial << F("Gameplay: Player->Exiting") << endl;
+    simon.transitionTo(exiting);
   }
 
   // otherwise, wait for button press.
@@ -175,34 +171,63 @@ void playerState() {
 
     if ( correct ) {
       correctLength++;
+      Serial << "incCorrect: " << correctLength << "\n";
       // reset timeout
       playerTimeout.reset();
       // keep going
     } 
     else {
-      Serial << F("Gameplay: Player incorrect.  currentLength = ") << currentLength << endl;
+      Serial << F("Gameplay: Player incorrect.  currentLength = ") << currentLength << " correct: " << correctLength << " expecting: " << correctSequence[correctLength] << endl;
+
       // if so, show the correct next button
-      //play(correctSequence[correctLength], false);
+      play(correctSequence[correctLength], false);
+
+      // wait
+      Metro delayNow(500);
+      while (! delayNow.check() ) {
+        light.update();
+      }
+
+      quiet();
+      simon.transitionTo(exiting);
+    }
+  }
+
+  /// check if they've got the sequence complete, or if there's just awesome
+  if ( correctLength == currentLength || correctLength == (MAX_SEQUENCE_LENGTH - 1) ) {
+    // nice.  pass it back to game
+    Serial << F("Gameplay: Player correct.  currentLength = ") << currentLength << endl;
+    Serial << F("Gameplay: Player->Game") << endl;
+    
+    correctLength = 0;
+    simon.transitionTo(game);
+  }
+}
+
+void exitingState() {
+    Serial << "Inside exiting state.  correct: " << correctLength << endl;
+    // if so, show the correct next button
+    //play(correctSequence[correctLength], false);
+    byte fanfareLevel = getLevel(currentLength-1);
+    if (fanfareLevel == FANFARE_NONE) {
+      Serial << "Animating failure";
       animateFailure();
       // wait
       Metro delayNow(3000);
       while (! delayNow.check() ) {
         light.update();
       }
-      quiet();
-      // exit game play
-      Serial << F("Gameplay: Player->Idle") << endl;
-      simon.transitionTo(idle);
+    } else {
+        playerFanfare(fanfareLevel); 
     }
-  }
+    quiet();
+    
+    // reset correct length
+    correctLength = 0;
 
-  // check if they've got the sequence complete, or if there's just awesome
-  if ( correctLength == currentLength || correctLength == (MAX_SEQUENCE_LENGTH - 1) ) {
-    // nice.  pass it back to game
-    Serial << F("Gameplay: Player correct.  currentLength = ") << currentLength << endl;
-    Serial << F("Gameplay: Player->Game") << endl;
-    simon.transitionTo(game);
-  }
+    // exit game play
+    Serial << F("Gameplay: Player->Idle") << endl;
+    simon.transitionTo(idle);
 }
 
 // generate a character to append to the current correct sequence
@@ -365,7 +390,9 @@ void idleFanfare() {
   kioskTimer.reset();
 }
 
-void playerFanfare() {
+void playerFanfare(byte level) {
+  Serial << "***Inside playerFanFare: level: " << level << "\n";
+  
   if (!FANFARE_ENABLED) {
     Serial.println("Fanfare disabled");
     return;
@@ -378,15 +405,47 @@ void playerFanfare() {
   // turn up the music
   byte volume = MUSIC_DEFAULT_VOL;
   sound.setVolume(volume);
-
+/*
   // make sweet fire/light/music.
   sound.playWin();
+  
   while ( ! fanfareDuration.check() ) {
     // should calculate Light and Fire on Towers here.
 
     // resend tower commands
     light.update();
   }
+*/
+    if (level >= FANFARE_1) {
+      Serial << "Playing win level 0";
+      for(byte n=0; n < 8; n++) {
+        for ( byte i = 0; i < N_COLORS; i++ ) {
+          if (n % 2 == 0) {
+            light.setLight(I_BLU, LIGHT_ON);
+            light.setFire(i, LIGHT_ON);
+          } else {
+            light.setLight(I_BLU, LIGHT_OFF);
+            light.setFire(i, LIGHT_OFF);
+          }
+        }
+        if (n % 2 == 0) {
+          light.show();
+          Metro delayNow(50);
+          while (! delayNow.check() ) {
+            light.update();
+          }
+        } else {
+          light.show();
+          Metro delayNow(400);
+          while (! delayNow.check() ) {
+            light.update();
+          }
+        }
+      }
+    }
+    
+    light.setAllLight(LIGHT_OFF);
+    light.setAllFire(LIGHT_OFF);
 
   // ramp down the volume to exit the music playing cleanly.
   Metro volumeRampTime(MUSIC_RAMP_DOWN_TIME / volume);
@@ -407,6 +466,19 @@ void playerFanfare() {
   Serial << F("Gameplay: Player fanfare ended") << endl;
 }
 
+// Get the fanfare level to play based on # correct.  Returns 0-3
+byte getLevel(int correct) {
+  Serial << "Get Level: correct: " << correct << "\n";
+  if (correct < FANFARE_LEVEL1) {
+    return FANFARE_NONE;
+  } else if (correct <= FANFARE_LEVEL2) {
+    return FANFARE_1;
+  } else if (correct <= FANFARE_LEVEL3) {
+    return FANFARE_2;
+  } else {
+    return FANFARE_3;
+  }
+}
 
 
 
