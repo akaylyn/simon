@@ -1,4 +1,4 @@
-// Compile for Arduino Pro or Pro Mini
+// Compile for Arduino Uno
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -14,7 +14,7 @@
 #include <Bounce.h>
 
 // RIM of LEDs
-#define RIM_PIN 12 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
+#define RIM_PIN 3 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
 // geometry
 #define RIM_N 109 // best if divisible by 4
 #define RIM_SEG_LENGTH 27 // floor(RIM_N/4)=27
@@ -24,10 +24,10 @@
 #define GRN_SEG_START RED_SEG_START+RIM_SEG_LENGTH
 
 // 4x touch lighting strips
-#define RED_PIN A0 // wire to button DI pin.  Include a 330 Ohm resistor in series.
-#define GRN_PIN A1 // wire to button DI pin.  Include a 330 Ohm resistor in series.
-#define BLU_PIN A2 // wire to button DI pin.  Include a 330 Ohm resistor in series.
-#define YEL_PIN A3 // wire to button DI pin.  Include a 330 Ohm resistor in series.
+#define RED_PIN 4 // wire to button DI pin.  Include a 330 Ohm resistor in series.
+#define GRN_PIN 5 // wire to button DI pin.  Include a 330 Ohm resistor in series.
+#define BLU_PIN 6 // wire to button DI pin.  Include a 330 Ohm resistor in series.
+#define YEL_PIN 7 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 // geometry
 #define BUTTON_N 49 // wrapped around each button
 
@@ -35,15 +35,19 @@
 #define LED_PIN 13
 
 // button pins.  wire to Mega GPIO, bring LOW to indicate pressed.
-#define RED_BUTTON 4
-#define YEL_BUTTON 5
-#define GRN_BUTTON 6
-#define BLU_BUTTON 7
+#define RED_BUTTON A1
+#define YEL_BUTTON A4
+#define GRN_BUTTON A3
+#define BLU_BUTTON A2
 #define DEBOUNCE_TIME 5UL
 Bounce redButton = Bounce( RED_BUTTON, DEBOUNCE_TIME );
 Bounce grnButton = Bounce( GRN_BUTTON, DEBOUNCE_TIME );
 Bounce bluButton = Bounce( BLU_BUTTON, DEBOUNCE_TIME );
 Bounce yelButton = Bounce( YEL_BUTTON, DEBOUNCE_TIME );
+
+// note A0 and A5 are wired up to enable SoftwareSerial comms btw Light and Mega/Console.
+#define SS_RX A0
+#define SS_TX A5
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
