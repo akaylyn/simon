@@ -340,18 +340,25 @@ void playSequence() {
   }
 }
 
-// generate a random number on the interval [a, b] with mode c.
-unsigned long trandom(int a, int c, int b) {
+// generate a random number on the interval [xmin, xmax] with mode xmode.
+// takes about 0.22 ms to generate a number.  random(min,max) takes 0.14 ms.  
+unsigned long trandom(unsigned long xmin, unsigned long xmode, unsigned long xmax) {
   // using a triangular pdf
   // http://en.wikipedia.org/wiki/Triangular_distribution#Generating_Triangular-distributed_random_variates
 
-  float cut = (c - a) / (b - a);
+  unsigned long modeMinusMin = xmode - xmin;
+  unsigned long maxMinusMin = xmax - xmin;
+  float cut = modeMinusMin / maxMinusMin;
+  // not using random() here: too slow.
+  // we'll use the timekeeping function to give a number [0,1] with period 10 ms.
+  float u = micros() % 10001 / 10000.; 
 
-  float u = random(0, 101) / 100;
-
-  if ( u < cut ) return ( a + sqrt( u * (b - a) * (c - a) ) );
-  else return ( b - sqrt( (1 - u) * (b - a) * (b - c) ) );
-
+  if ( u < cut ) {
+    return ( xmin + sqrt( u * maxMinusMin * modeMinusMin ) );
+  } else {
+    unsigned long maxMinusMode = xmax - xmode;
+    return ( xmax - sqrt( (1-u) * maxMinusMin * maxMinusMode ) );
+  }
 }
 
 //
