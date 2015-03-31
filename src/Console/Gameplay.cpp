@@ -69,7 +69,7 @@ void idleState() {
     while ( touch.anyPressed()) ;
     // let's play a game
     simon.transitionTo(game);
-  } 
+  }
   else if ( kioskTimer.check() ) {
     // let's do some light, music and fire
     idleFanfare();
@@ -99,7 +99,7 @@ void idleState() {
     delay(10); // need to let the transmission happen
 
     clearInterval.reset();
-  } 
+  }
 
   if( clearInterval.check() ) {
     light.setAllOff(); // clear colors
@@ -122,7 +122,7 @@ void gameState() {
 
   // reset timeout
   playerTimeout.reset();
-  
+
   // give it back to the player
   Serial << F("Gameplay: Game->Player") << endl;
   simon.transitionTo(player);
@@ -175,7 +175,7 @@ void playerState() {
       // reset timeout
       playerTimeout.reset();
       // keep going
-    } 
+    }
     else {
       Serial << F("Gameplay: Player incorrect.  currentLength = ") << currentLength << " correct: " << correctLength << " expecting: " << correctSequence[correctLength] << endl;
 
@@ -198,7 +198,7 @@ void playerState() {
     // nice.  pass it back to game
     Serial << F("Gameplay: Player correct.  currentLength = ") << currentLength << endl;
     Serial << F("Gameplay: Player->Game") << endl;
-    
+
     correctLength = 0;
     simon.transitionTo(game);
   }
@@ -218,10 +218,10 @@ void exitingState() {
         light.update();
       }
     } else {
-        playerFanfare(fanfareLevel); 
+        playerFanfare(fanfareLevel);
     }
     quiet();
-    
+
     // reset correct length
     correctLength = 0;
 
@@ -235,13 +235,13 @@ char nextMove() {
   int move = random(1, 4 + 1);
   // 1=GRN, 2=RED, 3=BLU, 4=YEL
   switch ( move ) {
-  case 1: 
+  case 1:
     return ('G');
-  case 2: 
+  case 2:
     return ('R');
-  case 3: 
+  case 3:
     return ('B');
-  case 4: 
+  case 4:
     return ('Y');
   }
 }
@@ -251,10 +251,14 @@ char nextMove() {
 // helper function to tie together Tower, Light, Sound
 void setSoundLights(byte colorIndex, boolean correctTone) {
   // order is important: sound is slower than lights
-  
+
   // Sound on Console and Tower
-  sound.playTone(colorIndex, correctTone);
-  
+  if (correctTone) {
+      sound.playTone(colorIndex);
+  } else {
+      sound.playFailureTone();
+  }
+
   // Lights on Tower
   light.setLight(colorIndex, LIGHT_ON, true);
 
@@ -392,7 +396,7 @@ void idleFanfare() {
 
 void playerFanfare(byte level) {
   Serial << "***Inside playerFanFare: level: " << level << "\n";
-  
+
   if (!FANFARE_ENABLED) {
     Serial.println("Fanfare disabled");
     return;
@@ -408,7 +412,7 @@ void playerFanfare(byte level) {
 /*
   // make sweet fire/light/music.
   sound.playWin();
-  
+
   while ( ! fanfareDuration.check() ) {
     // should calculate Light and Fire on Towers here.
 
@@ -443,7 +447,7 @@ void playerFanfare(byte level) {
         }
       }
     }
-    
+
     light.setAllLight(LIGHT_OFF);
     light.setAllFire(LIGHT_OFF);
 
