@@ -6,7 +6,6 @@
 
 #ifndef Sound_h
 #define Sound_h
-
 #include <Arduino.h>
 #include <Streaming.h>
 
@@ -61,7 +60,8 @@ class Sound {
         int playRock(int track=RANDOM_TRACK, int gain=DEFAULT_TRACK_GAIN, bool repeat=false);
 
         // convenience function for Fx board. returns track #.
-        int playTone(byte colorIndex, boolean correctTone=true);
+        int playTone(byte colorIndex, int gain = DEFAULT_TONE_GAIN);
+        int playFailTone(int gain = DEFAULT_TONE_GAIN);
 
         // Stop a track
         void stopTrack(int track);

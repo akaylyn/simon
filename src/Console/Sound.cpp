@@ -60,23 +60,21 @@ int Sound::randomTrack(const int (&range)[2]) {
 }
 
 // convenience function for Fx board. returns track #.
-int Sound::playTone(byte colorIndex, boolean correctTone) {
+int Sound::playTone(byte colorIndex, int gain) {
     int tr;
-    if ( correctTone ) {
-        switch ( colorIndex ) {
-            case I_RED: tr=trTones[0]; break;
-            case I_GRN: tr=trTones[1]; break;
-            case I_BLU: tr=trTones[2]; break;
-            case I_YEL: tr=trTones[3]; break;
-        }
-    } else {
-        tr=trTones[4];
+    switch ( colorIndex ) {
+        case I_RED: tr=trTones[0]; break;
+        case I_GRN: tr=trTones[1]; break;
+        case I_BLU: tr=trTones[2]; break;
+        case I_YEL: tr=trTones[3]; break;
     }
-
     // looping enabled!
-    return( playTrack(tr, DEFAULT_TONE_GAIN, true) );
+    return(playTrack(tr, gain, true));
 }
 
+int Sound::playFailTone(int gain) {
+    return(playTrack(trTones[4], gain, true));
+}
 
 
 // Stop a track
