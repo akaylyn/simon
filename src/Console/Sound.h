@@ -12,7 +12,7 @@
 
 // communications with WAV module via Serial port
 #include <wavTrigger.h>
-#define WTSerial Serial1 // use Serial1 hardware
+#define WTSerial Serial2
 
 #include <Simon_Common.h> // for color defs.
 
@@ -44,16 +44,16 @@ class Sound {
         // fire it up.
         bool begin();
 
-        // Play a track.  
+        // Play a track.
         // track is 1 to 999.
-        // gain is track gain -70 to +10.  
+        // gain is track gain -70 to +10.
         // repeat true signals looping of track.
         // -> returns track #.
         int playTrack(int track, int gain=DEFAULT_TRACK_GAIN, bool repeat=false);
-        
+
         // note that the calling program should store the return value for later stopTrack
-        // and fadeTrack usage.  
-        
+        // and fadeTrack usage.
+
         // Play tracks by type.  track==0 means "random".  returns track #.
         int playWin(int track=RANDOM_TRACK, int gain=DEFAULT_TRACK_GAIN, bool repeat=false);
         int playLose(int track=RANDOM_TRACK, int gain=DEFAULT_TRACK_GAIN, bool repeat=false);
@@ -69,13 +69,13 @@ class Sound {
         void stopAllTracks();
         // Fade out track
         void fadeTrack(int track, unsigned long fadeTime=DEFAULT_FADE_TIME);
-        
+
         // NOTE: it's tempting to use "pause" features, but there's only 14 voices available,
         // and "pause" doesn't release a voice slot.  I think it's better to restart.
-        
+
         // unit test for Music
         void unitTest();
-        
+
         // set master gain
         void setMasterGain(int gain=DEFAULT_MASTER_GAIN); // -70 to +4 dB
 
