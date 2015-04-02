@@ -23,7 +23,7 @@
 // RIM of LEDs
 #define RIM_PIN 3 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
 // geometry
-#define RIM_N 109*3 // best if divisible by 4
+#define RIM_N 108*3 // best if divisible by 4
 #define RIM_SEG_LENGTH 27 // floor(RIM_N/4)=27
 #define YEL_SEG_START 12 // start yellow at this pixel
 #define BLU_SEG_START YEL_SEG_START+RIM_SEG_LENGTH
