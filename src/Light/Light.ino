@@ -1,3 +1,6 @@
+// Compile for Mega
+
+// TODO: get the memory usage inside 2K so we can:
 // Compile for Arduino Uno
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
@@ -9,14 +12,18 @@
 // so, we can support 2000/3/60=11.1 meters, other memory usage notwithstanding.
 
 #include <Adafruit_NeoPixel.h>
+// TODO: move to NeoMatrix to take advantage of the 3x stacked strips
 #include <Streaming.h>
 #include <Metro.h>
-#include <Bounce.h>
+//#include <Bounce.h>
+
+// watchdog timer
+#include <avr/wdt.h>
 
 // RIM of LEDs
 #define RIM_PIN 3 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
 // geometry
-#define RIM_N 109 // best if divisible by 4
+#define RIM_N 109*3 // best if divisible by 4
 #define RIM_SEG_LENGTH 27 // floor(RIM_N/4)=27
 #define YEL_SEG_START 12 // start yellow at this pixel
 #define BLU_SEG_START YEL_SEG_START+RIM_SEG_LENGTH
@@ -31,6 +38,11 @@
 // geometry
 #define BUTTON_N 49 // wrapped around each button
 
+// 1x chotsky lighting 
+#define MIDDLE_PIN 8 //
+// geometry
+#define MIDDLE_N 18 // wrapped around middle chotsky
+
 // LED indicator to ack button presses
 #define LED_PIN 13
 
@@ -40,10 +52,10 @@
 #define GRN_BUTTON A3
 #define BLU_BUTTON A2
 #define DEBOUNCE_TIME 5UL
-Bounce redButton = Bounce( RED_BUTTON, DEBOUNCE_TIME );
-Bounce grnButton = Bounce( GRN_BUTTON, DEBOUNCE_TIME );
-Bounce bluButton = Bounce( BLU_BUTTON, DEBOUNCE_TIME );
-Bounce yelButton = Bounce( YEL_BUTTON, DEBOUNCE_TIME );
+//Bounce redButton = Bounce( RED_BUTTON, DEBOUNCE_TIME );
+//Bounce grnButton = Bounce( GRN_BUTTON, DEBOUNCE_TIME );
+//Bounce bluButton = Bounce( BLU_BUTTON, DEBOUNCE_TIME );
+//Bounce yelButton = Bounce( YEL_BUTTON, DEBOUNCE_TIME );
 
 // note A0 and A5 are wired up to enable SoftwareSerial comms btw Light and Mega/Console.
 #define SS_RX A0
@@ -66,6 +78,9 @@ Adafruit_NeoPixel grnL = Adafruit_NeoPixel(BUTTON_N, GRN_PIN, NEO_GRB + NEO_KHZ8
 Adafruit_NeoPixel bluL = Adafruit_NeoPixel(BUTTON_N, BLU_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel yelL = Adafruit_NeoPixel(BUTTON_N, YEL_PIN, NEO_GRB + NEO_KHZ800);
 
+// strip around the middle chotsky
+Adafruit_NeoPixel midL = Adafruit_NeoPixel(MIDDLE_N, MIDDLE_PIN, NEO_GRB + NEO_KHZ800);
+
 // LED brightness is not equivalent across colors.  Higher wavelengths are dimmed to balance.
 #define RED_MAX 255
 #define GRN_MAX 220
@@ -86,6 +101,7 @@ boolean redUpdated = false;
 boolean grnUpdated = false;
 boolean bluUpdated = false;
 boolean yelUpdated = false;
+boolean midUpdated = false;
 
 // reduce intensity at each update, so this is the amount of time we can expect a pixel to last
 #define PIXEL_TTL 3000UL
@@ -99,14 +115,25 @@ Metro quietUpdateInterval(STRIP_ADD_PIXEL);
 Metro stripUpdateInterval(STRIP_UPDATE);
 
 // count memory usage for LEDs, which is reported at startup.
-#define TOTAL_LED_MEM (RIM_N + BUTTON_N*4)*3
+#define TOTAL_LED_MEM (RIM_N + BUTTON_N*4 + MIDDLE_N)*3
 
 void setup() {
   Serial.begin(115200);
 
+  delay(500);
+  
   Serial << F("Light startup.") << endl;
 
-  Serial << F("Total strip memory usage: ") << TOTAL_LED_MEM << F(" bytes of 2000.") << endl;
+  // use WDT to reboot if we hang.
+  watchdogSetup();
+  Serial << F("Watchdog timer setup complete. 8000 ms reboot time if hung.") << endl;
+  
+  Serial << F("Total strip memory usage: ") << TOTAL_LED_MEM << F(" bytes of 2000. ") << 2000-TOTAL_LED_MEM << F(" remaining RAM.") << endl;
+  Serial << F("Free RAM: ") << freeRam() << endl;
+
+  // check memory sizes for stuff
+  Serial << F("Metro size: ") << sizeof(stripUpdateInterval)*2 << endl;
+//  Serial << F("Button size: ") << sizeof(redButton)*4 << endl;
 
   // random seed from analog noise.
   randomSeed(analogRead(0));
@@ -127,15 +154,24 @@ void setup() {
   // Initialize all pixels to 'sweet love makin'
   setupStrip(rimJob, Dead);
   theaterChase(rimJob, SweetLoveMakin, 10);
+  Serial << F("Free RAM: ") << freeRam() << endl;
+
+  setupStrip(midL, Dead);
+  theaterChase(midL, SweetLoveMakin, 10);
+  Serial << F("Free RAM: ") << freeRam() << endl;
 
   setupStrip(redL, Dead);
   theaterChase(redL, Red, 10);
+  Serial << F("Free RAM: ") << freeRam() << endl;
   setupStrip(grnL, Dead);
   theaterChase(grnL, Grn, 10);
+  Serial << F("Free RAM: ") << freeRam() << endl;
   setupStrip(bluL, Dead);
   theaterChase(bluL, Blu, 10);
+  Serial << F("Free RAM: ") << freeRam() << endl;
   setupStrip(yelL, Dead);
   theaterChase(yelL, Yel, 10);
+  Serial << F("Free RAM: ") << freeRam() << endl;
 
   Serial << F("Light: startup complete.") << endl;
   
@@ -143,14 +179,10 @@ void setup() {
   // put a lockout function here.  If we try to program with the other components powered off,
   // the buttons all report pressed, and Light goes crazy with Serial spam which prevents upload.
   // so we wait for all of the button pins to be pulled high.
-  while( redButton.read() == LOW && grnButton.read() == LOW && bluButton.read() == LOW && yelButton.read() == LOW) {
-    redButton.update();
-    grnButton.update();
-    bluButton.update();
-    yelButton.update();
-  }
+  while( isPressed(RED_BUTTON) && isPressed(GRN_BUTTON) && isPressed(BLU_BUTTON) && isPressed(YEL_BUTTON) );
   
   Serial << F("Console checked in.  Proceeding...") << endl;
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
 }
 
 void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
@@ -163,10 +195,12 @@ void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
   }
 
   strip.show();
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
 }
 
 void loop() {
-
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
+  
   // update the strip automata on an interval
   if ( stripUpdateInterval.check() ) {
     // compute the next step and flag for show.
@@ -177,6 +211,9 @@ void loop() {
     updateRule90(grnL, PIXEL_TTL); grnUpdated = true;
     updateRule90(bluL, PIXEL_TTL); bluUpdated = true;
     updateRule90(yelL, PIXEL_TTL); yelUpdated = true;
+
+    // if we wanted the middle chotsky to animate differently than the rim, this would be the place to do it.
+    updateRule90(midL, PIXEL_TTL); midUpdated = true;
 
     stripUpdateInterval.reset();
   }
@@ -211,53 +248,96 @@ void loop() {
     yelL.show();
     yelUpdated = false;
   }
+  if ( midUpdated && midL.canShow() ) {
+    midL.show();
+    midUpdated = false;
+  }
 
 }
 
+// from: http://forum.arduino.cc/index.php?action=dlattach;topic=63651.0;attach=3585
+void watchdogSetup() {
+  cli();
+  
+  wdt_reset();
+  
+  // enter watchdog config mode
+  WDTCSR |=(1<<WDCE)|(1<<WDE);
+  
+  // set watchdog settings; 8000 ms timout.
+  WDTCSR = (1<<WDIE)|(1<<WDE)|(1<<WDP3)|(0<<WDP2)|(0<<WDP1)|(1<<WDP0);
+  
+  sei();
+}
+
+ISR(WDT_vect) {
+  Serial << F("WATCHDOG!  Rebooting!") << endl;
+  Serial << F("Free RAM: ") << freeRam() << endl;
+}
+
+int freeRam () {
+  extern int __heap_start, *__brkval; 
+  int v; 
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
+
 void quietAddPixels() {
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
+  
   switch (random(0, 4)) {
     case 0:
       rimJob.setPixelColor(random(0, RIM_N), Red);
       redL.setPixelColor(random(0, BUTTON_N), Red);
+      midL.setPixelColor(random(0, MIDDLE_N), Red);
       redUpdated = true;
       break;
     case 1:
       rimJob.setPixelColor(random(0, RIM_N), Grn);
       grnL.setPixelColor(random(0, BUTTON_N), Grn);
+      midL.setPixelColor(random(0, MIDDLE_N), Grn);
       grnUpdated = true;
       break;
     case 2:
       rimJob.setPixelColor(random(0, RIM_N), Blu);
       bluL.setPixelColor(random(0, BUTTON_N), Blu);
+      midL.setPixelColor(random(0, MIDDLE_N), Blu);
       bluUpdated = true;
       break;
     case 3:
       rimJob.setPixelColor(random(0, RIM_N), Yel);
       yelL.setPixelColor(random(0, BUTTON_N), Yel);
+      midL.setPixelColor(random(0, MIDDLE_N), Yel);
       yelUpdated = true;
       break;
   }
   rimUpdated = true;
+  midUpdated = true;
 
 }
 
-boolean buttonCheck() {
-  // run the update all the time.
-  redButton.update();
-  grnButton.update();
-  bluButton.update();
-  yelButton.update();
+// cheap-ass bebounce routine, but 15 bytes for Bounce library is too much.
+boolean isPressed(byte buttonPin) {
+  if( digitalRead(buttonPin)==LOW ) {
+    delay(DEBOUNCE_TIME);
+    // check again
+    if( digitalRead(buttonPin)==LOW ) {
+      return( true );
+    }
+  }
+  return( false );
+}
 
-  digitalWrite(LED_PIN, LOW);
-  boolean buttonPressed = false;
-  
+boolean buttonCheck() {
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
+
   // check for pressed (LOW), and trigger pixels if pressed.
-  if ( redButton.read() == LOW ) buttonPressPattern(0);
-  if ( grnButton.read() == LOW ) buttonPressPattern(1);
-  if ( bluButton.read() == LOW ) buttonPressPattern(2);
-  if ( yelButton.read() == LOW ) buttonPressPattern(3);
+  boolean pressed = false;
+  if ( isPressed(RED_BUTTON) ) { buttonPressPattern(0); pressed=true; }
+  if ( isPressed(GRN_BUTTON) ) { buttonPressPattern(1); pressed=true; }
+  if ( isPressed(BLU_BUTTON) ) { buttonPressPattern(2); pressed=true; }
+  if ( isPressed(YEL_BUTTON) ) { buttonPressPattern(3); pressed=true; }
   
-  if( buttonPressed ) {
+  if( pressed ) {
     digitalWrite(LED_PIN, HIGH);
     return( true ); // signal buttons pressed.
   } else {     
@@ -267,6 +347,7 @@ boolean buttonCheck() {
 }
 
 void buttonPressPattern(uint8_t button) {
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
 
   switch (button) {
     case 0:  // red
@@ -300,6 +381,8 @@ void buttonPressPattern(uint8_t button) {
 }
 
 void buttonPressToButton(Adafruit_NeoPixel &strip, const uint32_t color) {
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
+
   Serial << F("Button.  Adding pixels to Button color: ");
   printColor(color);
 
@@ -311,6 +394,8 @@ void buttonPressToButton(Adafruit_NeoPixel &strip, const uint32_t color) {
 }
 
 void buttonPressToRim(const uint32_t color, uint16_t segStart, uint16_t segLength) {
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
+
   Serial << F("Button.  Adding pixels to Rim from ") << segStart << F(" to ") << (segStart + segLength - 1) % RIM_N << F(". Color: ");
   printColor(color);
 
@@ -429,19 +514,24 @@ void updateRule90(Adafruit_NeoPixel &strip, unsigned long ttl) {
 }
 
 void test(Adafruit_NeoPixel &strip) {
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
   // Some example procedures showing how to display to the pixels:
   colorWipe(strip, strip.Color(255, 0, 0), 50); // Red
   colorWipe(strip, strip.Color(0, 255, 0), 50); // Green
   colorWipe(strip, strip.Color(0, 0, 255), 50); // Blue
 
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
   // Send a theater pixel chase in...
   theaterChase(strip, strip.Color(127, 127, 127), 50); // White
   theaterChase(strip, strip.Color(127,   0,   0), 50); // Red
   theaterChase(strip, strip.Color(  0,   0, 127), 50); // Blue
 
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
   rainbow(strip, 20);
   rainbowCycle(strip, 20);
   theaterChaseRainbow(strip, 50);
+
+  wdt_reset(); // must be called periodically to prevent spurious reboot.
 }
 
 // Fill the dots one after the other with a color
