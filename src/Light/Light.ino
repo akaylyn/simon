@@ -33,7 +33,8 @@
 // 4x touch lighting strips
 #define RED_PIN 4 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 #define GRN_PIN 5 // wire to button DI pin.  Include a 330 Ohm resistor in series.
-#define BLU_PIN 6 // wire to button DI pin.  Include a 330 Ohm resistor in series.
+// pin 6 is dead on this Mega?
+#define BLU_PIN 9 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 #define YEL_PIN 7 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 // geometry
 #define BUTTON_N 49 // wrapped around each button
