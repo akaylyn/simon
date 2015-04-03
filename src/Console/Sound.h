@@ -6,100 +6,86 @@
 
 #ifndef Sound_h
 #define Sound_h
-
-// Speaker
-//#define SPEAKER_WIRE 3 // can move, PWM needed
-
 #include <Arduino.h>
-#include <Simon_Common.h> // sizes, indexing defines.
-#include <Streaming.h> // <<-style printing
-#include <EasyTransfer.h> // data transfer between arduinos
-#include <SoundMessage.h> // sound message structure and consts
+#include <Streaming.h>
 
-// tone frequencies for each note
-#define NOTE_DS4 311
-#define RED_TONE NOTE_DS4   // Red 310 Hz D#4 (true pitch 311.127 Hz)
-#define NOTE_GS4 415
-#define GRN_TONE NOTE_GS4   // Green 415 Hz G#4 (true pitch 415.305 Hz)
-#define NOTE_GS3 208
-#define BLU_TONE NOTE_GS3   // Blue 209 Hz G#3 (true pitch 207.652 Hz)
-#define NOTE_B3  248
-#define YEL_TONE NOTE_B3    // Yellow 252 Hz B3 (true pitch 247.942 Hz)
-#define WRONG_TONE 42       // a losing tone of 42 Hz
+// communications with WAV module via Serial port
+#include <wavTrigger.h>
+#define WTSerial Serial2
 
-#define N_TRIGGER 11
-enum Trigger {
-  TR_BAFF=0,
-  TR_RED=1, TR_GRN=2, TR_BLU=3, TR_YEL=4, TR_WRONG=5,
-  // unused, currently, from here on out
-  TR_U1=6, TR_U2=7, TR_U3=8, TR_U4=9, TR_U5=10
-};
-const int pin[N_TRIGGER] = {
-  30,
-  31,32,33,34,35,
-  36,37,38,39,40
-};
+#include <Simon_Common.h> // for color defs.
 
-/*
-#define FX_RESET 41
-#define FX_VOL_UP 42
-#define FX_VOL_DOWN 43 
-#define FX_PRESS_DELAY 1UL
-*/
+// define track number for tones
+#define N_TONES 5
+const int trTones[N_TONES] = {1,2,3,4,5}; // red, grn, blu, yel, wrong
 
-// communications with Music module via Serial port
-#define Music Serial2
-#define MUSIC_COMMS_RATE 19200
+// define track ranges for other play types.  used to select random tracks of these types.
+// must be in the range [1,999]
+const int trWins[2] = {100, 101};
+const int trLose[2] = {300, 300};
+const int trRock[2] = {500, 502};
+const int trBaff[2] = {700, 701};
 
-// default sound level on Music module [0,9]
-#define MUSIC_MAX_VOL 0
-#define MUSIC_DEFAULT_VOL 100
-#define MUSIC_MIN_VOL 255
+// some defaults
+// gains.  remember that polyphonic sounds get stacked, so clipping can easily occur.  gonna have to tune this.
+#define DEFAULT_MASTER_GAIN 0 // -70 to +4 dB.  0 is nominal.
+#define DEFAULT_TRACK_GAIN 0 // -70 to +10.  0 is nominal.
+#define DEFAULT_TONE_GAIN 0 // -70 to +10. 0 is nominal.
 
+// fade out time (extro)
+#define DEFAULT_FADE_TIME 1000UL // ms it takes from current gain to stop.
+
+#define RANDOM_TRACK 0 // use zero to mean "random", as zero isn't a valid track number.
+
+// Real Keyboard Jockeys could probably write Sound as extending wavTrigger.
 class Sound {
-    byte volume;
-    SoundMessage message;
-    EasyTransfer easyTransfer;
-
     public:
+        // fire it up.
         bool begin();
 
-        // Play tracks by type
-        void playWin(int playCount=1);
-        void playLose();
-        void playBaff();
-        void playRock(int playCount=1);
+        // Play a track.
+        // track is 1 to 999.
+        // gain is track gain -70 to +10.
+        // repeat true signals looping of track.
+        // -> returns track #.
+        int playTrack(int track, int gain=DEFAULT_TRACK_GAIN, bool repeat=false);
 
-        // Control volume level
-        void setVolume(int level);
-        void incVolume();
-        void decVolume();
+        // note that the calling program should store the return value for later stopTrack
+        // and fadeTrack usage.
 
-        // Control Fx board:
-        void fxReset();
-        void fxOn(Trigger t);
-        void fxOff(Trigger t);
-        void fxAllOff();
-        void fxVolUp();
-        void fxVolDown();
-        void fxVolMax();
-        void fxVolMin();
-        // convience function for Fx board
-        void playTone(byte colorIndex, boolean correctTone=true);
+        // Play tracks by type.  track==0 means "random".  returns track #.
+        int playWin(int track=RANDOM_TRACK, int gain=DEFAULT_TRACK_GAIN, bool repeat=false);
+        int playLose(int track=RANDOM_TRACK, int gain=DEFAULT_TRACK_GAIN, bool repeat=false);
+        int playBaff(int track=RANDOM_TRACK, int gain=DEFAULT_TRACK_GAIN, bool repeat=false);
+        int playRock(int track=RANDOM_TRACK, int gain=DEFAULT_TRACK_GAIN, bool repeat=false);
 
-        // Stop playing sounds
-        void stop();
-        
+        // convenience function for Fx board. returns track #.
+        int playTone(byte colorIndex, int gain = DEFAULT_TONE_GAIN);
+        int playFailTone(int gain = DEFAULT_TONE_GAIN);
+
+        // Stop a track
+        void stopTrack(int track);
+        // Stop all tracks
+        void stopAllTracks();
+        // Fade out track
+        void fadeTrack(int track, unsigned long fadeTime=DEFAULT_FADE_TIME);
+
+        // NOTE: it's tempting to use "pause" features, but there's only 14 voices available,
+        // and "pause" doesn't release a voice slot.  I think it's better to restart.
+
         // unit test for Music
         void unitTest();
 
+        // set master gain
+        void setMasterGain(int gain=DEFAULT_MASTER_GAIN); // -70 to +4 dB
+
     private:
-        // Send request to play a sound (using EasyTransfer)
-        void sendData();
+        // select a random track
+        int randomTrack(const int (&range)[2]);
 
 };
 
 extern Sound sound;
+extern wavTrigger wav;
 
 #endif
-

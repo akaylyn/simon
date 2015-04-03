@@ -28,18 +28,18 @@ FSM simon = FSM(idle); //initialize state machine, start in state: idle
 
 // startup
 void gameplayStart(Sound &currSound) {
-  Serial << F("Gameplay: startup.") << endl;
-  sound = currSound;
+    Serial << F("Gameplay: startup.") << endl;
+    sound = currSound;
 }
 
 // call this from loop()
 boolean gameplayUpdate() {
 
-  // update FSM
-  simon.update();
+    // update FSM
+    simon.update();
 
-  // return true if playing
-  return ( !simon.isInState( idle ) );
+    // return true if playing
+    return ( !simon.isInState( idle ) );
 
 }
 
@@ -107,103 +107,104 @@ void idleState() {
     clearInterval.reset();
   }
 */
+
 }
 
 // when the player has played, or at the start of the game, we're in this state
 void gameState() {
-  Serial << F("Current State: Game") << endl;
-  // generate the next in sequence and add that to the sequence
-  correctSequence[currentLength] = nextMove();
-  correctSequence[currentLength + 1] = '\0'; // and null terminate it for printing purposes.
-  // increment
-  currentLength++;
-  // play back sequence
-  Serial << F("Gameplay: Game currentLength=") << currentLength << F(". sequence=") << correctSequence << endl;
-  playSequence();
-  // debug
+    Serial << F("Current State: Game") << endl;
+    // generate the next in sequence and add that to the sequence
+    correctSequence[currentLength] = nextMove();
+    correctSequence[currentLength + 1] = '\0'; // and null terminate it for printing purposes.
+    // increment
+    currentLength++;
+    // play back sequence
+    Serial << F("Gameplay: Game currentLength=") << currentLength << F(". sequence=") << correctSequence << endl;
+    playSequence();
+    // debug
 
-  // reset timeout
-  playerTimeout.reset();
-  
-  // give it back to the player
-  Serial << F("Gameplay: Game->Player") << endl;
-  simon.transitionTo(player);
+    // reset timeout
+    playerTimeout.reset();
+
+    // give it back to the player
+    Serial << F("Gameplay: Game->Player") << endl;
+    simon.transitionTo(player);
 }
 
 // waiting for the player to press a button.
 void playerState() {
-  //Serial << F("Current State: Player.  correctLength: ") << correctLength << endl;
-  // check if they waited too long
-  if ( playerTimeout.check() ) {
-    Serial << F("Gameplay: Player timeout.  currentLength = ") << currentLength << endl;
-    // if so, show the correct next button
-    play(correctSequence[correctLength], false);
-    // wait
-    sound.playBaff();
-    Metro delayNow(2000);
-    while (! delayNow.check() ) {
-      light.update();
-    }
-    quiet();
-    // and exit game play
-    Serial << F("Gameplay: Player->Exiting") << endl;
-    simon.transitionTo(exiting);
-  }
-
-  // otherwise, wait for button press.
-  if ( touch.anyPressed() ) {
-    boolean correct =
-      (touch.pressed(I_GRN) && correctSequence[correctLength] == 'G') ||
-      (touch.pressed(I_RED) && correctSequence[correctLength] == 'R') ||
-      (touch.pressed(I_BLU) && correctSequence[correctLength] == 'B') ||
-      (touch.pressed(I_YEL) && correctSequence[correctLength] == 'Y');
-
-    // there's a total cheat.
-    correct = correct || CHEATY_PANTS_MODE;
-
-    // light and music
-    play( correctSequence[correctLength], correct );
-    // hold it while we're mashing
-    while ( touch.anyPressed() ) {
-      light.update();
+    //Serial << F("Current State: Player.  correctLength: ") << correctLength << endl;
+    // check if they waited too long
+    if ( playerTimeout.check() ) {
+        Serial << F("Gameplay: Player timeout.  currentLength = ") << currentLength << endl;
+        // if so, show the correct next button
+        play(correctSequence[correctLength], false);
+        // wait
+        sound.playBaff();
+        Metro delayNow(2000);
+        while (! delayNow.check() ) {
+            light.update();
+        }
+        quiet();
+        // and exit game play
+        Serial << F("Gameplay: Player->Exiting") << endl;
+        simon.transitionTo(exiting);
     }
 
-    // done
-    quiet();
+    // otherwise, wait for button press.
+    if ( touch.anyPressed() ) {
+        boolean correct =
+            (touch.pressed(I_GRN) && correctSequence[correctLength] == 'G') ||
+            (touch.pressed(I_RED) && correctSequence[correctLength] == 'R') ||
+            (touch.pressed(I_BLU) && correctSequence[correctLength] == 'B') ||
+            (touch.pressed(I_YEL) && correctSequence[correctLength] == 'Y');
 
-    if ( correct ) {
-      correctLength++;
-      Serial << "incCorrect: " << correctLength << "\n";
-      // reset timeout
-      playerTimeout.reset();
-      // keep going
-    } 
-    else {
-      Serial << F("Gameplay: Player incorrect.  currentLength = ") << currentLength << " correct: " << correctLength << " expecting: " << correctSequence[correctLength] << endl;
+        // there's a total cheat.
+        correct = correct || CHEATY_PANTS_MODE;
 
-      // if so, show the correct next button
-      play(correctSequence[correctLength], false);
+        // light and music
+        play( correctSequence[correctLength], correct );
+        // hold it while we're mashing
+        while ( touch.anyPressed() ) {
+            light.update();
+        }
 
-      // wait
-      Metro delayNow(500);
-      while (! delayNow.check() ) {
-        light.update();
-      }
+        // done
+        quiet();
 
-      quiet();
-      simon.transitionTo(exiting);
+        if ( correct ) {
+            correctLength++;
+            Serial << "incCorrect: " << correctLength << "\n";
+            // reset timeout
+            playerTimeout.reset();
+            // keep going
+        }
+        else {
+            Serial << F("Gameplay: Player incorrect.  currentLength = ") << currentLength << " correct: " << correctLength << " expecting: " << correctSequence[correctLength] << endl;
+
+            // if so, show the correct next button
+            play(correctSequence[correctLength], false);
+
+            // wait
+            Metro delayNow(500);
+            while (! delayNow.check() ) {
+                light.update();
+            }
+
+            quiet();
+            simon.transitionTo(exiting);
+        }
     }
-  }
 
-  /// check if they've got the sequence complete, or if there's just awesome
-  if ( correctLength == currentLength || correctLength == (MAX_SEQUENCE_LENGTH - 1) ) {
-    // nice.  pass it back to game
-    Serial << F("Gameplay: Player correct.  currentLength = ") << currentLength << endl;
-    Serial << F("Gameplay: Player->Game") << endl;
-    
-    correctLength = 0;
-    simon.transitionTo(game);
-  }
+    /// check if they've got the sequence complete, or if there's just awesome
+    if ( correctLength == currentLength || correctLength == (MAX_SEQUENCE_LENGTH - 1) ) {
+        // nice.  pass it back to game
+        Serial << F("Gameplay: Player correct.  currentLength = ") << currentLength << endl;
+        Serial << F("Gameplay: Player->Game") << endl;
+
+        correctLength = 0;
+        simon.transitionTo(game);
+    }
 }
 
 void exitingState() {
@@ -212,18 +213,18 @@ void exitingState() {
     //play(correctSequence[correctLength], false);
     byte fanfareLevel = getLevel(currentLength-1);
     if (fanfareLevel == FANFARE_NONE) {
-      Serial << "Animating failure";
-      animateFailure();
-      // wait
-      Metro delayNow(3000);
-      while (! delayNow.check() ) {
-        light.update();
-      }
+        Serial << "Animating failure";
+        animateFailure();
+        // wait
+        Metro delayNow(3000);
+        while (! delayNow.check() ) {
+            light.update();
+        }
     } else {
-        playerFanfare(fanfareLevel); 
+        playerFanfare(fanfareLevel);
     }
     quiet();
-    
+
     // reset correct length
     correctLength = 0;
 
@@ -234,112 +235,116 @@ void exitingState() {
 
 // generate a character to append to the current correct sequence
 char nextMove() {
-  int move = random(1, 4 + 1);
-  // 1=GRN, 2=RED, 3=BLU, 4=YEL
-  switch ( move ) {
-  case 1: 
-    return ('G');
-  case 2: 
-    return ('R');
-  case 3: 
-    return ('B');
-  case 4: 
-    return ('Y');
-  }
+    int move = random(1, 4 + 1);
+    // 1=GRN, 2=RED, 3=BLU, 4=YEL
+    switch ( move ) {
+        case 1:
+            return ('G');
+        case 2:
+            return ('R');
+        case 3:
+            return ('B');
+        case 4:
+            return ('Y');
+    }
 }
 
 
 
 // helper function to tie together Tower, Light, Sound
 void setSoundLights(byte colorIndex, boolean correctTone) {
-  // order is important: sound is slower than lights
-  
-  // Sound on Console and Tower
-  sound.playTone(colorIndex, correctTone);
-  
-  // Lights on Tower
-  light.setLight(colorIndex, LIGHT_ON, true);
+    // order is important: sound is slower than lights
+
+    // Sound on Console and Tower
+    if (correctTone) {
+        sound.playTone(colorIndex);
+    } else {
+        sound.playFailureTone();
+    }
+
+    // Lights on Tower
+    light.setLight(colorIndex, LIGHT_ON, true);
 
 }
 
 // decode color character and set lights and music
 void play(char color, boolean correctTone) {
-  switch ( color ) {
-  case 'G':
-    setSoundLights(I_GRN, correctTone);
-    break;
-  case 'R':
-    setSoundLights(I_RED, correctTone);
-    break;
-  case 'B':
-    setSoundLights(I_BLU, correctTone);
-    break;
-  case 'Y':
-    setSoundLights(I_YEL, correctTone);
-    break;
-  }
+    switch ( color ) {
+        case 'G':
+            setSoundLights(I_GRN, correctTone);
+            break;
+        case 'R':
+            setSoundLights(I_RED, correctTone);
+            break;
+        case 'B':
+            setSoundLights(I_BLU, correctTone);
+            break;
+        case 'Y':
+            setSoundLights(I_YEL, correctTone);
+            break;
+    }
 }
 
 void animateFailure()
 {
-  Serial << "AnimateFailure!" << endl;
-  sound.setVolume(0);
-  sound.playLose();
-  for (int i = 0; i < 6; i++) {
-    light.setAllLight(LIGHT_ON, true);
-    delay(300);
-    light.setAllOff();
-    delay(100);
-  }
+    Serial << "AnimateFailure!" << endl;
+    sound.setVolume(0);
+    sound.playLose();
+    for (int i = 0; i < 6; i++) {
+        light.setAllLight(LIGHT_ON, true);
+        delay(300);
+        light.setAllOff();
+        delay(100);
+    }
 
-  quiet();
+    quiet();
 }
 
 // turn off lights and music
 void quiet() {
-  // Lights and Fire on Tower
-  // Lights on Console
-  light.setAllOff();
+    // Lights and Fire on Tower
+    // Lights on Console
+    light.setAllOff();
 
-  // Sound on Console and Tower
-  sound.stop();
+    // Sound on Console and Tower
+    sound.stop();
 
 }
 
 // playback a character array of the current correct sequence
 void playSequence() {
-  // how long between each
-  unsigned long pauseDuration = 50; // ms
-  Metro pauseAfter(pauseDuration);
+    // how long between each
+    unsigned long pauseDuration = 50; // ms
+    Metro pauseAfter(pauseDuration);
 
-  // how long to light and tone
-  unsigned long playDuration = 420;
-  if ( currentLength >= 6 ) playDuration = 320;
-  if ( currentLength >= 14) playDuration = 220;
-  Metro pauseDuring(playDuration);
+    // how long to light and tone
+    unsigned long playDuration = 420;
+    if ( currentLength >= 6 ) playDuration = 320;
+    if ( currentLength >= 14) playDuration = 220;
+    Metro pauseDuring(playDuration);
 
-  // delay after a player's last move
-  delay(playDuration);
+    // delay after a player's last move
+    delay(playDuration);
 
-  for (int i = 0; i < currentLength; i++) {
-    // lights and music
-    play(correctSequence[i], true);
-    // wait
-    pauseDuring.reset();
-    while ( !pauseDuring.check() ) {
-      light.update(); // for resend, really.
+    for (int i = 0; i < currentLength; i++) {
+        // lights and music
+        play(correctSequence[i], true);
+        // wait
+        pauseDuring.reset();
+        while ( !pauseDuring.check() ) {
+            light.update(); // for resend, really.
+        }
+
+        // done
+        quiet();
+
+        // pause between next
+        // wait
+        pauseAfter.reset();
+        while ( !pauseAfter.check() ) {
+            light.update(); // for resend, really.
+        }
     }
-
-    // done
-    quiet();
-
-    // pause between next
-    // wait
-    pauseAfter.reset();
-    while ( !pauseAfter.check() ) {
-      light.update(); // for resend, really.
-    }
-  }
 }
 
 // generate a random number on the interval [xmin, xmax] with mode xmode.
@@ -354,6 +359,7 @@ unsigned long trandom(unsigned long xmin, unsigned long xmode, unsigned long xma
   // not using random() here: too slow.
   // we'll use the timekeeping function to give a number [0,1] with period 10 ms.
   float u = micros() % 10001 / 10000.; 
+
 
   if ( u < cut ) {
     return ( xmin + sqrt( u * maxMinusMin * modeMinusMin ) );
@@ -370,123 +376,123 @@ void flameOff() {
 }
 
 void towerPoof(int poofCount) {
-  Serial << F("! Poofs. N:") << poofCount << endl;
-  for (int i = 0; i < poofCount; i++) {
-    flameOn();
-    delay(trandom(POOF_MIN, POOF_MODE, POOF_MAX));
-    flameOff();
-    delay(random(WAIT_MIN, WAIT_MAX));
-  }
+    Serial << F("! Poofs. N:") << poofCount << endl;
+    for (int i = 0; i < poofCount; i++) {
+        flameOn();
+        delay(trandom(POOF_MIN, POOF_MODE, POOF_MAX));
+        flameOff();
+        delay(random(WAIT_MIN, WAIT_MAX));
+    }
 }
 
 void idleFanfare() {
-  Serial << F("Gameplay: Idle Fanfare !!") << endl;
+    Serial << F("Gameplay: Idle Fanfare !!") << endl;
 
-  // pick a song
-  int minSong = 22;
-  int maxSong = 121;
-  int song = random(minSong, maxSong + 1);
-  Serial << F(" song: ") << song << endl;
-  //  musicPlayer.play_P(song_table[song], 0);  // tunez and fire.  yeah.
+    // pick a song
+    int minSong = 22;
+    int maxSong = 121;
+    int song = random(minSong, maxSong + 1);
+    Serial << F(" song: ") << song << endl;
+    //  musicPlayer.play_P(song_table[song], 0);  // tunez and fire.  yeah.
 
-  Serial << F("Gameplay: Idle fanfare ended") << endl;
+    Serial << F("Gameplay: Idle fanfare ended") << endl;
 
-  // reset the timer
-  delay(300); // be still, my electrical heart
-  unsigned long kioskTimerInterval = random(KIOSK_FANFARE_MIN, KIOSK_FANFARE_MAX);
-  kioskTimer.interval(kioskTimerInterval);
-  Serial << F("Gameplay: idle Fanfare interval reset to ") << kioskTimerInterval << endl;
-  kioskTimer.reset();
+    // reset the timer
+    delay(300); // be still, my electrical heart
+    unsigned long kioskTimerInterval = random(KIOSK_FANFARE_MIN, KIOSK_FANFARE_MAX);
+    kioskTimer.interval(kioskTimerInterval);
+    Serial << F("Gameplay: idle Fanfare interval reset to ") << kioskTimerInterval << endl;
+    kioskTimer.reset();
 }
 
 void playerFanfare(byte level) {
-  Serial << "***Inside playerFanFare: level: " << level << "\n";
-  
-  if (!FANFARE_ENABLED) {
-    Serial.println("Fanfare disabled");
-    return;
-  }
+    Serial << "***Inside playerFanFare: level: " << level << "\n";
 
-  Serial << F("Gameplay: Player fanfare, duration: ") << FANFARE_DURATION_PER_CORRECT * currentLength << endl;
+    if (!FANFARE_ENABLED) {
+        Serial.println("Fanfare disabled");
+        return;
+    }
 
-  Metro fanfareDuration(FANFARE_DURATION_PER_CORRECT * currentLength);
+    Serial << F("Gameplay: Player fanfare, duration: ") << FANFARE_DURATION_PER_CORRECT * currentLength << endl;
 
-  // turn up the music
-  byte volume = MUSIC_DEFAULT_VOL;
-  sound.setVolume(volume);
-/*
-  // make sweet fire/light/music.
-  sound.playWin();
-  
-  while ( ! fanfareDuration.check() ) {
+    Metro fanfareDuration(FANFARE_DURATION_PER_CORRECT * currentLength);
+
+    // turn up the music
+    byte volume = MUSIC_DEFAULT_VOL;
+    sound.setVolume(volume);
+    /*
+    // make sweet fire/light/music.
+    sound.playWin();
+
+    while ( ! fanfareDuration.check() ) {
     // should calculate Light and Fire on Towers here.
 
     // resend tower commands
     light.update();
-  }
-*/
-    if (level >= FANFARE_1) {
-      Serial << "Playing win level 0";
-      for(byte n=0; n < 8; n++) {
-        for ( byte i = 0; i < N_COLORS; i++ ) {
-          if (n % 2 == 0) {
-            light.setLight(I_BLU, LIGHT_ON);
-            light.setFire(i, LIGHT_ON);
-          } else {
-            light.setLight(I_BLU, LIGHT_OFF);
-            light.setFire(i, LIGHT_OFF);
-          }
-        }
-        if (n % 2 == 0) {
-          light.show();
-          Metro delayNow(50);
-          while (! delayNow.check() ) {
-            light.update();
-          }
-        } else {
-          light.show();
-          Metro delayNow(400);
-          while (! delayNow.check() ) {
-            light.update();
-          }
-        }
-      }
     }
-    
+    */
+    if (level >= FANFARE_1) {
+        Serial << "Playing win level 0";
+        for(byte n=0; n < 8; n++) {
+            for ( byte i = 0; i < N_COLORS; i++ ) {
+                if (n % 2 == 0) {
+                    light.setLight(I_BLU, LIGHT_ON);
+                    light.setFire(i, LIGHT_ON);
+                } else {
+                    light.setLight(I_BLU, LIGHT_OFF);
+                    light.setFire(i, LIGHT_OFF);
+                }
+            }
+            if (n % 2 == 0) {
+                light.show();
+                Metro delayNow(50);
+                while (! delayNow.check() ) {
+                    light.update();
+                }
+            } else {
+                light.show();
+                Metro delayNow(400);
+                while (! delayNow.check() ) {
+                    light.update();
+                }
+            }
+        }
+    }
+
     light.setAllLight(LIGHT_OFF);
     light.setAllFire(LIGHT_OFF);
 
-  // ramp down the volume to exit the music playing cleanly.
-  Metro volumeRampTime(MUSIC_RAMP_DOWN_TIME / volume);
-  while ( volume > 0 ) {
-    if ( volumeRampTime.check() ) {
-      volumeRampTime.reset();
-      volume--;
-      sound.decVolume();
+    // ramp down the volume to exit the music playing cleanly.
+    Metro volumeRampTime(MUSIC_RAMP_DOWN_TIME / volume);
+    while ( volume > 0 ) {
+        if ( volumeRampTime.check() ) {
+            volumeRampTime.reset();
+            volume--;
+            sound.decVolume();
+        }
+
+        // resend tower commands
+        light.update();
     }
 
-    // resend tower commands
-    light.update();
-  }
+    // end display
+    quiet();
 
-  // end display
-  quiet();
-
-  Serial << F("Gameplay: Player fanfare ended") << endl;
+    Serial << F("Gameplay: Player fanfare ended") << endl;
 }
 
 // Get the fanfare level to play based on # correct.  Returns 0-3
 byte getLevel(int correct) {
-  Serial << "Get Level: correct: " << correct << "\n";
-  if (correct < FANFARE_LEVEL1) {
-    return FANFARE_NONE;
-  } else if (correct <= FANFARE_LEVEL2) {
-    return FANFARE_1;
-  } else if (correct <= FANFARE_LEVEL3) {
-    return FANFARE_2;
-  } else {
-    return FANFARE_3;
-  }
+    Serial << "Get Level: correct: " << correct << "\n";
+    if (correct < FANFARE_LEVEL1) {
+        return FANFARE_NONE;
+    } else if (correct <= FANFARE_LEVEL2) {
+        return FANFARE_1;
+    } else if (correct <= FANFARE_LEVEL3) {
+        return FANFARE_2;
+    } else {
+        return FANFARE_3;
+    }
 }
 
 
