@@ -22,12 +22,15 @@ extern Sensor sensor;
 #include <EEPROM.h> // saving and loading radio settings
 #include <RFM12B.h> // RFM12b radio transmitter module
 
-
 // Light module IO.  Pull LOW to active touch buttons and rim lighting.
-#define PIXELS_RED 23
-#define PIXELS_YEL 25
-#define PIXELS_GRN 27
-#define PIXELS_BLU 29
+#define PIXELS_RED 36
+#define PIXELS_BLU 38
+#define PIXELS_GRN 40
+#define PIXELS_YEL 42
+
+// note wired up to enable SoftwareSerial comms btw Light and Mega/Console.  Not currently used, but go for it.
+#define SS_TX 34
+#define SS_RX 44
 
 // Manual button lights, panels, under console.  wire to N-channel MOSFET + and any GND.
 #define LED_YEL 8 // can move, PWM
@@ -37,10 +40,10 @@ extern Sensor sensor;
 
 
 // SPI library requirements: http://arduino.cc/en/Reference/SPI
-#define RADIO_SCK 52 // SPI CLK
-#define RADIO_SDO 50 // SPI MISO
-#define RADIO_SDI 51 // SPI MOSI
-#define RADIO_SEL 53 // SPI SS
+#define RADIO_SCK 52 // SPI CLK/SCK
+#define RADIO_SDO 50 // SPI MISO/SDI
+#define RADIO_SDI 51 // SPI MOSI/SDO
+#define RADIO_SEL 53 // SPI SS/SEL
 #define RADIO_IRQ 2 // IRQ 0
 #define D_CS_PIN 10 // default SS pin for RFM module
 

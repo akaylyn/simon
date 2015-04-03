@@ -15,9 +15,10 @@ bool Sound::begin() {
   setVolume(MUSIC_DEFAULT_VOL);
   stop();
 
+/*
   // Fx board
   Serial << F("Fx: setup.") << endl;
-  
+    
   // setup pins
   for(int i=0; i<N_TRIGGER; i++) {
     pinMode(pin[i],OUTPUT);
@@ -33,7 +34,7 @@ bool Sound::begin() {
   fxReset();
   // turn the volume all the way up  
   fxVolMax();
-
+*/
   Serial << "Sound: startup complete." << endl; 
 
   return ( Music ); // if there was an error with Serial connection to Music, return false.
@@ -75,30 +76,34 @@ void Sound::playTone(byte colorIndex, boolean correctTone) {
 }
 
 void Sound::fxReset() {
+/*
   // reset the board
   digitalWrite(FX_RESET, LOW);
   delay(FX_PRESS_DELAY);
   digitalWrite(FX_RESET, HIGH);
   delay(FX_PRESS_DELAY);
   Serial << F("Fx: reset.") << endl;
+  */
 }
 void Sound::fxOn(Trigger t) {
-  digitalWrite(pin[t], LOW);
+  
+//  digitalWrite(pin[t], LOW);
 //  Serial << "Fx: " << t << " pin: " << pin[t] << endl;
 }
 
 void Sound::fxOff(Trigger t) {
-  digitalWrite(pin[t], HIGH);
+//  digitalWrite(pin[t], HIGH);
 }
 
 void Sound::fxAllOff() {
   // all off
-  for(int i=0; i<N_TRIGGER; i++) {
-    digitalWrite(pin[i], HIGH);
-  }
+//  for(int i=0; i<N_TRIGGER; i++) {
+//    digitalWrite(pin[i], HIGH);
+//  }
 }
 
 void Sound::fxVolUp() {
+/*
   // make sure DOWN isn't pegged
   digitalWrite(FX_VOL_DOWN, HIGH);
 
@@ -107,8 +112,10 @@ void Sound::fxVolUp() {
   delay(FX_PRESS_DELAY);
   digitalWrite(FX_VOL_UP, HIGH);  
   delay(FX_PRESS_DELAY);
+*/
 }
 void Sound::fxVolDown() {
+/*
   // make sure UP isn't pegged
   digitalWrite(FX_VOL_UP, HIGH); 
 
@@ -117,8 +124,10 @@ void Sound::fxVolDown() {
   delay(FX_PRESS_DELAY);
   digitalWrite(FX_VOL_DOWN, HIGH);  
   delay(FX_PRESS_DELAY);
+*/
 }
 void Sound::fxVolMax() {
+/*
   // make sure DOWN isn't pegged
   digitalWrite(FX_VOL_DOWN, HIGH); 
 
@@ -126,8 +135,10 @@ void Sound::fxVolMax() {
   digitalWrite(FX_VOL_UP, LOW);
 
   Serial << F("Fx: maximum volume.") << endl;
+*/
 }
 void Sound::fxVolMin() {
+/*
   // make sure UP isn't pegged
   digitalWrite(FX_VOL_UP, HIGH); 
 
@@ -135,6 +146,7 @@ void Sound::fxVolMin() {
   digitalWrite(FX_VOL_DOWN, LOW);
 
   Serial << F("Fx: minimum volume.") << endl;
+*/
 }
 
 void Sound::setVolume(int level) {

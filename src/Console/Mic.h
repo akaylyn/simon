@@ -7,9 +7,9 @@
 // MSGEQ7 datasheet: https://www.sparkfun.com/datasheets/Components/General/MSGEQ7.pdf
 // pin locations
 
-#define MSGEQ7_STROBE_PIN      24
-#define MSGEQ7_RESET_PIN       22
-#define MSGEQ7_ANALOG_PIN      A15
+#define MSGEQ7_ANALOG_PIN      A0
+#define MSGEQ7_STROBE_PIN      A1
+#define MSGEQ7_RESET_PIN       A2
 
 #define NUM_FREQUENCY_BANDS    7
 

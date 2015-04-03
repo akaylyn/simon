@@ -40,10 +40,12 @@ const int pin[N_TRIGGER] = {
   36,37,38,39,40
 };
 
+/*
 #define FX_RESET 41
 #define FX_VOL_UP 42
 #define FX_VOL_DOWN 43 
 #define FX_PRESS_DELAY 1UL
+*/
 
 // communications with Music module via Serial port
 #define Music Serial2

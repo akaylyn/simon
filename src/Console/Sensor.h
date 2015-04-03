@@ -16,11 +16,11 @@
 #define SENSOR_DEBOUCE_TIME 100UL
 
 // remote control
-#define GAME_ENABLE_PIN 45
+#define GAME_ENABLE_PIN A8
   // at system power up, relay is open, meaning pin will read HIGH.
 #define GAME_ENABLED HIGH
 
-#define FIRE_ENABLE_PIN 47
+#define FIRE_ENABLE_PIN A9
   // at system power up, relay is open, meaning pin will read HIGH.
 #define FIRE_ENABLED LOW
 

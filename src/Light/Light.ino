@@ -33,8 +33,7 @@
 // 4x touch lighting strips
 #define RED_PIN 4 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 #define GRN_PIN 5 // wire to button DI pin.  Include a 330 Ohm resistor in series.
-// pin 6 is dead on this Mega?
-#define BLU_PIN 9 // wire to button DI pin.  Include a 330 Ohm resistor in series.
+#define BLU_PIN 6 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 #define YEL_PIN 7 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 // geometry
 #define BUTTON_N 49 // wrapped around each button
@@ -49,16 +48,16 @@
 
 // button pins.  wire to Mega GPIO, bring LOW to indicate pressed.
 #define RED_BUTTON A1
-#define YEL_BUTTON A4
-#define GRN_BUTTON A3
 #define BLU_BUTTON A2
+#define GRN_BUTTON A3
+#define YEL_BUTTON A4
 #define DEBOUNCE_TIME 5UL
 //Bounce redButton = Bounce( RED_BUTTON, DEBOUNCE_TIME );
 //Bounce grnButton = Bounce( GRN_BUTTON, DEBOUNCE_TIME );
 //Bounce bluButton = Bounce( BLU_BUTTON, DEBOUNCE_TIME );
 //Bounce yelButton = Bounce( YEL_BUTTON, DEBOUNCE_TIME );
 
-// note A0 and A5 are wired up to enable SoftwareSerial comms btw Light and Mega/Console.
+// note wired up to enable SoftwareSerial comms btw Light and Mega/Console.  Not currently used, but go for it.
 #define SS_RX A0
 #define SS_TX A5
 

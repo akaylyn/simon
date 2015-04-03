@@ -75,6 +75,7 @@ void idleState() {
     idleFanfare();
   }
 
+/*
   // stubbing in microphone pickup activity.
   // doesn't do anything useful; just makes a tone that should be synchronized with the beat.
   mic.update();
@@ -105,6 +106,7 @@ void idleState() {
     light.setAllOff(); // clear colors
     clearInterval.reset();
   }
+*/
 }
 
 // when the player has played, or at the start of the game, we're in this state
