@@ -1,8 +1,5 @@
 // Compile for Mega
 
-// TODO: get the memory usage inside 2K so we can:
-// Compile for Arduino Uno
-
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
 // and minimize distance between Arduino and first pixel.  Avoid connecting
@@ -15,7 +12,8 @@
 // TODO: move to NeoMatrix to take advantage of the 3x stacked strips
 #include <Streaming.h>
 #include <Metro.h>
-//#include <Bounce.h>
+#include <EasyTransfer.h>
+#include <LightMessage.h> // common message definition
 
 // watchdog timer
 #include <avr/wdt.h>
@@ -47,19 +45,15 @@
 #define LED_PIN 13
 
 // button pins.  wire to Mega GPIO, bring LOW to indicate pressed.
-#define RED_BUTTON A1
-#define BLU_BUTTON A2
-#define GRN_BUTTON A3
-#define YEL_BUTTON A4
-#define DEBOUNCE_TIME 5UL
-//Bounce redButton = Bounce( RED_BUTTON, DEBOUNCE_TIME );
-//Bounce grnButton = Bounce( GRN_BUTTON, DEBOUNCE_TIME );
-//Bounce bluButton = Bounce( BLU_BUTTON, DEBOUNCE_TIME );
-//Bounce yelButton = Bounce( YEL_BUTTON, DEBOUNCE_TIME );
+//create object
+EasyTransfer ET; 
 
-// note wired up to enable SoftwareSerial comms btw Light and Mega/Console.  Not currently used, but go for it.
-#define SS_RX A0
-#define SS_TX A5
+//give a name to the group of data
+LightET lightInst;
+
+// communications with Console module via Serial port
+#define LightComms Serial2
+#define LIGHT_COMMS_RATE 19200
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -128,22 +122,13 @@ void setup() {
   watchdogSetup();
   Serial << F("Watchdog timer setup complete. 8000 ms reboot time if hung.") << endl;
   
-  Serial << F("Total strip memory usage: ") << TOTAL_LED_MEM << F(" bytes of 2000. ") << 2000-TOTAL_LED_MEM << F(" remaining RAM.") << endl;
+  Serial << F("Total strip memory usage: ") << TOTAL_LED_MEM << F(" bytes.") << endl;
   Serial << F("Free RAM: ") << freeRam() << endl;
-
-  // check memory sizes for stuff
-  Serial << F("Metro size: ") << sizeof(stripUpdateInterval)*2 << endl;
-//  Serial << F("Button size: ") << sizeof(redButton)*4 << endl;
 
   // random seed from analog noise.
   randomSeed(analogRead(0));
 
   pinMode(LED_PIN, OUTPUT); digitalWrite(LED_PIN, LOW);
-
-  pinMode(RED_BUTTON, INPUT_PULLUP);
-  pinMode(GRN_BUTTON, INPUT_PULLUP);
-  pinMode(YEL_BUTTON, INPUT_PULLUP);
-  pinMode(BLU_BUTTON, INPUT_PULLUP);
 
   Serial << F("RimJob: ") << RIM_N << F(" pixels in 4 segments of length ") << RIM_SEG_LENGTH << endl;
   Serial << F("RimJob: YEL starts at: ") << YEL_SEG_START << endl;
@@ -154,21 +139,16 @@ void setup() {
   // Initialize all pixels to 'sweet love makin'
   setupStrip(rimJob, Dead);
   theaterChase(rimJob, SweetLoveMakin, 10);
-  Serial << F("Free RAM: ") << freeRam() << endl;
 
   setupStrip(midL, Dead);
   theaterChase(midL, SweetLoveMakin, 10);
-  Serial << F("Free RAM: ") << freeRam() << endl;
 
   setupStrip(redL, Dead);
   theaterChase(redL, Red, 10);
-  Serial << F("Free RAM: ") << freeRam() << endl;
   setupStrip(grnL, Dead);
   theaterChase(grnL, Grn, 10);
-  Serial << F("Free RAM: ") << freeRam() << endl;
   setupStrip(bluL, Dead);
   theaterChase(bluL, Blu, 10);
-  Serial << F("Free RAM: ") << freeRam() << endl;
   setupStrip(yelL, Dead);
   theaterChase(yelL, Yel, 10);
   Serial << F("Free RAM: ") << freeRam() << endl;
@@ -176,12 +156,13 @@ void setup() {
   Serial << F("Light: startup complete.") << endl;
   
   Serial << F("Waiting for Console...") << endl;
-  // put a lockout function here.  If we try to program with the other components powered off,
-  // the buttons all report pressed, and Light goes crazy with Serial spam which prevents upload.
-  // so we wait for all of the button pins to be pulled high.
-  while( isPressed(RED_BUTTON) && isPressed(GRN_BUTTON) && isPressed(BLU_BUTTON) && isPressed(YEL_BUTTON) );
+  
+  LightComms.begin(LIGHT_COMMS_RATE);
+  //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc. 
+  ET.begin(details(lightInst), &LightComms);
   
   Serial << F("Console checked in.  Proceeding...") << endl;
+
   wdt_reset(); // must be called periodically to prevent spurious reboot.
 }
 
@@ -195,7 +176,6 @@ void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
   }
 
   strip.show();
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
 }
 
 void loop() {
@@ -218,9 +198,23 @@ void loop() {
     stripUpdateInterval.reset();
   }
 
-  // check for button pressed
-  if ( buttonCheck() ) quietUpdateInterval.reset();
-
+  //check and see if a data packet has come in. 
+  if(ET.receiveData()) {
+    quietUpdateInterval.reset();
+    
+    boolean pressed = false;
+    if ( lightInst.red ) { buttonPressPattern(0); pressed=true; }
+    if ( lightInst.grn ) { buttonPressPattern(1); pressed=true; }
+    if ( lightInst.blu ) { buttonPressPattern(2); pressed=true; }
+    if ( lightInst.yel ) { buttonPressPattern(3); pressed=true; }
+  
+    if( pressed ) {
+      digitalWrite(LED_PIN, HIGH);
+    } else {     
+      digitalWrite(LED_PIN, LOW);
+    }
+  }
+  
   // when it's quiet, add some pixels
   if ( quietUpdateInterval.check() ) {
     quietAddPixels();
@@ -282,8 +276,6 @@ int freeRam () {
 }
 
 void quietAddPixels() {
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
-  
   switch (random(0, 4)) {
     case 0:
       rimJob.setPixelColor(random(0, RIM_N), Red);
@@ -315,39 +307,7 @@ void quietAddPixels() {
 
 }
 
-// cheap-ass bebounce routine, but 15 bytes for Bounce library is too much.
-boolean isPressed(byte buttonPin) {
-  if( digitalRead(buttonPin)==LOW ) {
-    delay(DEBOUNCE_TIME);
-    // check again
-    if( digitalRead(buttonPin)==LOW ) {
-      return( true );
-    }
-  }
-  return( false );
-}
-
-boolean buttonCheck() {
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
-
-  // check for pressed (LOW), and trigger pixels if pressed.
-  boolean pressed = false;
-  if ( isPressed(RED_BUTTON) ) { buttonPressPattern(0); pressed=true; }
-  if ( isPressed(GRN_BUTTON) ) { buttonPressPattern(1); pressed=true; }
-  if ( isPressed(BLU_BUTTON) ) { buttonPressPattern(2); pressed=true; }
-  if ( isPressed(YEL_BUTTON) ) { buttonPressPattern(3); pressed=true; }
-  
-  if( pressed ) {
-    digitalWrite(LED_PIN, HIGH);
-    return( true ); // signal buttons pressed.
-  } else {     
-    digitalWrite(LED_PIN, LOW);
-    return( false ); // signal no buttons pressed.
-  }
-}
-
 void buttonPressPattern(uint8_t button) {
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
 
   switch (button) {
     case 0:  // red
@@ -381,7 +341,7 @@ void buttonPressPattern(uint8_t button) {
 }
 
 void buttonPressToButton(Adafruit_NeoPixel &strip, const uint32_t color) {
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
+
 
   Serial << F("Button.  Adding pixels to Button color: ");
   printColor(color);
@@ -394,8 +354,7 @@ void buttonPressToButton(Adafruit_NeoPixel &strip, const uint32_t color) {
 }
 
 void buttonPressToRim(const uint32_t color, uint16_t segStart, uint16_t segLength) {
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
-
+  
   Serial << F("Button.  Adding pixels to Rim from ") << segStart << F(" to ") << (segStart + segLength - 1) % RIM_N << F(". Color: ");
   printColor(color);
 
@@ -514,24 +473,19 @@ void updateRule90(Adafruit_NeoPixel &strip, unsigned long ttl) {
 }
 
 void test(Adafruit_NeoPixel &strip) {
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
   // Some example procedures showing how to display to the pixels:
   colorWipe(strip, strip.Color(255, 0, 0), 50); // Red
   colorWipe(strip, strip.Color(0, 255, 0), 50); // Green
   colorWipe(strip, strip.Color(0, 0, 255), 50); // Blue
 
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
   // Send a theater pixel chase in...
   theaterChase(strip, strip.Color(127, 127, 127), 50); // White
   theaterChase(strip, strip.Color(127,   0,   0), 50); // Red
   theaterChase(strip, strip.Color(  0,   0, 127), 50); // Blue
 
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
   rainbow(strip, 20);
   rainbowCycle(strip, 20);
   theaterChaseRainbow(strip, 50);
-
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
 }
 
 // Fill the dots one after the other with a color

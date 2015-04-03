@@ -10,6 +10,9 @@
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
 
+#include <EasyTransfer.h>
+#include <LightMessage.h> // common message definition
+
 // for fireEnable function
 #include "Sensor.h" 
 extern Sensor sensor;
@@ -22,22 +25,15 @@ extern Sensor sensor;
 #include <EEPROM.h> // saving and loading radio settings
 #include <RFM12B.h> // RFM12b radio transmitter module
 
-// Light module IO.  Pull LOW to active touch buttons and rim lighting.
-#define PIXELS_RED 36
-#define PIXELS_BLU 38
-#define PIXELS_GRN 40
-#define PIXELS_YEL 42
-
-// note wired up to enable SoftwareSerial comms btw Light and Mega/Console.  Not currently used, but go for it.
-#define SS_TX 34
-#define SS_RX 44
+// communications with Console module via Serial port
+#define LightComms Serial3
+#define LIGHT_COMMS_RATE 19200
 
 // Manual button lights, panels, under console.  wire to N-channel MOSFET + and any GND.
 #define LED_YEL 8 // can move, PWM
 #define LED_GRN 9 // can move, PWM
 #define LED_BLU 10 // can move, PWM
 #define LED_RED 11 // can move, PWM
-
 
 // SPI library requirements: http://arduino.cc/en/Reference/SPI
 #define RADIO_SCK 52 // SPI CLK/SCK
@@ -47,12 +43,9 @@ extern Sensor sensor;
 #define RADIO_IRQ 2 // IRQ 0
 #define D_CS_PIN 10 // default SS pin for RFM module
 
-
 #define CONFIG_SEND_INTERVAL 30000UL // ms. 
 #define SEND_INTERVAL 5UL
 #define PING_COUNT 10
-
-
 
 // LED mins and max (analogWrite).  use for ledValue.
 #define LIGHT_ON 255

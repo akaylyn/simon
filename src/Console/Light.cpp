@@ -9,15 +9,19 @@ Metro resendCounter(SEND_INTERVAL);
 // time before we reconfig the network
 Metro networkConfigUpdate(CONFIG_SEND_INTERVAL);
 
+// button pins.  wire to Mega GPIO, bring LOW to indicate pressed.
+//create object
+EasyTransfer ET; 
+
+//give a name to the group of data
+LightET lightInst;
+
 // system outputs
 // LED lights
 LED redLight(LED_RED);
 LED grnLight(LED_GRN);
 LED bluLight(LED_BLU);
 LED yelLight(LED_YEL);
-
-// WS2812's
-const byte pixel[N_COLORS] = {PIXELS_RED, PIXELS_GRN, PIXELS_BLU, PIXELS_YEL};
 
 // try to use these nodes:
 boolean listenAll[N_COLORS]={true, true, true, true};
@@ -62,11 +66,14 @@ void Light::begin() {
   led[I_GRN] = &grnLight;
   led[I_BLU] = &bluLight;
   led[I_YEL] = &yelLight;
-
-  pinMode(PIXELS_RED, OUTPUT);
-  pinMode(PIXELS_GRN, OUTPUT);
-  pinMode(PIXELS_BLU, OUTPUT);
-  pinMode(PIXELS_YEL, OUTPUT);
+  
+  Serial << F("Light: Waiting for Light...") << endl;
+  
+  LightComms.begin(LIGHT_COMMS_RATE);
+  //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc. 
+  ET.begin(details(lightInst), &LightComms);
+  
+  Serial << F("Light: Light checked in.  Proceeding...") << endl;
 
   // once configured, start with all off.
   setAllOff();
@@ -130,19 +137,22 @@ void Light::setAllOff(boolean showNow, byte nodeID) {
 
 // call this to latch the light and fire settings
 void Light::show(byte nodeID) {
-  // update the local LEDs and pixels
-  for ( int i = 0; i < N_COLORS; i++ ) {
-    // local LEDs
-    led[i]->setValue(inst.lightLevel[i]);
-    // local NeoPixels
-    digitalWrite(pixel[i], inst.lightLevel[i] >= PIXEL_THRESHOLD ? PIXEL_ON : PIXEL_OFF);
-  }
-
   // outboard Tower lighting and fire
   radio.Send(nodeID, (const void*)(&inst), sizeof(inst));
 
-  // maybe resend?
-  if ( nodeID == 0 ) resendCount = RESEND_COUNT - 1;
+  // update the local LEDs 
+  for ( int i = 0; i < N_COLORS; i++ ) {
+    // local LEDs
+    led[i]->setValue(inst.lightLevel[i]);
+  }
+  // Light module WS2812's
+  lightInst.red = inst.lightLevel[I_RED] >= PIXEL_THRESHOLD ? true : false;
+  lightInst.grn = inst.lightLevel[I_GRN] >= PIXEL_THRESHOLD ? true : false;
+  lightInst.blu = inst.lightLevel[I_BLU] >= PIXEL_THRESHOLD ? true : false;
+  lightInst.yel = inst.lightLevel[I_YEL] >= PIXEL_THRESHOLD ? true : false;
+  //send the data
+  ET.sendData();
+
 }
 
 void Light::sendInstruction(towerInstruction &externInst) {
