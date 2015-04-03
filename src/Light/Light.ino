@@ -52,7 +52,7 @@ EasyTransfer ET;
 LightET lightInst;
 
 // communications with Console module via Serial port
-#define LightComms Serial2
+#define LightComms Serial1
 #define LIGHT_COMMS_RATE 19200
 
 // Parameter 1 = number of pixels in strip

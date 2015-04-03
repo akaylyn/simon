@@ -26,7 +26,7 @@ extern Sensor sensor;
 #include <RFM12B.h> // RFM12b radio transmitter module
 
 // communications with Console module via Serial port
-#define LightComms Serial3
+#define LightComms Serial1
 #define LIGHT_COMMS_RATE 19200
 
 // Manual button lights, panels, under console.  wire to N-channel MOSFET + and any GND.

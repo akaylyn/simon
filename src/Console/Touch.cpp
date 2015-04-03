@@ -18,10 +18,10 @@ boolean Touch::begin() {
 
   // 0x5C is the MPR121 I2C address on the Bare Touch Board
   if (!MPR121.begin(MPR121_I2CADDR_DEFAULT)) {
-    Serial << F("Touch: error setting up MPR121");
+    Serial << F("Touch: error setting up MPR121: ");
     switch (MPR121.getError()) {
       case ADDRESS_UNKNOWN:
-        Serial << F("MPR121: incorrect address") << endl;
+        Serial << F("MPR121: did not respond at address") << endl;
         return ( false );
         break;
       case READBACK_FAIL:
