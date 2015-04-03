@@ -34,10 +34,11 @@ boolean Sensor::fireEnabled() {
 
     // this could be replaced by asking Music to play an mp3 file.  For now, we'll just use the tone system.
     for ( int i = 0; i < 3; i++ ) {
-      sound.playTone(I_RED, !fireMode); // if fireMode, we'll get a RED tone (high freq); false, we get a WRONG tone (low freq)
-      delay( 250UL ); // wait 0.25 seconds
-      sound.stop();
-      delay( 100UL ); // wait 0.1 seconds
+      // TODO: need a "klaxon" track!!!
+//      sound.playTone(I_RED, !fireMode); // if fireMode, we'll get a RED tone (high freq); false, we get a WRONG tone (low freq)
+//      delay( 250UL ); // wait 0.25 seconds
+//      sound.stop();
+//      delay( 100UL ); // wait 0.1 seconds
     }
   }
 

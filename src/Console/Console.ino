@@ -12,6 +12,7 @@
 #include <EEPROM.h> // saving and loading radio settings
 #include <RFM12B.h> // RFM12b radio transmitter module
 #include <EasyTransfer.h> // used for sending message to the sound module
+#include <wavTrigger.h> // sound board
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
@@ -97,7 +98,7 @@ void setupMode() {
     if ( tones < 5 ) {
       sound.playTone(tones);
     } else {
-      sound.stop();
+      sound.stopAllTracks();
     }
     // show
     light.show();

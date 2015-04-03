@@ -259,7 +259,7 @@ void setSoundLights(byte colorIndex, boolean correctTone) {
     if (correctTone) {
         sound.playTone(colorIndex);
     } else {
-        sound.playFailureTone();
+        sound.playFailTone();
     }
 
     // Lights on Tower
@@ -288,7 +288,6 @@ void play(char color, boolean correctTone) {
 void animateFailure()
 {
     Serial << "AnimateFailure!" << endl;
-    sound.setVolume(0);
     sound.playLose();
     for (int i = 0; i < 6; i++) {
         light.setAllLight(LIGHT_ON, true);
@@ -307,7 +306,7 @@ void quiet() {
     light.setAllOff();
 
     // Sound on Console and Tower
-    sound.stop();
+    sound.stopAllTracks();
 
 }
 
@@ -417,20 +416,9 @@ void playerFanfare(byte level) {
 
     Metro fanfareDuration(FANFARE_DURATION_PER_CORRECT * currentLength);
 
-    // turn up the music
-    byte volume = MUSIC_DEFAULT_VOL;
-    sound.setVolume(volume);
-    /*
     // make sweet fire/light/music.
-    sound.playWin();
-
-    while ( ! fanfareDuration.check() ) {
-    // should calculate Light and Fire on Towers here.
-
-    // resend tower commands
-    light.update();
-    }
-    */
+    int winTrack = sound.playWin();
+    
     if (level >= FANFARE_1) {
         Serial << "Playing win level 0";
         for(byte n=0; n < 8; n++) {
@@ -463,20 +451,7 @@ void playerFanfare(byte level) {
     light.setAllFire(LIGHT_OFF);
 
     // ramp down the volume to exit the music playing cleanly.
-    Metro volumeRampTime(MUSIC_RAMP_DOWN_TIME / volume);
-    while ( volume > 0 ) {
-        if ( volumeRampTime.check() ) {
-            volumeRampTime.reset();
-            volume--;
-            sound.decVolume();
-        }
-
-        // resend tower commands
-        light.update();
-    }
-
-    // end display
-    quiet();
+    sound.fadeTrack(winTrack);
 
     Serial << F("Gameplay: Player fanfare ended") << endl;
 }
