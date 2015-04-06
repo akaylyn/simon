@@ -39,16 +39,16 @@ void setup() {
   Serial.begin(115200);
 
   // random seed set from electrical noise on an analog pin.
-  randomSeed(analogRead(0));
+  randomSeed(analogRead(A5));
 
   // start each unit
+  //------ Output units.
+  light.begin(); // moved this up to the front, as synchronization with Light is apparently important.
+  if ( !sound.begin() && RUN_UNIT_ON_ERROR || 0) sound.unitTest();
   //------ Input units.
   touch.begin();
   sensor.begin();
   mic.begin();
-  //------ Output units.
-  light.begin();
-  if ( !sound.begin() && RUN_UNIT_ON_ERROR || 0) sound.unitTest();
   //------ "This" units.
   gameplayStart(sound);
   externStart();

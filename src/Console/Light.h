@@ -110,6 +110,7 @@ class Light {
     // configure network
     void networkConfig();
     void towerConfig(towerConfiguration & config, byte nodeID);
+    
 };
 
 extern Light light;

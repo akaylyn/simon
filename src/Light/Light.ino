@@ -36,7 +36,7 @@
 // geometry
 #define BUTTON_N 49 // wrapped around each button
 
-// 1x chotsky lighting 
+// 1x chotsky lighting
 #define MIDDLE_PIN 8 //
 // geometry
 #define MIDDLE_N 18 // wrapped around middle chotsky
@@ -46,7 +46,7 @@
 
 // button pins.  wire to Mega GPIO, bring LOW to indicate pressed.
 //create object
-EasyTransfer ET; 
+EasyTransfer ET;
 
 //give a name to the group of data
 LightET lightInst;
@@ -115,13 +115,33 @@ void setup() {
   Serial.begin(115200);
 
   delay(500);
-  
+
   Serial << F("Light startup.") << endl;
+
+  Serial << F("Waiting for Console...") << endl;
+
+  LightComms.begin(LIGHT_COMMS_RATE);
+  //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc.
+  ET.begin(details(lightInst), &LightComms);
+
+  // wait for an instruction.
+  while( ! ET.receiveData() ) {
+    Serial << F(".");
+    delay(25);
+  }
+  Serial << endl;
+
+  // return handshake that we got the instruction.
+  byte handShake = 'h';
+  LightComms.write(handShake);
+  LightComms.flush(); // wait for xmit to complete.
+
+  Serial << F("Console checked in.  Proceeding...") << endl;
 
   // use WDT to reboot if we hang.
   watchdogSetup();
   Serial << F("Watchdog timer setup complete. 8000 ms reboot time if hung.") << endl;
-  
+
   Serial << F("Total strip memory usage: ") << TOTAL_LED_MEM << F(" bytes.") << endl;
   Serial << F("Free RAM: ") << freeRam() << endl;
 
@@ -154,14 +174,6 @@ void setup() {
   Serial << F("Free RAM: ") << freeRam() << endl;
 
   Serial << F("Light: startup complete.") << endl;
-  
-  Serial << F("Waiting for Console...") << endl;
-  
-  LightComms.begin(LIGHT_COMMS_RATE);
-  //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc. 
-  ET.begin(details(lightInst), &LightComms);
-  
-  Serial << F("Console checked in.  Proceeding...") << endl;
 
   wdt_reset(); // must be called periodically to prevent spurious reboot.
 }
@@ -180,12 +192,12 @@ void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
 
 void loop() {
   wdt_reset(); // must be called periodically to prevent spurious reboot.
-  
+
   // update the strip automata on an interval
   if ( stripUpdateInterval.check() ) {
     // compute the next step and flag for show.
     updateRule90(rimJob, PIXEL_TTL); rimUpdated = true;
-    
+
     // if we wanted the buttons to animate differently than the rim, this would be the place to do it.
     updateRule90(redL, PIXEL_TTL); redUpdated = true;
     updateRule90(grnL, PIXEL_TTL); grnUpdated = true;
@@ -198,23 +210,35 @@ void loop() {
     stripUpdateInterval.reset();
   }
 
-  //check and see if a data packet has come in. 
-  if(ET.receiveData()) {
+  //check and see if a data packet has come in.
+  if (ET.receiveData()) {
     quietUpdateInterval.reset();
-    
+
     boolean pressed = false;
-    if ( lightInst.red ) { buttonPressPattern(0); pressed=true; }
-    if ( lightInst.grn ) { buttonPressPattern(1); pressed=true; }
-    if ( lightInst.blu ) { buttonPressPattern(2); pressed=true; }
-    if ( lightInst.yel ) { buttonPressPattern(3); pressed=true; }
-  
-    if( pressed ) {
+    if ( lightInst.red ) {
+      buttonPressPattern(0);
+      pressed = true;
+    }
+    if ( lightInst.grn ) {
+      buttonPressPattern(1);
+      pressed = true;
+    }
+    if ( lightInst.blu ) {
+      buttonPressPattern(2);
+      pressed = true;
+    }
+    if ( lightInst.yel ) {
+      buttonPressPattern(3);
+      pressed = true;
+    }
+
+    if ( pressed ) {
       digitalWrite(LED_PIN, HIGH);
-    } else {     
+    } else {
       digitalWrite(LED_PIN, LOW);
     }
   }
-  
+
   // when it's quiet, add some pixels
   if ( quietUpdateInterval.check() ) {
     quietAddPixels();
@@ -252,15 +276,15 @@ void loop() {
 // from: http://forum.arduino.cc/index.php?action=dlattach;topic=63651.0;attach=3585
 void watchdogSetup() {
   cli();
-  
+
   wdt_reset();
-  
+
   // enter watchdog config mode
-  WDTCSR |=(1<<WDCE)|(1<<WDE);
-  
+  WDTCSR |= (1 << WDCE) | (1 << WDE);
+
   // set watchdog settings; 8000 ms timout.
-  WDTCSR = (1<<WDIE)|(1<<WDE)|(1<<WDP3)|(0<<WDP2)|(0<<WDP1)|(1<<WDP0);
-  
+  WDTCSR = (1 << WDIE) | (1 << WDE) | (1 << WDP3) | (0 << WDP2) | (0 << WDP1) | (1 << WDP0);
+
   sei();
 }
 
@@ -270,9 +294,9 @@ ISR(WDT_vect) {
 }
 
 int freeRam () {
-  extern int __heap_start, *__brkval; 
-  int v; 
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
 void quietAddPixels() {
@@ -354,7 +378,7 @@ void buttonPressToButton(Adafruit_NeoPixel &strip, const uint32_t color) {
 }
 
 void buttonPressToRim(const uint32_t color, uint16_t segStart, uint16_t segLength) {
-  
+
   Serial << F("Button.  Adding pixels to Rim from ") << segStart << F(" to ") << (segStart + segLength - 1) % RIM_N << F(". Color: ");
   printColor(color);
 

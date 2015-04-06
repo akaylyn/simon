@@ -50,6 +50,24 @@ unsigned int flameCoolDownDivisor = 2;
 
 // startup
 void Light::begin() {
+  // moved this up front, as synchronization with Light apparently important.
+  Serial << F("Light: Waiting for Light...") << endl;
+  
+  LightComms.begin(LIGHT_COMMS_RATE);
+  //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc. 
+  ET.begin(details(lightInst), &LightComms);
+  
+  // send instructions until we get a response.
+  byte handShake = 'h';
+  while( LightComms.read() != handShake) {
+    Serial << F(".");
+    ET.sendData();
+    LightComms.flush(); // wait for xmit to complete.
+    delay(25);
+  }
+  Serial << endl;
+
+  Serial << F("Light: Light checked in.  Proceeding...") << endl;
 
   Serial << F("Tower: startup.") << endl;
 
@@ -67,14 +85,6 @@ void Light::begin() {
   led[I_BLU] = &bluLight;
   led[I_YEL] = &yelLight;
   
-  Serial << F("Light: Waiting for Light...") << endl;
-  
-  LightComms.begin(LIGHT_COMMS_RATE);
-  //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc. 
-  ET.begin(details(lightInst), &LightComms);
-  
-  Serial << F("Light: Light checked in.  Proceeding...") << endl;
-
   // once configured, start with all off.
   setAllOff();
 
