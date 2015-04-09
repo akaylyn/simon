@@ -127,15 +127,11 @@ void setup() {
   // wait for an instruction.
   while( ! ET.receiveData() ) {
     Serial << F(".");
-    delay(25);
+    delay(50);
   }
   Serial << endl;
-
-  // return handshake that we got the instruction.
-  byte handShake = 'h';
-  LightComms.write(handShake);
-  LightComms.flush(); // wait for xmit to complete.
-
+  sendHandshake();
+  
   Serial << F("Console checked in.  Proceeding...") << endl;
 
   // use WDT to reboot if we hang.
@@ -190,6 +186,13 @@ void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
   strip.show();
 }
 
+void sendHandshake() {
+  // return handshake that we got the instruction.
+  byte handShake = 'h';
+  LightComms.write(handShake);
+//  LightComms.flush(); // wait for xmit to complete.
+}
+
 void loop() {
   wdt_reset(); // must be called periodically to prevent spurious reboot.
 
@@ -213,6 +216,7 @@ void loop() {
   //check and see if a data packet has come in.
   if (ET.receiveData()) {
     quietUpdateInterval.reset();
+    sendHandshake(); // heartbeat.
 
     boolean pressed = false;
     if ( lightInst.red ) {

@@ -17,45 +17,51 @@ boolean Touch::begin() {
   // following Examples->BareConductive_MPR->SimpleTouch
 
   // 0x5C is the MPR121 I2C address on the Bare Touch Board
+  boolean mprError = false;
   if (!MPR121.begin(MPR121_I2CADDR_DEFAULT)) {
     Serial << F("Touch: error setting up MPR121: ");
     switch (MPR121.getError()) {
       case ADDRESS_UNKNOWN:
         Serial << F("MPR121: did not respond at address") << endl;
-        return ( false );
+        mprError = true;
         break;
       case READBACK_FAIL:
         Serial << F("MPR121: readback failure") << endl;
-        return ( false );
+        mprError = true;
         break;
       case OVERCURRENT_FLAG:
         Serial << F("MPR121: overcurrent on REXT pin") << endl;
-        return ( false );
+        mprError = true;
         break;
       case OUT_OF_RANGE:
         Serial << F("MPR121: electrode out of range") << endl;
-        return ( false );
+        mprError = true;
         break;
       case NOT_INITED:
         Serial << F("MPR121: not initialised") << endl;
-        return ( false );
+        mprError = true;
         break;
       default:
         Serial << F("MPR121: unknown error") << endl;
-        return ( false );
+        mprError = true;
         break;
     }
   }
   else {
     Serial << F("MPR121: no error") << endl;
     // set the interrupt handler.
-    MPR121.setInterruptPin(TOUCH_IRQ);
+//    MPR121.setInterruptPin(TOUCH_IRQ);
 
     // enable 13-th virtual proximity electrode, tying electrodes 0..3 together.
     MPR121.setProxMode(PROX0_3);
 
     // initial data update
     MPR121.updateAll();
+  }
+  if( mprError ) {
+    // try again?
+    delay(25);
+    return(this->begin()); 
   }
 
   Serial << F("Touch: setting up hard buttons.") << endl;
