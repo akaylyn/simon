@@ -2,7 +2,7 @@
 // included in several places.
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
-#include <Simon_Indexes.h> // indexing.
+#include <Simon_Common.h> // indexing.
 // capsense touch: MPR121 include I2C, MPR121 libraries from Bare Conductive.
 #include <Wire.h>
 #include <MPR121.h> // from: https://github.com/BareConductive/mpr121
