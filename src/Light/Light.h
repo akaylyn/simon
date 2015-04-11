@@ -67,7 +67,7 @@ Adafruit_NeoMatrix rimJob = Adafruit_NeoMatrix(
     NEO_TILE_ROWS +
     NEO_TILE_PROGRESSIVE,
     NEO_GRB + NEO_KHZ800
-        );
+    );
 
 // strips around the buttons
 Adafruit_NeoPixel redL = Adafruit_NeoPixel(BUTTON_N, RED_PIN, NEO_GRB + NEO_KHZ800);

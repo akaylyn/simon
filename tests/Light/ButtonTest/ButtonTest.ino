@@ -32,20 +32,41 @@ Adafruit_NeoMatrix strip = rimJob;
 // on a live circuit...if you must, connect GND first.
 
 void setup() {
+
     rimJob.begin();
     rimJob.show();
-    rimJob.setTextWrap(true);
-    rimJob.Color(255, 0, 0);
+    //rimJob.setTextWrap(true);
+    //rimJob.Color(255, 0, 0);
     //strip.begin();
     //strip.show(); // Initialize all pixels to 'off'
+    redL.begin();
+    redL.show();
+    grnL.begin();
+    grnL.show();
+    bluL.begin();
+    bluL.show();
+    yelL.begin();
+    yelL.show();
+
 }
 
 void loop() {
 
+    colorWipe(redL, redL.Color(127, 0, 0), 20);
+    colorWipe(redL, redL.Color(127, 127, 0), 20);
+    colorWipe(grnL, Blu, 20);
+    colorWipe(grnL, Yel, 20);
+    colorWipe(yelL, Red, 20);
+    colorWipe(yelL, Grn, 20);
+    colorWipe(bluL, Blu, 20);
+    colorWipe(bluL, Yel, 20);
     // Some example procedures showing how to display to the pixels:
-    colorWipeMatrix(rimJob.Color(255, 0, 0), 30); // Red
-    colorWipeMatrix(rimJob.Color(0, 255, 0), 30); // Green
-    colorWipeMatrix(rimJob.Color(0, 0, 255), 30); // Blue
+    colorWipeMatrix(rimJob, Yel, 1); // Blue
+    colorWipeMatrix(rimJob, Grn, 1); // Green
+    /*colorWipeMatrix(rimJob, Red, 1); // Red
+    colorWipeMatrix(rimJob, Blu, 1); // Blue
+    */
+
     // Send a theater pixel chase in...
     /*
     theaterChase(strip.Color(127, 127, 127), 50); // White
@@ -57,21 +78,21 @@ void loop() {
     theaterChaseRainbow(50);
     */
 }
-void colorWipeMatrix(uint32_t c, uint8_t wait) {
-    for(uint16_t x=0; x<108; x++) {
-        strip.drawPixel(x, 0, c);
-        strip.drawPixel(x, 1, c);
-        strip.drawPixel(x, 2, c);
-        strip.show();
+void colorWipeMatrix(Adafruit_NeoMatrix &matrix, uint32_t c, uint8_t wait) {
+    for (uint16_t x = 0; x < matrix.width(); x++) {
+        matrix.drawPixel(x, 0, c);
+        matrix.drawPixel(x, 1, c);
+        matrix.drawPixel(x, 2, c);
+        matrix.show();
         delay(wait);
     }
 }
 
 // Fill the dots one after the other with a color
-void colorWipe(uint32_t c, uint8_t wait) {
-    for(uint16_t i=0; i<strip.numPixels(); i++) {
-        strip.setPixelColor(i, c);
-        strip.show();
+void colorWipe(Adafruit_NeoPixel &button, uint8_t c, uint8_t wait) {
+    for (uint16_t i = 0; i < button.numPixels(); i++) {
+        button.setPixelColor(i, c);
+        button.show();
         delay(wait);
     }
 }
