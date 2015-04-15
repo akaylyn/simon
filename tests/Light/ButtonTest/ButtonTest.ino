@@ -1,4 +1,3 @@
-
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_NeoMatrix.h>
@@ -41,59 +40,114 @@ void setup() {
     //strip.show(); // Initialize all pixels to 'off'
     redL.begin();
     redL.show();
-    grnL.begin();
+    /*grnL.begin();
     grnL.show();
     bluL.begin();
     bluL.show();
     yelL.begin();
     yelL.show();
+    */
 
+    setStripColor(redL, RED_MAX, GRN_MAX, BLU_MAX);
+}
+
+void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b) {
+    for (int i = 0; i < strip.numPixels(); i++) {
+        strip.setPixelColor(i, strip.Color(r, g, b));
+        strip.show();
+    }
 }
 
 void loop() {
+    bool rimReady = true;
+    bool btnReady = true;
+    if (stripUpdateInterval.check()) {
 
-    colorWipe(redL, redL.Color(127, 0, 0), 20);
-    colorWipe(redL, redL.Color(127, 127, 0), 20);
-    colorWipe(grnL, Blu, 20);
-    colorWipe(grnL, Yel, 20);
-    colorWipe(yelL, Red, 20);
-    colorWipe(yelL, Grn, 20);
-    colorWipe(bluL, Blu, 20);
-    colorWipe(bluL, Yel, 20);
-    // Some example procedures showing how to display to the pixels:
-    colorWipeMatrix(rimJob, Yel, 1); // Blue
-    colorWipeMatrix(rimJob, Grn, 1); // Green
-    /*colorWipeMatrix(rimJob, Red, 1); // Red
-    colorWipeMatrix(rimJob, Blu, 1); // Blue
-    */
-
-    // Send a theater pixel chase in...
     /*
-    theaterChase(strip.Color(127, 127, 127), 50); // White
-    theaterChase(strip.Color(127,   0,   0), 50); // Red
-    theaterChase(strip.Color(  0,   0, 127), 50); // Blue
+        colorWipe(redL, RED_MAX, GRN_MAX, LED_OFF, 10);
+        setStripColor(redL, RED_MAX, LED_OFF, LED_OFF);
+        colorWipe(redL, redL.Color(127, 127, 0), 20);
+        */
+    /*    colorWipe(grnL, Blu, 20);
+        colorWipe(grnL, Yel, 20);
+        colorWipe(yelL, Red, 20);
+        colorWipe(yelL, Grn, 20);
+        colorWipe(bluL, Blu, 20);
+        colorWipe(bluL, Yel, 20);
+        */
+        // Some example procedures showing how to display to the pixels:
+        /*colorWipeMatrix(rimJob, Grn, 1); // Green
+        colorWipeMatrix(rimJob, Yel, 1); // Blue
+        colorWipeMatrix(rimJob, Red, 1); // Red
+        colorWipeMatrix(rimJob, Blu, 1); // Blue
+        */
 
-    rainbow(20);
-    rainbowCycle(20);
-    theaterChaseRainbow(50);
-    */
+        // Send a theater pixel chase in...
+        /*
+        theaterChase(strip.Color(127, 127, 127), 50); // White
+        theaterChase(strip.Color(127,   0,   0), 50); // Red
+        theaterChase(strip.Color(  0,   0, 127), 50); // Blue
+
+        rainbow(20);
+        rainbowCycle(20);
+        theaterChaseRainbow(50);
+        */
+
+        calculateAnimation();
+        push(strip, rimReady);
+        push(strip,
+        stripUpdateInterval.reset();
+    }
 }
+
+void push(Adafruit_NeoPixel &strip, bool &ready) {
+    static Metro timer(wait);
+    if (!timer.check()) return;
+    strip.show();
+    ready = true;
+}
+
+void calculateAnimation(void (*animate)(&strip, int r, int g, int b, uint8_t wait), bool &ready) {
+    if (!ready) return;
+    animate(strip, r, g, b, wait);
+    ready = false;
+}
+
 void colorWipeMatrix(Adafruit_NeoMatrix &matrix, uint32_t c, uint8_t wait) {
     for (uint16_t x = 0; x < matrix.width(); x++) {
-        matrix.drawPixel(x, 0, c);
-        matrix.drawPixel(x, 1, c);
-        matrix.drawPixel(x, 2, c);
-        matrix.show();
-        delay(wait);
+        if (timer.check()) {
+            matrix.drawPixel(x, 0, c);
+            matrix.drawPixel(x, 1, c);
+            matrix.drawPixel(x, 2, c);
+            matrix.show();
+            timer.reset();
+        }
     }
 }
 
 // Fill the dots one after the other with a color
-void colorWipe(Adafruit_NeoPixel &button, uint8_t c, uint8_t wait) {
+void colorWipe(Adafruit_NeoPixel &button, int r, int g, int b, uint8_t wait) {
+    Metro timer(wait);
     for (uint16_t i = 0; i < button.numPixels(); i++) {
-        button.setPixelColor(i, c);
-        button.show();
-        delay(wait);
+        if (timer.check()) {
+            button.setPixelColor(i, button.Color(r, g, b));
+            button.show();
+            timer.reset();
+        }
+    }
+}
+
+// color wipes the last 8 pixels
+void laserWipe(Adafruit_NeoPixel &button, int r, int g, int b, uint8_t wait, int times = 3) {
+    int currTimes = 0;
+
+    while (currTimes < times) {
+        for (uint16_t i = 0; i < button.numPixels(); i++) {
+            button.setPixelColor(i, button.Color(r, g, b));
+            button.show();
+            delay(wait);
+        }
+        times++;
     }
 }
 
