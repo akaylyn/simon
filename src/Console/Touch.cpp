@@ -16,7 +16,7 @@ boolean Touch::begin() {
 
   // following Examples->BareConductive_MPR->SimpleTouch
 
-  // 0x5C is the MPR121 I2C address on the Bare Touch Board
+  // 0x5A is the MPR121 I2C address on the Bare Touch Board
   Wire.begin();
 
   boolean mprError = true;
