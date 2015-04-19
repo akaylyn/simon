@@ -46,7 +46,7 @@ boolean Touch::begin() {
       delay(1000);
     } 
     else {
-      Serial << F("Touhc: MPR121: initialized.") << endl;
+      Serial << F("Touch: MPR121: initialized.") << endl;
         
       MPR121.reset();
       Serial << F("Touch: MPR121: reset.") << endl;
