@@ -1,4 +1,5 @@
-
+#ifndef Light_h
+#define Light_h
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_NeoMatrix.h>
@@ -114,4 +115,4 @@ Metro stripUpdateInterval(STRIP_UPDATE);
 // count memory usage for LEDs, which is reported at startup.
 #define TOTAL_LED_MEM (RIM_N + BUTTON_N*4 + MIDDLE_N)*3
 
-
+#endif

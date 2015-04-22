@@ -2,6 +2,7 @@
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_NeoMatrix.h>
 #include "Light.h"
+#include "ButtonTest.h"
 
 // TODO: move to NeoMatrix to take advantage of the 3x stacked strips
 #include <Streaming.h>
@@ -31,7 +32,7 @@ Adafruit_NeoMatrix strip = rimJob;
 // on a live circuit...if you must, connect GND first.
 
 void setup() {
-
+    Serial.begin(115200);
     rimJob.begin();
     rimJob.show();
     //rimJob.setTextWrap(true);
@@ -48,23 +49,26 @@ void setup() {
     yelL.show();
     */
 
-    setStripColor(redL, RED_MAX, GRN_MAX, BLU_MAX);
+    //setStripColor(redL, RED_MAX, GRN_MAX, BLU_MAX);
+    //setStripColor(rimJob, RED_MAX, GRN_MAX, BLU_MAX);
 }
 
 void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b) {
     for (int i = 0; i < strip.numPixels(); i++) {
         strip.setPixelColor(i, strip.Color(r, g, b));
-        strip.show();
     }
+    strip.show();
 }
 
+static uint8_t lastPosition = 0;
+static uint8_t buttonLastPosition = 0;
+static bool rimReady = true;
+static bool btnReady = true;
 void loop() {
-    bool rimReady = true;
-    bool btnReady = true;
     if (stripUpdateInterval.check()) {
+        Serial << "------------------------ start loop" << endl;
 
     /*
-        colorWipe(redL, RED_MAX, GRN_MAX, LED_OFF, 10);
         setStripColor(redL, RED_MAX, LED_OFF, LED_OFF);
         colorWipe(redL, redL.Color(127, 127, 0), 20);
         */
@@ -93,48 +97,56 @@ void loop() {
         theaterChaseRainbow(50);
         */
 
-        calculateAnimation();
+        void (*wipeStrip)(Adafruit_NeoPixel&, int, int, int, uint8_t) = colorWipe;
+
+        // rim
+        calculateAnimation(wipeStrip, rimJob, RED_MAX, GRN_MAX, LED_OFF, lastPosition, rimReady);
         push(strip, rimReady);
-        push(strip,
+        lastPosition++;
+        if (lastPosition > rimJob.numPixels()) lastPosition = 0;
+
+        // red button
+        calculateAnimation(wipeStrip, redL, LED_OFF, GRN_MAX, LED_OFF, buttonLastPosition, btnReady);
+        push(redL, btnReady);
+
+        buttonLastPosition++;
+        if (buttonLastPosition > redL.numPixels()) buttonLastPosition = 0;
+
         stripUpdateInterval.reset();
     }
 }
 
 void push(Adafruit_NeoPixel &strip, bool &ready) {
-    static Metro timer(wait);
+    static Metro timer(1);
     if (!timer.check()) return;
     strip.show();
     ready = true;
 }
 
-void calculateAnimation(void (*animate)(&strip, int r, int g, int b, uint8_t wait), bool &ready) {
-    if (!ready) return;
-    animate(strip, r, g, b, wait);
+void calculateAnimation(void (*animate)(Adafruit_NeoPixel&, int, int, int, uint8_t),
+        Adafruit_NeoPixel &strip, int r, int g, int b, uint8_t wait, bool &ready) {
+    if (!ready) {
+        Serial << "calcAnimation !! Not Ready !! " << strip.numPixels() << endl;
+        return;
+    }
+    Serial << "calcAnimation" << endl;
+    (*animate)(strip, r, g, b, wait);
     ready = false;
 }
 
 void colorWipeMatrix(Adafruit_NeoMatrix &matrix, uint32_t c, uint8_t wait) {
     for (uint16_t x = 0; x < matrix.width(); x++) {
-        if (timer.check()) {
-            matrix.drawPixel(x, 0, c);
-            matrix.drawPixel(x, 1, c);
-            matrix.drawPixel(x, 2, c);
-            matrix.show();
-            timer.reset();
-        }
+        matrix.drawPixel(x, 0, c);
+        matrix.drawPixel(x, 1, c);
+        matrix.drawPixel(x, 2, c);
+        matrix.show();
     }
 }
 
 // Fill the dots one after the other with a color
 void colorWipe(Adafruit_NeoPixel &button, int r, int g, int b, uint8_t wait) {
-    Metro timer(wait);
-    for (uint16_t i = 0; i < button.numPixels(); i++) {
-        if (timer.check()) {
-            button.setPixelColor(i, button.Color(r, g, b));
-            button.show();
-            timer.reset();
-        }
-    }
+    button.setPixelColor(wait, button.Color(r, g, b));
+    Serial << F("Set pixel: ") << wait << endl;
 }
 
 // color wipes the last 8 pixels
