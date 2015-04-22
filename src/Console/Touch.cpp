@@ -16,54 +16,57 @@ boolean Touch::begin() {
 
   // following Examples->BareConductive_MPR->SimpleTouch
 
-  // 0x5C is the MPR121 I2C address on the Bare Touch Board
-  boolean mprError = false;
-  if (!MPR121.begin(MPR121_I2CADDR_DEFAULT)) {
-    Serial << F("Touch: error setting up MPR121: ");
-    switch (MPR121.getError()) {
-      case ADDRESS_UNKNOWN:
-        Serial << F("MPR121: did not respond at address") << endl;
-        mprError = true;
-        break;
-      case READBACK_FAIL:
-        Serial << F("MPR121: readback failure") << endl;
-        mprError = true;
-        break;
-      case OVERCURRENT_FLAG:
-        Serial << F("MPR121: overcurrent on REXT pin") << endl;
-        mprError = true;
-        break;
-      case OUT_OF_RANGE:
-        Serial << F("MPR121: electrode out of range") << endl;
-        mprError = true;
-        break;
-      case NOT_INITED:
-        Serial << F("MPR121: not initialised") << endl;
-        mprError = true;
-        break;
-      default:
-        Serial << F("MPR121: unknown error") << endl;
-        mprError = true;
-        break;
+  // 0x5A is the MPR121 I2C address on the Bare Touch Board
+  Wire.begin();
+
+  boolean mprError = true;
+  while( mprError ) {
+    if (!MPR121.begin(MPR121_I2CADDR_DEFAULT)) {
+      Serial << F("Touch: error setting up MPR121: ");
+      switch (MPR121.getError()) {
+        case ADDRESS_UNKNOWN:
+          Serial << F("MPR121: did not respond at address") << endl;
+          break;
+        case READBACK_FAIL:
+          Serial << F("MPR121: readback failure") << endl;
+          break;
+        case OVERCURRENT_FLAG:
+          Serial << F("MPR121: overcurrent on REXT pin") << endl;
+          break;
+        case OUT_OF_RANGE:
+          Serial << F("MPR121: electrode out of range") << endl;
+          break;
+        case NOT_INITED:
+          Serial << F("MPR121: not initialised") << endl;
+          break;
+        default:
+          Serial << F("MPR121: unknown error") << endl;
+          break;
+      }
+      delay(1000);
+    } 
+    else {
+      Serial << F("Touch: MPR121: initialized.") << endl;
+      
+      // WARNING: MPR121.reset() blows the whole thing up.  Probably need to resend configuration after doing so?
+//     MPR121.reset();
+//      Serial << F("Touch: MPR121: reset.") << endl;
+      // NOT USING interrupt handler.  Polling mode only.
+//      MPR121.setInterruptPin(TOUCH_IRQ);
+
+      // enable 13-th virtual proximity electrode, tying electrodes 0..3 together.
+      MPR121.setProxMode(PROX0_3);
+      Serial << F("Touch: MPR121 proximity enabled.") << endl;
+
+      // initial data update
+      MPR121.updateAll();
+      Serial << F("Touch: MPR121 data update.") << endl;
+
+      Serial << F("Touch: MPR121 initialization complete.") << endl;
+      mprError = false;
     }
   }
-  else {
-    Serial << F("MPR121: no error") << endl;
-    // set the interrupt handler.
-//    MPR121.setInterruptPin(TOUCH_IRQ);
-
-    // enable 13-th virtual proximity electrode, tying electrodes 0..3 together.
-    MPR121.setProxMode(PROX0_3);
-
-    // initial data update
-    MPR121.updateAll();
-  }
-  if( mprError ) {
-    // try again?
-    delay(25);
-    return(this->begin()); 
-  }
-
+  
   Serial << F("Touch: setting up hard buttons.") << endl;
   pinMode(BUTTON_RED, INPUT_PULLUP);
   pinMode(BUTTON_GRN, INPUT_PULLUP);
@@ -74,7 +77,7 @@ boolean Touch::begin() {
   button[I_GRN] = &grnButton;
   button[I_BLU] = &bluButton;
   button[I_YEL] = &yelButton;
-  
+
   Serial << F("Button: startup complete.") << endl;
 
   return ( true );
@@ -106,11 +109,11 @@ boolean Touch::changed(byte index) {
 // returns true if any of the buttons are pressed.
 boolean Touch::anyChanged() {
   return (
-           changed(I_RED) ||
-           changed(I_GRN) ||
-           changed(I_BLU) ||
-           changed(I_YEL)
-         );
+  changed(I_RED) ||
+    changed(I_GRN) ||
+    changed(I_BLU) ||
+    changed(I_YEL)
+    );
 }
 
 
@@ -137,11 +140,11 @@ boolean Touch::pressed(byte index) {
 // avoid short-circuit eval so that each button gets an update
 boolean Touch::anyPressed() {
   return (
-           pressed(I_RED) ||
-           pressed(I_GRN) ||
-           pressed(I_BLU) ||
-           pressed(I_YEL)
-         );
+  pressed(I_RED) ||
+    pressed(I_GRN) ||
+    pressed(I_BLU) ||
+    pressed(I_YEL)
+    );
 }
 // for distance/proximity, see http://cache.freescale.com/files/sensors/doc/app_note/AN3893.pdf
 
@@ -154,7 +157,8 @@ int Touch::distance(byte sensorIndex) {
   boolean bar = MPR121.updateFilteredData();
 
   // save the maximum delta we note
-  static int maxDelta[13] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  static int maxDelta[13] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    };
   for (int i = 0; i < 13; i++ ) {
     maxDelta[i] = max(maxDelta[i], MPR121.getBaselineData(i) - MPR121.getFilteredData(i));
   }
@@ -249,3 +253,5 @@ float fscale( float originalMin, float originalMax, float newBegin, float newEnd
 }
 
 Touch touch;
+
+

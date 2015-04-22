@@ -32,7 +32,7 @@
 
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
-#include <Simon_Common.h> // sizes, indexing
+#include <Simon_Common.h>
 
 //----- capsense touch: soft capsense buttons
 #include <MPR121.h> // MPR121 capsense board

@@ -42,13 +42,13 @@ void setup() {
   randomSeed(analogRead(A5));
 
   // start each unit
-  //------ Output units.
-  light.begin(); // moved this up to the front, as synchronization with Light is apparently important.
-  if ( !sound.begin() && RUN_UNIT_ON_ERROR || 0) sound.unitTest();
   //------ Input units.
   touch.begin();
   sensor.begin();
   mic.begin();
+  //------ Output units.
+  light.begin(); // moved this up to the front, as synchronization with Light is apparently important.
+  if ( !sound.begin() && RUN_UNIT_ON_ERROR || 0) sound.unitTest();
   //------ "This" units.
   gameplayStart(sound);
   externStart();
@@ -81,6 +81,22 @@ void loop() {
 }
 
 void setupMode() {
+/*  
+  if( MPR121.getError() ) {
+    Serial << "Touch: Error!" << endl;
+  }
+  if( !MPR121.isRunning() ) Serial << "Touch: not running!" << endl;
+  if( !MPR121.isInited() ) Serial << "Touch: not intialized!" << endl;
+  
+  MPR121.updateAll();
+  static int lastRed = MPR121.getFilteredData(1);
+  int currRed = MPR121.getFilteredData(1);
+  
+  Serial << "Touch: " << currRed << endl;
+  delay(100);
+  lastRed = currRed;
+  
+  */
   if ( touch.anyChanged()) {
     // if anything's pressed, pack the instructions
     byte tones = 5;
