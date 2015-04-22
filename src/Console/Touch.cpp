@@ -47,11 +47,12 @@ boolean Touch::begin() {
     } 
     else {
       Serial << F("Touch: MPR121: initialized.") << endl;
-        
-      MPR121.reset();
-      Serial << F("Touch: MPR121: reset.") << endl;
-      // set the interrupt handler.
-      MPR121.setInterruptPin(TOUCH_IRQ);
+      
+      // WARNING: MPR121.reset() blows the whole thing up.  Probably need to resend configuration after doing so?
+//     MPR121.reset();
+//      Serial << F("Touch: MPR121: reset.") << endl;
+      // NOT USING interrupt handler.  Polling mode only.
+//      MPR121.setInterruptPin(TOUCH_IRQ);
 
       // enable 13-th virtual proximity electrode, tying electrodes 0..3 together.
       MPR121.setProxMode(PROX0_3);
@@ -59,7 +60,7 @@ boolean Touch::begin() {
 
       // initial data update
       MPR121.updateAll();
-      Serial << F("Touch: MPR121 data updaet.") << endl;
+      Serial << F("Touch: MPR121 data update.") << endl;
 
       Serial << F("Touch: MPR121 initialization complete.") << endl;
       mprError = false;

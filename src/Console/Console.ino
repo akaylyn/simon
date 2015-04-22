@@ -81,6 +81,22 @@ void loop() {
 }
 
 void setupMode() {
+/*  
+  if( MPR121.getError() ) {
+    Serial << "Touch: Error!" << endl;
+  }
+  if( !MPR121.isRunning() ) Serial << "Touch: not running!" << endl;
+  if( !MPR121.isInited() ) Serial << "Touch: not intialized!" << endl;
+  
+  MPR121.updateAll();
+  static int lastRed = MPR121.getFilteredData(1);
+  int currRed = MPR121.getFilteredData(1);
+  
+  Serial << "Touch: " << currRed << endl;
+  delay(100);
+  lastRed = currRed;
+  
+  */
   if ( touch.anyChanged()) {
     // if anything's pressed, pack the instructions
     byte tones = 5;
