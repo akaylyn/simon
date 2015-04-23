@@ -146,10 +146,10 @@ boolean Touch::anyPressed() {
     pressed(I_YEL)
     );
 }
-// for distance/proximity, see http://cache.freescale.com/files/sensors/doc/app_note/AN3893.pdf
 
 // returns "distance" an object is to the sensor, scaled [0, 32767]
 // realistically, we have 10-bit resolution?
+// for distance/proximity, see http://cache.freescale.com/files/sensors/doc/app_note/AN3893.pdf
 int Touch::distance(byte sensorIndex) {
 
   // for this, we need the baseline and filtered data
@@ -157,21 +157,19 @@ int Touch::distance(byte sensorIndex) {
   boolean bar = MPR121.updateFilteredData();
 
   // save the maximum delta we note
-  static int maxDelta[13] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    };
-  for (int i = 0; i < 13; i++ ) {
-    maxDelta[i] = max(maxDelta[i], MPR121.getBaselineData(i) - MPR121.getFilteredData(i));
-  }
+  static int maxDelta[13] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
   // the larger the delta, the closer the object
   int sensorDelta = MPR121.getBaselineData(sensorIndex) - MPR121.getFilteredData(sensorIndex);
 
-  // delta is zero at infinite distance, and very large (approaching baseline data) at zero distance, so distance has an inverse relationship with delta
+  // if the delta is larger than maximum recorded, save
+  maxDelta[sensorIndex] = max(sensorDelta, maxDelta[sensorIndex]);
+
+  // delta is zero at infinite distance, and very large at zero distance, so distance has an inverse relationship with delta
   // like many fields in a 3-D volume, the radiated energy decreses with the distance squared from the source.
   // so, we'll take a stab at distance = 1/(delta^2)
   const int maxInt = 32767;
   const float calibrant = -2.0;
-
   float distance = fscale(0, maxDelta[sensorIndex], maxInt, 0, sensorDelta, calibrant);
 
   return ( int(distance) );

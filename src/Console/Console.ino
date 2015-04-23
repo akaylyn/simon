@@ -74,29 +74,58 @@ void loop() {
   }
   else {
     // assume we're setting up the project on-site, so this is a good time to run unit tests, calibration activities, etc.
+
     // when a button is pressed, send the colors out and make some fire (drum machine mode?)
-    setupMode();
+//    setupMode();
+
+    // when hands are near the project, act like a theramin
+    proximityMode();
+    delay(100); // slow the Serial spew
   }
 
 }
 
-void setupMode() {
-/*  
-  if( MPR121.getError() ) {
-    Serial << "Touch: Error!" << endl;
+// uses the MPR121 device to adjust lights and sound based on Player 1's proximity to sensors
+void proximityMode() {
+  // save maximum observed distance data, for calibration
+  static int maxDist = touch.distance();
+  // store the track number we're playing.
+  static int trackNumber = -1;
+    
+  // some kind of proxy for distance
+  int currDist = touch.distance();  // note that we're using the default "13th" sensor, which is the multiplexed aggregate of all of the sensors
+                                    // but, you could ask for distances for each sensor, individually [0..3].
+  
+  // take a look
+  Serial << F("Proximity: curr=") << currDist << F(" max=") << maxDist << endl;
+  
+  // define a treshold for distance. closer: make lights and sound; further: turn off lights and sound
+  const int thresholdDist = 100; 
+  
+  if( currDist >= thresholdDist ) {
+    // lights off.  immediate send.
+    light.setAllLight(LIGHT_OFF, true);
+    // quiet
+    if( trackNumber > 0 ) sound.fadeTrack(trackNumber);
+    trackNumber = -1; // clear.
+  } else {
+    // map distance to [0,255] for lights
+    byte lightLevel = map(currDist, 0, thresholdDist, 255, 0); // closer is brighter
+    // map distance to [-70,0] for sound
+    int soundLevel = map(currDist, 0, thresholdDist, 0, -70); // closed is louder
+    Serial << F("Proximity: light=") << lightLevel << F(" sound=") << soundLevel << endl;
+  
+    // lights on.  immediate send
+    light.setAllLight(lightLevel, true);
+    // sound
+    if( trackNumber > 0 ) sound.setVol(trackNumber, soundLevel); // adjust volume, if we're already playing
+    else trackNumber = sound.playFailTone(soundLevel); // if we're not playing, start playing
   }
-  if( !MPR121.isRunning() ) Serial << "Touch: not running!" << endl;
-  if( !MPR121.isInited() ) Serial << "Touch: not intialized!" << endl;
-  
-  MPR121.updateAll();
-  static int lastRed = MPR121.getFilteredData(1);
-  int currRed = MPR121.getFilteredData(1);
-  
-  Serial << "Touch: " << currRed << endl;
-  delay(100);
-  lastRed = currRed;
-  
-  */
+
+}
+
+// simply operate the Console in "bongoes" mode.  Will shoot fire.
+void setupMode() {
   if ( touch.anyChanged()) {
     // if anything's pressed, pack the instructions
     byte tones = 5;
