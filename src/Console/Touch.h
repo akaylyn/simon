@@ -53,9 +53,8 @@ class Touch {
     boolean pressed(byte index); // returns true if pressed
     boolean anyPressed(); // convenience function; returns true if any index is pressed
 
-    // proximity/distance sensor
     // returns "distance" an object is to the sensor
-    int distance(byte touchIndex = 12); // defaults to 13th "virtual" sensor.
+    byte distance(byte touchIndex = 12); // defaults to 13th "virtual" sensor.
 
     // unit test
     void unitTest();
