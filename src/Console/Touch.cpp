@@ -150,29 +150,32 @@ boolean Touch::anyPressed() {
 // returns "distance" an object is to the sensor, scaled [0, 32767]
 // realistically, we have 10-bit resolution?
 // for distance/proximity, see http://cache.freescale.com/files/sensors/doc/app_note/AN3893.pdf
-int Touch::distance(byte sensorIndex) {
+byte Touch::distance(byte sensorIndex) {
 
-  // for this, we need the baseline and filtered data
-  boolean foo = MPR121.updateBaselineData();
-  boolean bar = MPR121.updateFilteredData();
+  // for this, we need the filtered data
+  int sensorRead = 0;
+  for( int i=0; i<10; i++ ) {
+    // average ten readings
+    boolean bar = MPR121.updateFilteredData();
+    sensorRead += MPR121.getFilteredData(sensorIndex);
+  }
+  sensorRead /= 10;
+  
+  // track sensor returns for 12 sensors and the virtual 13th.
+  static int minRead[13] = { 999,999,999,999,999,999,999,999,999,999,999,999,999 };
+  minRead[sensorIndex] = min(minRead[sensorIndex], sensorRead); 
 
-  // save the maximum delta we note
-  static int maxDelta[13] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+  int delta = sensorRead - minRead[sensorIndex];
+  
+  // track deltas 12 sensors and the virtual 13th.
+  static int maxDelta[13] = { 0,0,0,0,0,0,0,0,0,0,0,0,0 };
+  maxDelta[sensorIndex] = max(maxDelta[sensorIndex], delta); 
 
-  // the larger the delta, the closer the object
-  int sensorDelta = MPR121.getBaselineData(sensorIndex) - MPR121.getFilteredData(sensorIndex);
-
-  // if the delta is larger than maximum recorded, save
-  maxDelta[sensorIndex] = max(sensorDelta, maxDelta[sensorIndex]);
-
-  // delta is zero at infinite distance, and very large at zero distance, so distance has an inverse relationship with delta
-  // like many fields in a 3-D volume, the radiated energy decreses with the distance squared from the source.
-  // so, we'll take a stab at distance = 1/(delta^2)
-  const int maxInt = 32767;
-  const float calibrant = -2.0;
-  float distance = fscale(0, maxDelta[sensorIndex], maxInt, 0, sensorDelta, calibrant);
-
-  return ( int(distance) );
+  // nonlinear transform to get higher sensitivity at larger distances
+  float distance = fscale(0, maxDelta[sensorIndex], 0, 255, delta, -3.0);
+//  Serial << F("Proximity: distance=") << distance << F(" delta=") << delta << F(" curr=") << sensorRead << F(" minR=") << minRead[sensorIndex] << F(" maxD=") << maxDelta[sensorIndex] << endl;
+  
+  return( distance );
 
 }
 
