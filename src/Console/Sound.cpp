@@ -6,105 +6,114 @@ wavTrigger wav;
 
 bool Sound::begin() {
 
-	Serial << "Sound: startup." << endl;
-	
-    // set up comms at 57600 baud
-    WTSerial.begin(57600);
-    if( !WTSerial ) {
-        Serial << F("Sound: error setting up WAV board serial.") << endl;
-        return( false );
-    }
+  Serial << "Sound: startup." << endl;
 
-    // start the wav board
-    wav.start(&WTSerial);
+  // set up comms at 57600 baud
+  WTSerial.begin(57600);
+  if ( !WTSerial ) {
+    Serial << F("Sound: error setting up WAV board serial.") << endl;
+    return ( false );
+  }
 
-    // set master gain
-    setMasterGain();
+  // start the wav board
+  wav.start(&WTSerial);
 
-	Serial << "Sound: startup complete." << endl; 
-    return( true );
+  // set master gain
+  setMasterGain();
+
+  Serial << "Sound: startup complete." << endl;
+  return ( true );
 }
 
 void Sound::setMasterGain(int gain) {
-    wav.masterGain(constrain(gain, -70, 4));
+  wav.masterGain(constrain(gain, -70, 4));
 }
 
 int Sound::playTrack(int track, int gain, bool repeat) {
-    // enforce limits
-    int tr = constrain(track, 1, 999);
-    int ga = constrain(gain, -70, 10);
+  // enforce limits
+  int tr = constrain(track, 1, 999);
+  int ga = constrain(gain, -70, 10);
 
-    // set volume
-    wav.trackGain(tr, ga);
-    // play in polyphonic mode
-    wav.trackPlayPoly(tr);
-    // set looping
-    wav.trackLoop(tr, repeat);
+  // set volume
+  wav.trackGain(tr, ga);
+  // play in polyphonic mode
+  wav.trackPlayPoly(tr);
+  // set looping
+  wav.trackLoop(tr, repeat);
 
-    Serial << F("Sound: starting track:") << tr << F(" gain:") << ga << F(" repeat:") << repeat << endl;
+  Serial << F("Sound: starting track:") << tr << F(" gain:") << ga << F(" repeat:") << repeat << endl;
 
-    return( tr );
+  return ( tr );
 }
 
 int Sound::playWin(int track, int gain, bool repeat) {
-    return( playTrack(track==RANDOM_TRACK ? randomTrack(trWins) : track, gain, repeat) );
+  return ( playTrack(track == RANDOM_TRACK ? randomTrack(trWins) : track, gain, repeat) );
 }
 int Sound::playLose(int track, int gain, bool repeat) {
-    return( playTrack(track==RANDOM_TRACK ? randomTrack(trLose) : track, gain, repeat) );
+  return ( playTrack(track == RANDOM_TRACK ? randomTrack(trLose) : track, gain, repeat) );
 }
 int Sound::playBaff(int track, int gain, bool repeat) {
-    return( playTrack(track==RANDOM_TRACK ? randomTrack(trBaff) : track, gain, repeat) );
+  return ( playTrack(track == RANDOM_TRACK ? randomTrack(trBaff) : track, gain, repeat) );
 }
 int Sound::playRock(int track, int gain, bool repeat) {
-    return( playTrack(track==RANDOM_TRACK ? randomTrack(trRock) : track, gain, repeat) );
+  return ( playTrack(track == RANDOM_TRACK ? randomTrack(trRock) : track, gain, repeat) );
 }
 int Sound::randomTrack(const int (&range)[2]) {
-    return( random(range[0], range[1]+1) );
+  return ( random(range[0], range[1] + 1) );
 }
 
 // convenience function for Fx board. returns track #.
 int Sound::playTone(byte colorIndex, int gain) {
-    int tr;
-    switch ( colorIndex ) {
-        case I_RED: tr=trTones[0]; break;
-        case I_GRN: tr=trTones[1]; break;
-        case I_BLU: tr=trTones[2]; break;
-        case I_YEL: tr=trTones[3]; break;
-    }
-    // looping enabled!
-    return(playTrack(tr, gain, true));
+  int tr;
+  switch ( colorIndex ) {
+    case I_RED: tr = trTones[0]; break;
+    case I_GRN: tr = trTones[1]; break;
+    case I_BLU: tr = trTones[2]; break;
+    case I_YEL: tr = trTones[3]; break;
+  }
+  // looping enabled!
+  return (playTrack(tr, gain, true));
 }
 
 int Sound::playFailTone(int gain) {
-    return(playTrack(trTones[4], gain, true));
+  return (playTrack(trTones[4], gain, true));
 }
 
 
 // Stop a track
 void Sound::stopTrack(int track) {
-    // enforce limits
-    int tr = constrain(track, 1, 999);
-    // stop
-    wav.trackStop(tr);
+  // enforce limits
+  int tr = constrain(track, 1, 999);
+  // stop
+  wav.trackStop(tr);
 
-    Serial << F("Sound: stopping track:") << tr << endl;
+  Serial << F("Sound: stopping track:") << tr << endl;
 }
 
 // Stop all track
 void Sound::stopAllTracks() {
-    // stop
-    wav.stopAllTracks();
+  // stop
+  wav.stopAllTracks();
 
-    Serial << F("Sound: stopping all tracks:") << endl;
+  Serial << F("Sound: stopping all tracks:") << endl;
 }
 
 // Fade out track
 void Sound::fadeTrack(int track, unsigned long fadeTime) {
-    // enforce limits
-    int tr = constrain(track, 1, 999);
-    // fade, with Stop at the end.  Stop is important, so voices can be freed up.
-    wav.trackFade(tr, -70, fadeTime, true);
+  // enforce limits
+  int tr = constrain(track, 1, 999);
+  // fade, with Stop at the end.  Stop is important, so voices can be freed up.
+  wav.trackFade(tr, -70, fadeTime, true);
 
-    Serial << F("Sound: fading track:") << tr << F(" stopped in:") << fadeTime << endl;
+  Serial << F("Sound: fading track:") << tr << F(" stopped in:") << fadeTime << endl;
 }
 
+// Adjust volume on playing track
+void Sound::setVol(int track, int gain) {
+  // enforce limits
+  int tr = constrain(track, 1, 999);
+  int ga = constrain(gain, -70, 10);
+
+  // set volume
+  wav.trackGain(tr, ga);
+}

@@ -160,9 +160,9 @@ void Light::show(byte nodeID) {
   lightInst.grn = inst.lightLevel[I_GRN] >= PIXEL_THRESHOLD ? true : false;
   lightInst.blu = inst.lightLevel[I_BLU] >= PIXEL_THRESHOLD ? true : false;
   lightInst.yel = inst.lightLevel[I_YEL] >= PIXEL_THRESHOLD ? true : false;
+  
   //send the data
   ET.sendData();
-
 }
 
 void Light::sendInstruction(towerInstruction &externInst) {
