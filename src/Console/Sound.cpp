@@ -43,6 +43,9 @@ int Sound::playTrack(int track, int gain, bool repeat) {
 
   Serial << F("Sound: starting track:") << tr << F(" gain:") << ga << F(" repeat:") << repeat << endl;
 
+  // adjust volume based on any playing tracks
+  relevelVol();
+  
   return ( tr );
 }
 
@@ -116,4 +119,42 @@ void Sound::setVol(int track, int gain) {
 
   // set volume
   wav.trackGain(tr, ga);
+  
+  Serial << F("Sound: volume for track:") << tr << F(" =") << ga << endl;
+
+}
+
+// Relevel volume on playing tracks to summed 0dB gain prevent clipping
+void Sound::relevelVol() {
+  // playing track indices.
+  int tr[14];
+  // get the array of currently playing tracks
+  wav.getPlayingTracks(tr);
+
+  // figure out what we've got in the way of total tracks, tone and music tracks
+  byte nTotal, nTones, nTracks;
+  for( byte i=0;i<14;i++ ) {
+    if( tr[i] > 0 ) {
+      nTotal++;
+      if( tr[i] < 100 ) nTones++; // any track number less than 100 is a tone
+      else nTracks++;
+    }
+  }
+  
+  // see: https://www.noisemeters.com/apps/db-calculator.asp for the gnarly logarithm mess
+  // basically, we're calibrating the tone gain based on the number of tones and tracks currently playing,
+  // relative to the total gain that we want out of the system
+  int toneGain = TONE_GAIN - floor( 10.0*log10(float(nTones) + float(nTracks)*pow(10.0, float(TRACK_GAIN_RELATIVE_TO_TONE)/10.0)) );
+  int trackGain = toneGain + TRACK_GAIN_RELATIVE_TO_TONE;
+  
+  // with that, execute the volume adjustments per track
+  // figure out what we've got in the way of total tracks, tone and music tracks
+  for( byte i=0;i<14;i++ ) {
+    if( tr[i] > 0 ) {
+      if( tr[i] < 100 ) setVol(tr[i], toneGain); // any track number less than 100 is a tone
+      else setVol(tr[i], trackGain);
+    }
+  }
+  
+  // QED
 }

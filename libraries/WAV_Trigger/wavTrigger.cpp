@@ -228,6 +228,42 @@ unsigned short vol;
 }
 
 
+// **************************************************************
+// MGD: implement GET_STATUS (Tx) and STATUS (Rx) to return playing track numbers
+// See: http://robertsonics.com/wav-trigger-online-user-guide/
+void wavTrigger::getPlayingTracks(int playingTracks[14]) {
 
+	byte txbuf[5];
+
+	txbuf[0] = 0xf0; // SOM header byte 1
+	txbuf[1] = 0xaa; // SOM header byte 2
+	txbuf[2] = 0x05; // message length
+	txbuf[3] = CMD_GET_STATUS;
+	txbuf[4] = 0x55; // EOM byte
+	WTSerial->write(txbuf, 5);
+
+	// return message is (SOM1, SOM2, # tracks *2, EOM)
+	const int messageLength = 2+2*14+1;
+	byte rxbuf[messageLength]; 
+
+	// get the message, waiting for message to complete.
+	// baud rate is 57600 kps 8N1, so bitrate is 10/57600 = 0.1736 ms/byte
+	// so, 31 bytes (max message size) should take 5.38 ms.
+	WTSerial->setTimeout(7UL);
+	int rxLen = WTSerial->readBytes(rxbuf, messageLength);
+	
+	byte nTracks = (rxLen - 3)/2;	// drop SOM1, SOM2, EOM.	track count is remainder /2
+	
+	// extract playing track numbers
+	for( int tr=0; tr<14; tr++ ) {
+		if( tr >= nTracks ) {
+			playingTracks[tr] = 0; // not playing, so zero out to indicate
+		} else {
+			// LSB, MSB
+			playingTracks[tr] = rxbuf[2+tr*2];
+			playingTracks[tr] |= rxbuf[2+tr*2+1] << 8;
+		}
+	}
+}
 
 

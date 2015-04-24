@@ -28,12 +28,15 @@ const int trBaff[2] = {700, 701};
 
 // some defaults
 // gains.  remember that polyphonic sounds get stacked, so clipping can easily occur.  gonna have to tune this.
-#define DEFAULT_MASTER_GAIN 0 // -70 to +4 dB.  0 is nominal.
-#define DEFAULT_TRACK_GAIN 0 // -70 to +10.  0 is nominal.
-#define DEFAULT_TONE_GAIN 0 // -70 to +10. 0 is nominal.
+#define MASTER_GAIN 0 // -70 to +4 dB.  0 is nominal.
+#define TONE_GAIN_RELATIVE_TO_MASTER 0 // we want the tones to be as loud as possible
+#define TRACK_GAIN_RELATIVE_TO_TONE -3 // other tracks (music) should be slighly quieter
+
+#define TONE_GAIN MASTER_GAIN + TONE_GAIN_RELATIVE_TO_MASTER // proportionality is additive in log-space
+#define TRACK_GAIN TONE_GAIN + TRACK_GAIN_RELATIVE_TO_TONE // proportionality is additive in log-space
 
 // fade out time (extro)
-#define DEFAULT_FADE_TIME 1000UL // ms it takes from current gain to stop.
+#define FADE_TIME 1000UL // ms it takes from current gain to stop.
 
 #define RANDOM_TRACK 0 // use zero to mean "random", as zero isn't a valid track number.
 
@@ -48,30 +51,32 @@ class Sound {
     // gain is track gain -70 to +10.
     // repeat true signals looping of track.
     // -> returns track #.
-    int playTrack(int track, int gain = DEFAULT_TRACK_GAIN, bool repeat = false);
+    int playTrack(int track, int gain = TRACK_GAIN, bool repeat = false);
 
     // note that the calling program should store the return value for later stopTrack
     // and fadeTrack usage.
 
     // Play tracks by type.  track==0 means "random".  returns track #.
-    int playWin(int track = RANDOM_TRACK, int gain = DEFAULT_TRACK_GAIN, bool repeat = false);
-    int playLose(int track = RANDOM_TRACK, int gain = DEFAULT_TRACK_GAIN, bool repeat = false);
-    int playBaff(int track = RANDOM_TRACK, int gain = DEFAULT_TRACK_GAIN, bool repeat = false);
-    int playRock(int track = RANDOM_TRACK, int gain = DEFAULT_TRACK_GAIN, bool repeat = false);
+    int playWin(int track = RANDOM_TRACK, int gain = TRACK_GAIN, bool repeat = false);
+    int playLose(int track = RANDOM_TRACK, int gain = TRACK_GAIN, bool repeat = false);
+    int playBaff(int track = RANDOM_TRACK, int gain = TRACK_GAIN, bool repeat = false);
+    int playRock(int track = RANDOM_TRACK, int gain = TRACK_GAIN, bool repeat = false);
 
     // convenience function for Fx board. returns track #.
-    int playTone(byte colorIndex, int gain = DEFAULT_TONE_GAIN);
-    int playFailTone(int gain = DEFAULT_TONE_GAIN);
+    int playTone(byte colorIndex, int gain = TONE_GAIN);
+    int playFailTone(int gain = TONE_GAIN);
 
     // Stop a track
     void stopTrack(int track);
     // Stop all tracks
     void stopAllTracks();
     // Fade out track
-    void fadeTrack(int track, unsigned long fadeTime = DEFAULT_FADE_TIME);
-    // Adjust volume on playing track
-    void setVol(int track, int gain = DEFAULT_TRACK_GAIN);
-
+    void fadeTrack(int track, unsigned long fadeTime = FADE_TIME);
+    // Adjust volume on a playing track
+    void setVol(int track, int gain = TRACK_GAIN);
+    // Relevel volume on playing tracks to summed 0dB gain prevent clipping
+    void relevelVol();
+    
     // NOTE: it's tempting to use "pause" features, but there's only 14 voices available,
     // and "pause" doesn't release a voice slot.  I think it's better to restart.
 
@@ -79,7 +84,7 @@ class Sound {
     void unitTest();
 
     // set master gain
-    void setMasterGain(int gain = DEFAULT_MASTER_GAIN); // -70 to +4 dB
+    void setMasterGain(int gain = MASTER_GAIN); // -70 to +4 dB
 
   private:
     // select a random track

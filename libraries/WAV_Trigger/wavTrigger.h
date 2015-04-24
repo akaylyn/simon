@@ -28,6 +28,7 @@
 #define CMD_TRACK_CONTROL	3
 #define CMD_STOP_ALL		4
 #define CMD_MASTER_VOLUME	5
+#define CMD_GET_STATUS		7 // MGD: added
 #define CMD_TRACK_VOLUME	8
 #define CMD_TRACK_FADE		10
 #define CMD_RESUME_ALL_SYNC	11
@@ -67,6 +68,11 @@ public:
 	void trackGain(int trk, int gain);
 	void trackFade(int trk, int gain, int time, bool stopFlag);
 	void trackCrossFade(int trkFrom, int trkTo, int gain, int time);
+	// **************************************************************
+	// MGD: implement GET_STATUS (Tx) and STATUS (Rx) to return playing track numbers
+	// See: http://robertsonics.com/wav-trigger-online-user-guide/
+	void getPlayingTracks(int playingTracks[14]);
+
 private:
 	void trackControl(int trk, int code);
 
