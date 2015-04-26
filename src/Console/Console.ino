@@ -76,12 +76,46 @@ void loop() {
     // assume we're setting up the project on-site, so this is a good time to run unit tests, calibration activities, etc.
 
     // when a button is pressed, send the colors out and make some fire (drum machine mode?)
-//    bongoMode();
+    bongoMode();
 
     // when hands are near the project, act like a theramin
-    proximityMode();
+//    proximityMode();
+    
+    // work with sounds to get auto releveling sorted out
+//    soundTest();
+      
   }
 
+}
+
+void soundTest() {
+  // quiet
+  sound.stopAllTracks();
+  
+  // start up one tone.
+  sound.playTone(I_BLU);
+  delay(500);
+  sound.playTone(I_YEL);
+  delay(500);
+  sound.playTrack(101, 0, true);
+  delay(500);
+  sound.playTrack(500, 0, true);
+  
+  delay(5000);
+  
+  // quiet
+//  sound.stopAllTracks();  
+//  delay(1000);
+  sound.stopAllTracks();  
+//  delay(1000);
+//  sound.newStopAllTracks();  
+//  delay(1000);
+//  sound.newStopAllTracks();  
+//  delay(1000); 
+//  sound.stopTrack(500);
+  
+  // wait
+  while(1);
 }
 
 // uses the MPR121 device to adjust lights and sound based on Player 1's proximity to sensors

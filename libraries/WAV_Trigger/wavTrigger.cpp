@@ -242,27 +242,50 @@ void wavTrigger::getPlayingTracks(int playingTracks[14]) {
 	txbuf[4] = 0x55; // EOM byte
 	WTSerial->write(txbuf, 5);
 
-	// return message is (SOM1, SOM2, # tracks *2, EOM)
-	const int messageLength = 2+2*14+1;
-	byte rxbuf[messageLength]; 
+	// return message is (SOM1, SOM2, LEN, MSGTYPE, # tracks *2, EOM)
+	const int messageLength = 4+2*14+1;
+	static char rxbuf[messageLength]; // static to preserve malloc()
 
 	// get the message, waiting for message to complete.
 	// baud rate is 57600 kps 8N1, so bitrate is 10/57600 = 0.1736 ms/byte
-	// so, 31 bytes (max message size) should take 5.38 ms.
+	// so, 33 bytes (max message size) should take 5.72 ms.
 	WTSerial->setTimeout(7UL);
 	int rxLen = WTSerial->readBytes(rxbuf, messageLength);
-	
-	byte nTracks = (rxLen - 3)/2;	// drop SOM1, SOM2, EOM.	track count is remainder /2
-	
+
+	byte msgLength = rxbuf[2];
+	byte nTracks = (msgLength - 5)/2;
+
+/*
+	Serial.print("wavGPT: rxlen="); Serial.println(rxLen);
+	Serial.print("wavGPT: rxbuf=");
+	for( int i=0; i<rxLen; i++) {
+		Serial.print(rxbuf[i],HEX);
+		Serial.print(' ');
+	}
+	Serial.println(' ');
+
+	Serial.print("wavGPT: nTracks=");
+	Serial.println(nTracks);
+
+	Serial.print("wavGPT: tracks="); 
+*/	
 	// extract playing track numbers
 	for( int tr=0; tr<14; tr++ ) {
 		if( tr >= nTracks ) {
 			playingTracks[tr] = 0; // not playing, so zero out to indicate
 		} else {
 			// LSB, MSB
-			playingTracks[tr] = rxbuf[2+tr*2];
-			playingTracks[tr] |= rxbuf[2+tr*2+1] << 8;
+			// apparently, track 101 is returned as 100
+			playingTracks[tr] = word(rxbuf[4+tr*2+1], rxbuf[4+tr*2]) +1;
+/*
+			Serial.print("Word from indexes = ");
+			Serial.print(4+tr*2);
+			Serial.print(' ');
+			Serial.print(4+tr*2+1);
+			Serial.print(' ');
+*/
 		}
+//		Serial.println(playingTracks[tr]);
 	}
 }
 

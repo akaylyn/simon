@@ -88,6 +88,7 @@ void Sound::stopTrack(int track) {
   // enforce limits
   int tr = constrain(track, 1, 999);
   // stop
+  wav.trackLoop(tr, false); // looping seems to pooch voice control.
   wav.trackStop(tr);
 
   Serial << F("Sound: stopping track:") << tr << endl;
@@ -95,6 +96,17 @@ void Sound::stopTrack(int track) {
 
 // Stop all track
 void Sound::stopAllTracks() {
+  // dammit.  tracks set to loop don't reliably stop.  set to not loop, then turn off
+  // playing track indices.
+  int tr[14];
+  // get the array of currently playing tracks
+  wav.getPlayingTracks(tr);
+  for( byte i=0;i<14;i++ ) {
+    if( tr[i] > 0 ) {
+//      Serial << F("Sound: stopping track ") << tr[i] << endl;
+      wav.trackLoop(tr[i], false);
+    }
+  }  
   // stop
   wav.stopAllTracks();
 
@@ -106,6 +118,7 @@ void Sound::fadeTrack(int track, unsigned long fadeTime) {
   // enforce limits
   int tr = constrain(track, 1, 999);
   // fade, with Stop at the end.  Stop is important, so voices can be freed up.
+  wav.trackLoop(tr, false); // looping seems to pooch voice control.
   wav.trackFade(tr, -70, fadeTime, true);
 
   Serial << F("Sound: fading track:") << tr << F(" stopped in:") << fadeTime << endl;
@@ -132,11 +145,14 @@ void Sound::relevelVol() {
   wav.getPlayingTracks(tr);
 
   // figure out what we've got in the way of total tracks, tone and music tracks
-  byte nTotal, nTones, nTracks;
+  byte nTotal = 0;
+  byte nTones =0;
+  byte nTracks = 0;
   for( byte i=0;i<14;i++ ) {
     if( tr[i] > 0 ) {
+//      Serial << "TR: " << tr[i] << endl;
       nTotal++;
-      if( tr[i] < 100 ) nTones++; // any track number less than 100 is a tone
+      if( tr[i] <= 100 ) nTones++; // any track number less than 100 is a tone
       else nTracks++;
     }
   }
@@ -147,11 +163,14 @@ void Sound::relevelVol() {
   int toneGain = TONE_GAIN - floor( 10.0*log10(float(nTones) + float(nTracks)*pow(10.0, float(TRACK_GAIN_RELATIVE_TO_TONE)/10.0)) );
   int trackGain = toneGain + TRACK_GAIN_RELATIVE_TO_TONE;
   
+  Serial << "Gain: nTotal=" << nTotal << " nTones=" << nTones << " nTracks=" << nTracks;
+  Serial << " tone gain=" << toneGain << " track gain=" << trackGain << endl;
+  
   // with that, execute the volume adjustments per track
   // figure out what we've got in the way of total tracks, tone and music tracks
   for( byte i=0;i<14;i++ ) {
     if( tr[i] > 0 ) {
-      if( tr[i] < 100 ) setVol(tr[i], toneGain); // any track number less than 100 is a tone
+      if( tr[i] <= 100 ) setVol(tr[i], toneGain); // any track number less than 100 is a tone
       else setVol(tr[i], trackGain);
     }
   }
