@@ -76,10 +76,10 @@ void loop() {
     // assume we're setting up the project on-site, so this is a good time to run unit tests, calibration activities, etc.
 
     // when a button is pressed, send the colors out and make some fire (drum machine mode?)
-//    bongoMode();
+    bongoMode();
 
     // when hands are near the project, act like a theramin
-    proximityMode();
+//    proximityMode();
   }
 
 }
