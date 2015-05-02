@@ -46,49 +46,58 @@ class Sound {
     // fire it up.
     bool begin();
 
-    // Play a track.
-    // track is 1 to 999.
-    // gain is track gain -70 to +10.
-    // repeat true signals looping of track.
-    // -> returns track #.
-    int playTrack(int track, int gain = TRACK_GAIN, bool repeat = false);
+    // set master gain
+    void setMasterGain(int gain = MASTER_GAIN); // -70 to +4 dB
 
+    // set how we want volume levels to be applied so that simultaneous playback does not clip.
+    void setLeveling(int nTones=N_TONES-1, int nTracks=1);
+    // e.g. 
+    //  bongo: setLeveling(4, 0) -> reduce individual track gains so that 4x tones and zero tracks can play simultaneously
+    //  gameplay: setLeveling(1, 1) -> reduce individual track gains so that 1x tones and 1x track (ROCK) can play simultaneously
+    //  win/lose: setLevel(0, 1) -> reduce individual track gains so that zero tones and 1x track (WINS/LOSE) can play simultaneously
+    
     // note that the calling program should store the return value for later stopTrack
     // and fadeTrack usage.
 
     // Play tracks by type.  track==0 means "random".  returns track #.
-    int playWin(int track = RANDOM_TRACK, int gain = TRACK_GAIN, bool repeat = false);
-    int playLose(int track = RANDOM_TRACK, int gain = TRACK_GAIN, bool repeat = false);
-    int playBaff(int track = RANDOM_TRACK, int gain = TRACK_GAIN, bool repeat = false);
-    int playRock(int track = RANDOM_TRACK, int gain = TRACK_GAIN, bool repeat = false);
-
-    // convenience function for Fx board. returns track #.
-    int playTone(byte colorIndex, int gain = TONE_GAIN);
-    int playFailTone(int gain = TONE_GAIN);
-
+    int playWins(int track = RANDOM_TRACK);
+    int playLose(int track = RANDOM_TRACK);
+    int playBaff(int track = RANDOM_TRACK);
+    int playRock(int track = RANDOM_TRACK);
     // Stop a track
     void stopTrack(int track);
-    // Stop all tracks
-    void stopAllTracks();
     // Fade out track
-    void fadeTrack(int track, unsigned long fadeTime = FADE_TIME);
-    // Adjust volume on a playing track
-    void setVol(int track, int gain = TRACK_GAIN);
-    // Relevel volume on playing tracks to summed 0dB gain prevent clipping
-    void relevelVol();
-    
-    // NOTE: it's tempting to use "pause" features, but there's only 14 voices available,
-    // and "pause" doesn't release a voice slot.  I think it's better to restart.
+    void fadeTrack(int exitingTrack, unsigned long fadeTime = FADE_TIME);
+    // Crossfade from a track to a track
+    void crossFadeTrack(int exitingTrack, int enteringTrack, unsigned long fadeTime = FADE_TIME);
 
+    // convenience function for Fx board. returns track #.
+    int playTone(byte colorIndex);
+    void stopTone(byte colorIndex);
+
+    int playFailTone();
+    void stopFailTone();
+
+    // Stop tones
+    void stopTones();
+    // Stop tones and tracks
+    void stopAll();
+      
     // unit test for Music
     void unitTest();
 
-    // set master gain
-    void setMasterGain(int gain = MASTER_GAIN); // -70 to +4 dB
-
   private:
+    // Play a track.  INTENTIONALLY private to preserve gain settings
+    // track is 1 to 999.
+    // gain is track gain -70 to +10.
+    // -> returns track #.
+    int playTrack(int track, int gain);
+
     // select a random track
     int randomTrack(const int (&range)[2]);
+    
+    // store tone and volume levels
+    int toneGain, trackGain;
 
 };
 

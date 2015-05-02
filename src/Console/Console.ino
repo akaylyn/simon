@@ -89,34 +89,14 @@ void loop() {
 }
 
 void soundTest() {
-  // quiet
-  sound.stopAllTracks();
   
-  // start up one tone.
-  sound.playTone(I_BLU);
-  delay(500);
-  sound.playTone(I_YEL);
-  delay(500);
-  sound.playTrack(101, 0, true);
-  delay(500);
-  sound.playTrack(500, 0, true);
+  sound.unitTest();
   
-  delay(5000);
-  
-  // quiet
-//  sound.stopAllTracks();  
-//  delay(1000);
-  sound.stopAllTracks();  
-//  delay(1000);
-//  sound.newStopAllTracks();  
-//  delay(1000);
-//  sound.newStopAllTracks();  
-//  delay(1000); 
-//  sound.stopTrack(500);
-  
-  // wait
   while(1);
+  
 }
+
+/*
 
 // uses the MPR121 device to adjust lights and sound based on Player 1's proximity to sensors
 void proximityMode() {
@@ -152,27 +132,28 @@ void proximityMode() {
   }
 
 }
+*/
 
 // simply operate the Console in "bongoes" mode.  Will shoot fire.
 void bongoMode() {
+  static boolean haveSetLevels = false;
+  if( ! haveSetLevels ) {
+    sound.setLeveling(4, 0); // prep for 4x tones and no music.
+    haveSetLevels = true;
+  }
+  
   if ( touch.anyChanged()) {
+    sound.stopTones(); // stop tones
     // if anything's pressed, pack the instructions
-    byte tones = 5;
     for ( byte i = 0; i < N_COLORS; i++ ) {
       if ( touch.pressed(i) ) {
-        tones = i; // LIFO.  can't do multiple tones... yet.
+        sound.playTone(i);
         light.setLight(i, LIGHT_ON);
         light.setFire(i, LIGHT_ON);
       } else {
         light.setLight(i, LIGHT_OFF);
         light.setFire(i, LIGHT_OFF);
       }
-    }
-    // maybe a tone
-    if ( tones < 5 ) {
-      sound.playTone(tones);
-    } else {
-      sound.stopAllTracks();
     }
     // show
     light.show();

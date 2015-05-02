@@ -306,7 +306,8 @@ void quiet() {
     light.setAllOff();
 
     // Sound on Console and Tower
-    sound.stopAllTracks();
+    // note that stopAll() will turn of ROCK track, too, which is probably not what you want.  Try stopTones(), instead.
+    sound.stopAll();
 
 }
 
@@ -417,7 +418,7 @@ void playerFanfare(byte level) {
     Metro fanfareDuration(FANFARE_DURATION_PER_CORRECT * currentLength);
 
     // make sweet fire/light/music.
-    int winTrack = sound.playWin();
+    int winTrack = sound.playWins();
     
     if (level >= FANFARE_1) {
         Serial << "Playing win level 0";
