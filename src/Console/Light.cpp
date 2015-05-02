@@ -173,16 +173,6 @@ void Light::sendInstruction(towerInstruction &externInst) {
 // call this to perform resend and network maintenace
 void Light::update() {
 
-  // important that we check the buffer before sending, or we'll overwrite stuff.
-  // while we don't (currently) do anything with inbound Tower traffic, the radio FSM needs a ReceiveComplete check frequently to advance states.
-  if ( radio.ReceiveComplete() && radio.CRCPass() ) {
-    // we have radio comms
-
-    // check cases
-
-    // we don't do anything with inbound traffic from the towers.
-  }
-
   // then we process outbound traffic
   if ( resendCount > 0 && resendCounter.check() ) { // we need to send the instructions
     resendCount--; // one less time
@@ -191,11 +181,18 @@ void Light::update() {
     // NOTE: it is assumed retries are going out to all Towers.
     radio.Send(0, (const void*)(&inst), sizeof(inst));
 
-  } else if ( networkConfigUpdate.check() ) { // update network
-    networkConfig();
-  }
+  } 
 
 }
+
+// call this to perform network maintenance
+void Light::updateNetwork() {
+  // update network
+  if ( networkConfigUpdate.check() ) { 
+    networkConfig();
+  }
+}
+
 
 // instantiates radio communications
 byte Light::networkStart() {

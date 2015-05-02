@@ -85,6 +85,9 @@ class Sound {
       
     // unit test for Music
     void unitTest();
+    
+    // set volume manually.  THIS IS VERY LIKELY TO CREATE CLIPPING UNLESS YOU KNOW WHAT YOU'RE DOING
+    void setVolume(int track, int gain);
 
   private:
     // Play a track.  INTENTIONALLY private to preserve gain settings

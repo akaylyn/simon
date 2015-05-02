@@ -170,9 +170,9 @@ void Sound::stopAll() {
 }
 
 
-/*
+
 // Adjust volume on playing track
-void Sound::setVol(int track, int gain) {
+void Sound::setVolume(int track, int gain) {
   // enforce limits
   int tr = constrain(track, 1, 999);
   int ga = constrain(gain, -70, 10);
@@ -180,10 +180,10 @@ void Sound::setVol(int track, int gain) {
   // set volume
   wav.trackGain(tr, ga);
   
-  Serial << F("Sound: volume for track:") << tr << F(" =") << ga << endl;
-
+//  Serial << F("Sound: volume for track:") << tr << F(" =") << ga << endl;
 }
 
+/*
 // Relevel volume on playing tracks to summed 0dB gain prevent clipping
 void Sound::relevelVol() {
   // playing track indices.
