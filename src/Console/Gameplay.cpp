@@ -58,7 +58,7 @@ void idleState() {
 
     sound.stopAll();
     sound.setLeveling(1, 1); // 1x tone and 1x track
-    sound.playRock(101);
+    sound.playRock(501);
 
     // wait for them to let go of the button
     waitForButtonsReleased();
