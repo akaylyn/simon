@@ -6,25 +6,28 @@
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
 #include <EEPROM.h> // saving and loading radio and menu settings
+#include <avr/eeprom.h> // eeprom block r/w
 #include <SPI.h> // radio board is a SPI device
+#include <RFM69.h> // RFM12b radio transmitter module
+
+#include <Simon_Common.h> // sizes, indexing and comms common to Towers and Console
+
 // LCD
 #include <Wire.h>
 #include <Adafruit_MCP23017.h>
 #include <Adafruit_RGBLCDShield.h>
+//#include <LiquidCrystal_I2C.h>
 //#include <buttons.h>
 #include <MENWIZ.h>
-// radio
-#include <Simon_Indexes.h> // sizes, indexing and comms common to Towers and Console
-#include <RFM69.h> // RFM12b radio transmitter module
-#include <Simon_Comms.h>  // Wand<=>Console and Console=>Tower sniffing
 
-// this is where the lights and fire instructions to Console are placed
-towerInstruction inst;
-// from Simon_Comms.h:
-// typedef struct {
-//	byte lightLevel[N_COLORS]; // 0..255.  maps to analogWrite->light level
-//	byte fireLevel[N_COLORS]; // 0..255.  maps to timer->fire duration
-// } towerInstruction;
+// this is where the lights and fire instructions from Console are placed
+towerInstruction tInst;
+// structure stores how this Tower acts on those towerInstructions
+towerConfiguration tConfig;
+// structure stores Console instructions
+consoleInstruction cInst;
+// structure stores Console configuration
+consoleConfiguration cConfig;
 
 // Need an instance of the Radio Module
 RFM69 radio;
@@ -36,15 +39,6 @@ byte myNodeID;
 // However, you can connect other I2C sensors to the I2C bus and share
 // the I2C bus.
 Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
-
-// These #defines make it easy to set the backlight color
-#define RED 0x1
-#define YELLOW 0x3
-#define GREEN 0x2
-#define TEAL 0x6
-#define BLUE 0x4
-#define VIOLET 0x5
-#define WHITE 0x7
 
 // menuing
 menwiz menu;
@@ -58,6 +52,22 @@ int towerLightIndex, towerFireIndex, towerFireMin, towerFireMax, controlIndex;
 #define FIRE_STEP 10
 
 #define INTERACTIVE_TIMEOUT 3000
+
+// force overwrite of EEPROM.  useful for bootstrapping new Moteinos.
+#define WRITE_EEPROM_NOW true
+
+// radio pins
+#define D_CS_PIN 10 // default SS pin for RFM module
+
+// These #defines make it easy to set the backlight color
+#define RED 0x1
+#define YELLOW 0x3
+#define GREEN 0x2
+#define TEAL 0x6
+#define BLUE 0x4
+#define VIOLET 0x5
+#define WHITE 0x7
+
 
 void menuSetup() {
 
@@ -152,9 +162,8 @@ void setup() {
   menuSetup();
 
   // zero out instruction.
-  commsDefault(inst);
-
-  myNodeID = commsStart(7); // we're node 7
+  myNodeID = 7;
+  myNodeID = networkStart(WRITE_EEPROM_NOW); // assume that EEPROM has been used to correctly set values
   radio.setHighPower(); // for HW boards.
   radio.promiscuous(true); // so broadcasts are received.
   Serial << F("Radio startup complete. Node: ") << myNodeID << endl;
@@ -167,9 +176,9 @@ void loop() {
   // check for comms traffic
   if ( radio.receiveDone() ) {
     // process it.
-    if ( radio.DATALEN == sizeof(inst) ) {
+    if ( radio.DATALEN == sizeof(tInst) ) {
       // save instruction for lights/flame
-      inst = *(towerInstruction*)radio.DATA;
+      tInst = *(towerInstruction*)radio.DATA;
     }
   }
 
@@ -182,20 +191,20 @@ void printInstruction() {
 
   menu.sbuf = ""; // 1st row
   strcat(menu.sbuf, "R");
-  strcat(menu.sbuf, itoa(inst.lightLevel[I_RED], buf, 10));
-  strcat(menu.sbuf, itoa(inst.fireLevel[I_RED], buf, 10));
+  strcat(menu.sbuf, itoa(tInst.lightLevel[I_RED], buf, 10));
+  strcat(menu.sbuf, itoa(tInst.fireLevel[I_RED], buf, 10));
   strcat(menu.sbuf, " G");
-  strcat(menu.sbuf, itoa(inst.lightLevel[I_GRN], buf, 10));
-  strcat(menu.sbuf, itoa(inst.fireLevel[I_GRN], buf, 10));
+  strcat(menu.sbuf, itoa(tInst.lightLevel[I_GRN], buf, 10));
+  strcat(menu.sbuf, itoa(tInst.fireLevel[I_GRN], buf, 10));
 
   strcat(menu.sbuf, "\n"); // 2nd row
 
   strcat(menu.sbuf, "B");
-  strcat(menu.sbuf, itoa(inst.lightLevel[I_BLU], buf, 10));
-  strcat(menu.sbuf, itoa(inst.fireLevel[I_BLU], buf, 10));
+  strcat(menu.sbuf, itoa(tInst.lightLevel[I_BLU], buf, 10));
+  strcat(menu.sbuf, itoa(tInst.fireLevel[I_BLU], buf, 10));
   strcat(menu.sbuf, " Y");
-  strcat(menu.sbuf, itoa(inst.lightLevel[I_YEL], buf, 10));
-  strcat(menu.sbuf, itoa(inst.fireLevel[I_YEL], buf, 10));
+  strcat(menu.sbuf, itoa(tInst.lightLevel[I_YEL], buf, 10));
+  strcat(menu.sbuf, itoa(tInst.fireLevel[I_YEL], buf, 10));
 
   menu.drawUsrScreen(menu.sbuf);
 }
@@ -220,23 +229,23 @@ void controlSend() {
   // toggle light and fire
   switch(controlIndex) {
     case 0: // red
-      inst.lightLevel[I_RED] = val;
-      inst.fireLevel[I_RED] = val;
+      tInst.lightLevel[I_RED] = val;
+      tInst.fireLevel[I_RED] = val;
       break;
     case 1: // green
-      inst.lightLevel[I_GRN] = val;
-      inst.fireLevel[I_GRN] = val;
+      tInst.lightLevel[I_GRN] = val;
+      tInst.fireLevel[I_GRN] = val;
       break;
     case 2: // blue
-      inst.lightLevel[I_BLU] = val;
-      inst.fireLevel[I_BLU] = val;
+      tInst.lightLevel[I_BLU] = val;
+      tInst.fireLevel[I_BLU] = val;
       break;
     case 3: // yellow
-      inst.lightLevel[I_YEL] = val;
-      inst.fireLevel[I_YEL] = val;
+      tInst.lightLevel[I_YEL] = val;
+      tInst.fireLevel[I_YEL] = val;
       break;
     case 4: // all
-      memset((void*)(&inst), val, sizeof(inst));
+      memset((void*)(&tInst), val, sizeof(tInst));
       break;
   }
   
@@ -244,7 +253,7 @@ void controlSend() {
   isOn = !isOn;  
   
   // send it
-  commsSend(inst);
+//  commsSend(inst);
 }
 
 void saveSettings() {
@@ -275,4 +284,86 @@ int readButtons() {
     }
   }
 }
+
+/*
+**** copied straight from Tower.ino
+*/
+
+
+// starts the radio
+byte networkStart(boolean overWriteEEPROM) {
+
+  Serial << F("Tower: Reading radio settings from EEPROM.") << endl;
+
+  // EEPROM location for radio settings.
+  const byte radioConfigLocation = 42;
+
+  // try to recover settings from EEPROM
+  byte offset = 0;
+  byte nodeID = EEPROM.read(radioConfigLocation + (offset++));
+  byte groupID = EEPROM.read(radioConfigLocation + (offset++));
+  byte band = EEPROM.read(radioConfigLocation + (offset++));
+  byte csPin = EEPROM.read(radioConfigLocation + (offset++));
+
+  if ( groupID != D_GROUP_ID || overWriteEEPROM ) {
+    Serial << F("Tower: EEPROM not configured.  Doing so.") << endl;
+    // then EEPROM isn't configured correctly.
+    offset = 0;
+    EEPROM.write(radioConfigLocation + (offset++), myNodeID);
+    EEPROM.write(radioConfigLocation + (offset++), D_GROUP_ID);
+    EEPROM.write(radioConfigLocation + (offset++), RF69_915MHZ);
+    EEPROM.write(radioConfigLocation + (offset++), D_CS_PIN);
+
+    return ( networkStart(false) ); // go again after EEPROM save
+
+  } 
+  else {
+    Serial << F("Tower: Startup RFM12b radio module. ");
+    Serial << F(" NodeID: ") << nodeID;
+    Serial << F(" GroupID: ") << groupID;
+    Serial << F(" Band: ") << band;
+    Serial << F(" csPin: ") << csPin;
+    Serial << endl;
+
+    radio.initialize(band, nodeID, groupID);
+    radio.setHighPower(); // for HW boards.
+    radio.promiscuous(true); // so broadcasts are received.
+
+    Serial << F("Tower: RFM69HW radio module startup complete. ");
+    return (nodeID);
+  }
+
+}
+
+// saves configuration to EEPROM
+void configSave(towerConfiguration &config) {
+  Serial << F("Writing towerConfiguration to EEPROM.") << endl;
+  eeprom_write_block((const void*)&config, (void*)towerConfigLocation, sizeof(config));
+}
+// reads configuration from EEPROM
+void configLoad(towerConfiguration &config) {
+  Serial << F("Reading towerConfiguration from EEPROM.") << endl;
+  eeprom_read_block((void*)&config, (void*)towerConfigLocation, sizeof(config));
+}
+// and prints current configuration
+void configPrint(towerConfiguration &config, byte nodeID) {
+  Serial << F("Tower (") << nodeID << F(") config: ");
+  Serial << F("Color(");
+  for(byte i=0; i<N_COLORS; i++) Serial << config.lightListen[i] << F(" ");
+  Serial << F(") Fire(");
+  for(byte i=0; i<N_COLORS; i++) Serial << config.fireListen[i] << F(" ");
+  Serial << F(") ");
+  Serial << F("Flame min(") << config.minFireTime << F(") max(") << config.maxFireTime << F(").");
+  Serial << F("Flame cooldown divisor: ") << config.flameCoolDownDivisor << endl;
+}
+// clears all of the instructions 
+void instClear(towerInstruction & inst) {
+  for (int i = 0; i < N_COLORS; i++ ) {
+    inst.lightLevel[i] = 0;
+    inst.fireLevel[i] = 0;
+  }
+}
+
+
+
 
