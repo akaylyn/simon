@@ -3,7 +3,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_NeoMatrix.h>
-// TODO: move to NeoMatrix to take advantage of the 3x stacked strips
 #include <Streaming.h>
 #include <Metro.h>
 #include <EasyTransfer.h>
@@ -60,15 +59,15 @@ LightET lightInst;
 // strip around the inner rim
 //Adafruit_NeoPixel rimJob = Adafruit_NeoPixel(RIM_N, RIM_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoMatrix rimJob = Adafruit_NeoMatrix(
-    108, 1, 1, 3, RIM_PIN,
-    NEO_MATRIX_BOTTOM + NEO_MATRIX_LEFT +
-    NEO_MATRIX_ROWS +
-    NEO_MATRIX_PROGRESSIVE +
-    NEO_TILE_BOTTOM + NEO_TILE_LEFT +
-    NEO_TILE_ROWS +
-    NEO_TILE_PROGRESSIVE,
-    NEO_GRB + NEO_KHZ800
-    );
+        108, 1, 1, 3, RIM_PIN,
+        NEO_MATRIX_BOTTOM + NEO_MATRIX_LEFT +
+        NEO_MATRIX_ROWS +
+        NEO_MATRIX_PROGRESSIVE +
+        NEO_TILE_BOTTOM + NEO_TILE_LEFT +
+        NEO_TILE_ROWS +
+        NEO_TILE_PROGRESSIVE,
+        NEO_GRB + NEO_KHZ800
+        );
 
 // strips around the buttons
 Adafruit_NeoPixel redL = Adafruit_NeoPixel(BUTTON_N, RED_PIN, NEO_GRB + NEO_KHZ800);
@@ -114,5 +113,5 @@ Metro stripUpdateInterval(STRIP_UPDATE);
 
 // count memory usage for LEDs, which is reported at startup.
 #define TOTAL_LED_MEM (RIM_N + BUTTON_N*4 + MIDDLE_N)*3
-
 #endif
+
