@@ -24,6 +24,7 @@ void ConcurrentAnimator::calculateAnimation(
         return;
     }
     //Serial << "calcAnimation" << endl;
+
     (*animate)((*strip), color.red, color.green, color.blue, position);
     ready = false;
 }

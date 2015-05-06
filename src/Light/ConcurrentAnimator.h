@@ -14,6 +14,7 @@ typedef struct  {
 } RgbColor;
 
 struct AnimationConfig {
+    char* name;
     Adafruit_NeoPixel *strip;
     RgbColor color;
     int position;

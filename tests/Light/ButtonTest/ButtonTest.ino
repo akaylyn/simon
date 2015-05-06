@@ -1,19 +1,15 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_NeoMatrix.h>
-#include "Light.h"
-#include "Animations.h"
-#include "ConcurrentAnimator.h"
-#include "ButtonTest.h"
-
 #include <Streaming.h>
 #include <Metro.h>
 #include <EasyTransfer.h>
 #include <LightMessage.h> // common message definition
-
-// watchdog timer
-#include <avr/wdt.h>
-
+#include <avr/wdt.h> // watchdog timer
+#include "Light.h"
+#include "Animations.h"
+#include "ConcurrentAnimator.h"
+#include "ButtonTest.h"
 
 #define PIN 4
 
@@ -48,35 +44,28 @@ RgbColor red;
 AnimateFunc wipeStrip = colorWipe;
 
 void setup() {
-    Serial.begin(115200);
-    rimJob.begin();
-    rimJob.show();
-    //rimJob.setTextWrap(true);
-    //rimJob.Color(255, 0, 0);
-    //strip.begin();
-    //strip.show(); // Initialize all pixels to 'off'
-    redL.begin();
-    redL.show();
-    /*grnL.begin();
-      grnL.show();
-      bluL.begin();
-      bluL.show();
-      yelL.begin();
-      yelL.show();
-      */
 
-    //setStripColor(redL, RED_MAX, GRN_MAX, BLU_MAX);
-    //setStripColor(rimJob, RED_MAX, GRN_MAX, BLU_MAX);
+    Serial.begin(115200);
+
+    // Colors
     red.red = RED_MAX;
     red.blue = LED_OFF;
     red.green = LED_OFF;
 
+    // Neopixel strips
+    rimJob.begin();
+    rimJob.show();
+
+    rimConfig.name = "Outer rim";
     rimConfig.strip = &strip;
     rimConfig.color = red;
     rimConfig.ready = true;
     rimConfig.position = 0;
-    rimConfig.timer = Metro(1);
+    rimConfig.timer = Metro(10);
 
+    redL.begin();
+    redL.show();
+    redButtonConfig.name = "Red Button";
     redButtonConfig.strip = &redL;
     redButtonConfig.color = red;
     redButtonConfig.ready = true;
@@ -84,16 +73,10 @@ void setup() {
     redButtonConfig.timer = Metro(1000);
 }
 
-
-static uint8_t lastPosition = 0;
-static uint8_t buttonLastPosition = 0;
-static bool rimReady = true;
-static bool btnReady = true;
 void loop() {
     if (stripUpdateInterval.check()) {
         animator.animate(wipeStrip, rimConfig);
         animator.animate(wipeStrip, redButtonConfig);
-
         stripUpdateInterval.reset();
     }
 }
@@ -110,6 +93,7 @@ void colorWipeMatrix(Adafruit_NeoMatrix &matrix, uint32_t c, uint8_t wait) {
 // Fill the dots one after the other with a color
 void colorWipe(Adafruit_NeoPixel &button, int r, int g, int b, int next) {
     button.setPixelColor(next, button.Color(r, g, b));
+    Serial << F("Strip Length: ") << button.numPixels() << endl;
     Serial << F("Set pixel: ") << next << endl;
 }
 
