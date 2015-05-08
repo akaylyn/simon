@@ -1,20 +1,7 @@
 #include "Extern.h"
 
-// this is where the lights and fire instructions to Towers are placed
-// defined in Simon_Comms.h and instantiated in Tower.cpp
-extern towerInstruction inst;
-// from Simon_Comms.h:
-// typedef struct {
-//	byte lightLevel[N_COLORS]; // 0..255.  maps to analogWrite->light level
-//	byte fireLevel[N_COLORS]; // 0..255.  maps to timer->fire duration
-// } towerInstruction;
-// structure stores how Towers acts on those towerInstructions
-
 // Need an instance of the Radio Module.  Instantiated in Tower.cpp.
 extern RFM12B radio;
-
-// storage for instructions
-towerInstruction inst;
 
 // sets up external interface
 void externStart() {
@@ -33,14 +20,17 @@ boolean externUpdate() {
     // we have radio comms
     externTimeout.reset();
 
+    // message storage
+    static towerInstruction tInst;
+    
     // check cases
-    if ( radio.GetDataLen() == sizeof(inst) ) {
+    if ( radio.GetDataLen() == sizeof(tInst) ) {
 
       // save instruction for lights/flame
-      inst = *(towerInstruction*)radio.GetData();
+      tInst = *(towerInstruction*)radio.GetData();
       // do it.
-      light.sendInstruction(inst);
-
+      light.sendInstruction(tInst);
+        
     }
 
     // check for ACK request

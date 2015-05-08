@@ -61,10 +61,18 @@ typedef struct {
 } towerInstruction;
 
 
-
+// predefined Tower configuration settings
+enum towerLightFireConfig_t { EACH2OWN, ALLIN };
+// EACH2OWN: each tower listens to a single color (and related fire) channel
+// ALLIN: all towers listen to all color (and related fire) channels
 
 // during operation, the Console can be reconfigured on-the-fly
 typedef struct {
+	// how should Towers respond to light commands?
+	towerLightFireConfig_t towerLightResponse;
+	// how should Towers respond to fire commands?
+	towerLightFireConfig_t towerFireResponse;
+
 	// how long (ms) between fanfare displays when the system has been idle?
 	unsigned long kioskFanfareInterval; 
 
