@@ -108,7 +108,7 @@ boolean midUpdated = false;
 Metro quietUpdateInterval(STRIP_ADD_PIXEL);
 
 // update the automata on the rim at this interval
-#define STRIP_UPDATE 100UL
+#define STRIP_UPDATE 10
 Metro stripUpdateInterval(STRIP_UPDATE);
 
 // count memory usage for LEDs, which is reported at startup.

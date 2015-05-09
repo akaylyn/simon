@@ -42,6 +42,8 @@ RgbColor red;
 
 //void (*wipeStrip)(Adafruit_NeoPixel&, int, int, int, uint8_t) = colorWipe;
 AnimateFunc wipeStrip = colorWipe;
+AnimateFunc laserStrip = laserWipe;
+LaserWipePosition laserPos;
 
 void setup() {
 
@@ -69,14 +71,17 @@ void setup() {
     redButtonConfig.strip = &redL;
     redButtonConfig.color = red;
     redButtonConfig.ready = true;
-    redButtonConfig.position = 0;
-    redButtonConfig.timer = Metro(1000);
+    redButtonConfig.position = &laserPos;
+    redButtonConfig.timer = Metro(10);
 }
 
+/******************************************************************************
+ * Main Loop
+******************************************************************************/
 void loop() {
     if (stripUpdateInterval.check()) {
-        animator.animate(wipeStrip, rimConfig);
-        animator.animate(wipeStrip, redButtonConfig);
+        //animator.animate(wipeStrip, rimConfig);
+        animator.animate(laserStrip, redButtonConfig);
         stripUpdateInterval.reset();
     }
 }
@@ -92,18 +97,54 @@ void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int c, int wait) {
 
 // Fill the dots one after the other with a color
 // returns the position of the led that was lit
-int colorWipe(Adafruit_NeoPixel &button, int r, int g, int b, int prevPos) {
-    int next = ++prevPos;
-    button.setPixelColor(next, button.Color(r, g, b));
+void colorWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
+    int* pos = (int*) posData;
+    int next = (*pos);
+
+    if (next > strip.numPixels()) {
+        next = 0;
+    } else {
+        ++next;
+    }
+
+    strip.setPixelColor(next, strip.Color(r, g, b));
     Serial << F("Set pixel: ") << next << endl;
-    return next;
+    posData = (void*) next;
 }
 
-
 // color wipes the last 8 pixels
-int laserWipe(Adafruit_NeoPixel &strip, int r, int g, int b, int prevPos) {
-    int next = prevPos++;
+void laserWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
+    LaserWipePosition* pos = static_cast<LaserWipePosition*>(posData);
+
+    // next is relative to the previous position
+    int next = pos->prev;
+    int end = strip.numPixels() - 1;
+    int start = end - 3;
+
+    // first pixel on, direction set
+    if (pos->prev == 0) {
+        next = start;
+    }
+
+    // reverse direction if at an edge
+    if (pos->prev == end) {
+        pos->dir = 1;
+    }
+    else if (pos->prev == start) {
+        pos->dir = 0;
+    }
+
+    // proceed to the next position
+    if (pos->dir == 1) {
+        --next;
+    } else {
+        ++next;
+    }
+
+    // clear out the last color and set the next one
+    strip.setPixelColor(pos->prev, strip.Color(LED_OFF, LED_OFF, LED_OFF));
     strip.setPixelColor(next, strip.Color(r, g, b));
+    pos->prev = next;
 }
 
 void rainbow(uint8_t wait) {

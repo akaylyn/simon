@@ -8,19 +8,19 @@ void ConcurrentAnimator::animate(AnimateFunc animate, AnimationConfig &config) {
 void ConcurrentAnimator::calculateAnimation(AnimateFunc animate, AnimationConfig &config) {
   Serial << "---" << config.name << "---" << endl;
   if (!config.ready) {
-    Serial << "." << (*config.strip).numPixels();
+    Serial << "." << config.strip->numPixels();
     return;
   }
   Serial << "+calcAnimation+";
 
-  config.position = (*animate)((*config.strip),
+  (*animate)((*config.strip),
       config.color.red, config.color.green, config.color.blue, config.position);
   config.ready = false;
 }
 
 void ConcurrentAnimator::push(AnimationConfig &config) {
   if (!config.timer.check()) return;
-  (*config.strip).show();
+  config.strip->show();
   config.ready = true;
 }
 

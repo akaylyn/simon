@@ -6,19 +6,19 @@
 #include <Streaming.h>
 #include <Arduino.h>
 
-typedef int (*AnimateFunc)(Adafruit_NeoPixel&, int, int, int, int);
+typedef void (*AnimateFunc)(Adafruit_NeoPixel&, int, int, int, void*);
 
-typedef struct  {
+struct RgbColor {
     int red;
     int green;
     int blue;
-} RgbColor;
+};
 
 struct AnimationConfig {
     char* name;
     Adafruit_NeoPixel *strip;
     RgbColor color;
-    int position;
+    void* position;
     bool ready;
     Metro timer;
     AnimationConfig() : timer(1){};
