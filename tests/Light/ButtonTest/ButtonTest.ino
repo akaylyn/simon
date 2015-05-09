@@ -81,7 +81,7 @@ void loop() {
     }
 }
 
-void colorWipeMatrix(Adafruit_NeoMatrix &matrix, uint32_t c, uint8_t wait) {
+void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int c, int wait) {
     for (uint16_t x = 0; x < matrix.width(); x++) {
         matrix.drawPixel(x, 0, c);
         matrix.drawPixel(x, 1, c);
@@ -91,23 +91,19 @@ void colorWipeMatrix(Adafruit_NeoMatrix &matrix, uint32_t c, uint8_t wait) {
 }
 
 // Fill the dots one after the other with a color
-void colorWipe(Adafruit_NeoPixel &button, int r, int g, int b, int next) {
+// returns the position of the led that was lit
+int colorWipe(Adafruit_NeoPixel &button, int r, int g, int b, int prevPos) {
+    int next = ++prevPos;
     button.setPixelColor(next, button.Color(r, g, b));
     Serial << F("Set pixel: ") << next << endl;
+    return next;
 }
 
-// color wipes the last 8 pixels
-void laserWipe(Adafruit_NeoPixel &button, int r, int g, int b, uint8_t wait, int times = 3) {
-    int currTimes = 0;
 
-    while (currTimes < times) {
-        for (uint16_t i = 0; i < button.numPixels(); i++) {
-            button.setPixelColor(i, button.Color(r, g, b));
-            button.show();
-            delay(wait);
-        }
-        times++;
-    }
+// color wipes the last 8 pixels
+int laserWipe(Adafruit_NeoPixel &strip, int r, int g, int b, int prevPos) {
+    int next = prevPos++;
+    strip.setPixelColor(next, strip.Color(r, g, b));
 }
 
 void rainbow(uint8_t wait) {

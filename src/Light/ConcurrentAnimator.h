@@ -6,7 +6,7 @@
 #include <Streaming.h>
 #include <Arduino.h>
 
-typedef void (*AnimateFunc)(Adafruit_NeoPixel&, int, int, int, int);
+typedef int (*AnimateFunc)(Adafruit_NeoPixel&, int, int, int, int);
 
 typedef struct  {
     int red;
@@ -29,9 +29,6 @@ class ConcurrentAnimator {
         void animate(AnimateFunc animate, AnimationConfig &config);
         void calculateAnimation(AnimateFunc animate, AnimationConfig &config);
         void push(AnimationConfig &config);
-
-    private:
-        int updatePosition(Adafruit_NeoPixel *strip, int position);
 };
 
 #endif
