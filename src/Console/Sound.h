@@ -64,6 +64,10 @@ class Sound {
     int playLose(int track = RANDOM_TRACK);
     int playBaff(int track = RANDOM_TRACK);
     int playRock(int track = RANDOM_TRACK);
+    
+    // Play a specific track by number
+    int playTrack(int track);
+    
     // Stop a track
     void stopTrack(int track);
     // Fade out track
