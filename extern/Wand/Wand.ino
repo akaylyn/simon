@@ -184,6 +184,7 @@ void loop() {
     if ( radio.DATALEN == sizeof(tInst) ) {
       // save instruction for lights/flame
       tInst = *(towerInstruction*)radio.DATA;
+      printInstruction();
     }
   }
 
