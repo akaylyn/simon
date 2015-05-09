@@ -1,37 +1,37 @@
 #include "ConcurrentAnimator.h"
 
 void ConcurrentAnimator::animate(AnimateFunc animate, AnimationConfig &config) {
-    calculateAnimation(
-            animate,
-            config.strip,
-            config.color,
-            config.position,
-            config.ready
-            );
-    push(config.strip, config.timer, config.ready);
-    config.position++;
+    calculateAnimation(animate, config);
+    push(config);
 }
 
-void ConcurrentAnimator::calculateAnimation(
-        AnimateFunc animate,
-        Adafruit_NeoPixel *strip,
-        RgbColor color,
-        int position,
-        bool &ready
-        ) {
-    if (!ready) {
-        //Serial << "calcAnimation !! Not Ready !! " << (*strip).numPixels() << endl;
+void ConcurrentAnimator::calculateAnimation(AnimateFunc animate, AnimationConfig &config) {
+    Serial << "---" << config.name << "---" << endl;
+    if (!config.ready) {
+        Serial << "." << (*config.strip).numPixels();
         return;
     }
-    //Serial << "calcAnimation" << endl;
+    Serial << "+calcAnimation+";
 
-    (*animate)((*strip), color.red, color.green, color.blue, position);
-    ready = false;
+    (*animate)((*config.strip), config.color.red, config.color.green, config.color.blue, config.position);
+    config.ready = false;
 }
 
-void ConcurrentAnimator::push(Adafruit_NeoPixel *strip, Metro timer, bool &ready) {
-    if (!timer.check()) return;
-    (*strip).show();
-    ready = true;
+void ConcurrentAnimator::push(AnimationConfig &config) {
+    if (!config.timer.check()) return;
+    (*config.strip).show();
+    config.ready = true;
+    config.position = updatePosition(config.strip, config.position);
+    Serial << "pos:" << config.position;
+}
+
+int ConcurrentAnimator::updatePosition(Adafruit_NeoPixel *strip, int position) {
+    Serial << "*strip numpixels: " << (*strip).numPixels() << endl;
+    if (position > (*strip).numPixels()) {
+        return 0;
+    }
+    else {
+        return position+=1;
+    }
 }
 

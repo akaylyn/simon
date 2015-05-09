@@ -93,7 +93,6 @@ void colorWipeMatrix(Adafruit_NeoMatrix &matrix, uint32_t c, uint8_t wait) {
 // Fill the dots one after the other with a color
 void colorWipe(Adafruit_NeoPixel &button, int r, int g, int b, int next) {
     button.setPixelColor(next, button.Color(r, g, b));
-    Serial << F("Strip Length: ") << button.numPixels() << endl;
     Serial << F("Set pixel: ") << next << endl;
 }
 

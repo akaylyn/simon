@@ -3,6 +3,7 @@
 
 #include <Adafruit_Neopixel.h>
 #include <Metro.h>
+#include <Streaming.h>
 #include <Arduino.h>
 
 typedef void (*AnimateFunc)(Adafruit_NeoPixel&, int, int, int, int);
@@ -26,13 +27,11 @@ struct AnimationConfig {
 class ConcurrentAnimator {
     public:
         void animate(AnimateFunc animate, AnimationConfig &config);
+        void calculateAnimation(AnimateFunc animate, AnimationConfig &config);
+        void push(AnimationConfig &config);
 
-        void calculateAnimation(
-            AnimateFunc animate,
-            Adafruit_NeoPixel *strip, RgbColor color, int position, bool &ready
-        );
-
-        void push(Adafruit_NeoPixel *strip, Metro timer, bool &ready);
+    private:
+        int updatePosition(Adafruit_NeoPixel *strip, int position);
 };
 
 #endif
