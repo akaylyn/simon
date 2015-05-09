@@ -25,21 +25,22 @@
 #ifndef WAVTRIGGER_H
 #define WAVTRIGGER_H
 
-#define CMD_TRACK_CONTROL	3
-#define CMD_STOP_ALL		4
-#define CMD_MASTER_VOLUME	5
-#define CMD_TRACK_VOLUME	8
-#define CMD_TRACK_FADE		10
-#define CMD_RESUME_ALL_SYNC	11
+#define CMD_TRACK_CONTROL	0x03
+#define CMD_STOP_ALL		0x04
+#define CMD_MASTER_VOLUME	0x05
+#define CMD_GET_STATUS		0x07 // MGD: added
+#define CMD_TRACK_VOLUME	0x08
+#define CMD_TRACK_FADE		0x0A
+#define CMD_RESUME_ALL_SYNC	0x0B
 
-#define TRK_PLAY_SOLO	0
-#define TRK_PLAY_POLY	1
-#define TRK_PAUSE		2
-#define TRK_RESUME		3
-#define TRK_STOP		4
-#define TRK_LOOP_ON		5
-#define TRK_LOOP_OFF	6
-#define TRK_LOAD		7
+#define TRK_PLAY_SOLO		0x00
+#define TRK_PLAY_POLY		0x01
+#define TRK_PAUSE		0x02
+#define TRK_RESUME		0x03
+#define TRK_STOP		0x04
+#define TRK_LOOP_ON		0x05
+#define TRK_LOOP_OFF		0x06
+#define TRK_LOAD		0x07
 
 // MGD
 //#include "../AltSoftSerial/AltSoftSerial.h"
@@ -67,6 +68,11 @@ public:
 	void trackGain(int trk, int gain);
 	void trackFade(int trk, int gain, int time, bool stopFlag);
 	void trackCrossFade(int trkFrom, int trkTo, int gain, int time);
+	// **************************************************************
+	// MGD: implement GET_STATUS (Tx) and STATUS (Rx) to return playing track numbers
+	// See: http://robertsonics.com/wav-trigger-online-user-guide/
+	void getPlayingTracks(int playingTracks[14]);
+
 private:
 	void trackControl(int trk, int code);
 

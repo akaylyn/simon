@@ -34,6 +34,14 @@
 // should Unit Tests be run if the startup routines return an error?
 #define RUN_UNIT_ON_ERROR false
 
+
+// ***** really should move Kiosk stuff to it's own .cpp/.h
+// define the minimum time between fanfares in kiosk mode  <- influenced by knob 1
+#define KIOSK_FANFARE_MIN 30000UL  // 30 seconds
+#define KIOSK_FANFARE_MAX 300000UL  // 5 minutes
+// during idle, do a fanfare of light, music and fire
+Metro kioskTimer(KIOSK_FANFARE_MAX);
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -63,62 +71,161 @@ void loop() {
 
   if ( gamePlayMode ) {
     // play the Simon game; returns true if we're playing
-    if ( ! gameplayUpdate() ) {
+    if( gameplayUpdate() ) {
+      kioskTimer.reset(); // game's afoot, so reset timer for kiosk mode display
+    } 
+    else {
       // we're not playing, so check for Extern traffic; returns true if we have traffic.
-      if ( ! externUpdate() ) {
-        // no Extern traffic, so perform Tower maintenance and idle displays.
-        light.update();
+      if ( externUpdate() ) {
+        // external traffic handling
       }
+      // perform Tower network maintenance
+      light.updateNetwork();
     }
-    //touchUnitTest(50UL);
+
+    if( kioskTimer.check() ) {
+      // song and dance;  "come play with me!"
+      idleFanfare();
+    }
   }
   else {
     // assume we're setting up the project on-site, so this is a good time to run unit tests, calibration activities, etc.
+
     // when a button is pressed, send the colors out and make some fire (drum machine mode?)
-    setupMode();
+//    bongoMode();
+
+    // when hands are near the project, act like a theramin
+    proximityMode();
+
+    // work with sounds to get auto releveling sorted out
+    //    soundTest();
+
   }
 
 }
 
-void setupMode() {
-/*  
-  if( MPR121.getError() ) {
-    Serial << "Touch: Error!" << endl;
+void soundTest() {
+
+  sound.unitTest();
+
+  while(1);
+
+}
+
+
+// uses the MPR121 device to adjust lights and sound based on Player 1's proximity to sensors
+extern float fscale( float originalMin, float originalMax, float newBegin, float newEnd, float inputValue, float curve); // from Touch.cpp
+void proximityMode() {
+
+  static boolean startupComplete = false;
+  static Metro restartTimer(25000UL); // tones are only 30 seconds long, so we need to restart
+  static int gainMax=TONE_GAIN - 6;
+  static int gainMin=gainMax - 40;
+  static int trTone[N_COLORS];
+  static byte lastDistance[N_COLORS];
+  static byte distanceThreshold = 200;
+  
+  if( ! startupComplete || restartTimer.check() ) {
+    sound.stopAll();
+    sound.setLeveling(4, 0); // prep for 4x tones and no music.
+
+    for( byte i = 0; i < N_COLORS; i++ ) {
+      // start the tones up
+      trTone[i] = sound.playTone(i);
+      // and quietly
+      sound.setVolume(trTone[i], gainMin);
+    }
+
+    startupComplete = true;
+    restartTimer.reset();
   }
-  if( !MPR121.isRunning() ) Serial << "Touch: not running!" << endl;
-  if( !MPR121.isInited() ) Serial << "Touch: not intialized!" << endl;
+
+  boolean showLightsNow = false;
+  for( byte i = 0; i < N_COLORS; i++ ) {
+    // read the sensor distance
+    byte dist = touch.distance(i);
+    
+    if( dist != lastDistance[i] ) {
+      // adjust the volume based on the distance
+      int gain = fscale(0, 255, gainMax, gainMin, dist, -10.0); // log10
+      
+      sound.setVolume(trTone[i], gain);  
+      // save it
+      lastDistance[i] = dist;
+      
+      // set lights
+      light.setLight(i, dist < distanceThreshold ? LIGHT_ON : LIGHT_OFF );
+      showLightsNow = true;
+    }
+  }
   
-  MPR121.updateAll();
-  static int lastRed = MPR121.getFilteredData(1);
-  int currRed = MPR121.getFilteredData(1);
-  
-  Serial << "Touch: " << currRed << endl;
-  delay(100);
-  lastRed = currRed;
-  
-  */
+  if( showLightsNow ) light.show();
+  // update to towers
+  light.update();
+    
+}
+
+/*
+
+  // some kind of proxy for distance
+  // note that we're using the default "13th" sensor, which is the multiplexed aggregate of all of the sensors
+  // but, you could ask for distances for each sensor, individually [0..3].
+  byte currDist = touch.distance();
+
+  // define a treshold for distance. closer: make lights and sound; further: turn off lights and sound
+  const byte thresholdDist = 225; 
+
+  if( currDist > thresholdDist ) {
+    // lights off.  immediate send.
+    light.setAllLight(LIGHT_OFF, true);
+    // quiet
+    if( trackNumber > 0 ) sound.stopTrack(trackNumber);
+    trackNumber = -1; // clear.
+  } 
+  else {
+    // map distance to [0,255] for lights
+    byte lightLevel = map(currDist, 0, thresholdDist, 255, 0); // closer is brighter
+    // map distance to [-70,0] for sound
+    int soundLevel = map(currDist, 0, thresholdDist, 0, -20); // closed is louder
+    //   Serial << F("Proximity: dist= ") << currDist << F(" light=") << lightLevel << F(" sound=") << soundLevel << endl;
+
+    // lights on.  immediate send
+    light.setAllLight(lightLevel, true);
+    // sound
+    if( trackNumber > 0 ) sound.setVol(trackNumber, soundLevel); // adjust volume, if we're already playing
+    else trackNumber = sound.playTone(I_BLU, soundLevel); // if we're not playing, start playing
+  }
+*/
+
+
+// simply operate the Console in "bongoes" mode.  Will shoot fire.
+void bongoMode() {
+
+  static boolean haveSetLevels = false;
+  if( ! haveSetLevels ) {
+    sound.stopAll();
+    sound.setLeveling(4, 0); // prep for 4x tones and no music.
+    haveSetLevels = true;
+  }
+
   if ( touch.anyChanged()) {
+    sound.stopTones(); // stop tones
     // if anything's pressed, pack the instructions
-    byte tones = 5;
     for ( byte i = 0; i < N_COLORS; i++ ) {
       if ( touch.pressed(i) ) {
-        tones = i; // LIFO.  can't do multiple tones... yet.
+        sound.playTone(i);
         light.setLight(i, LIGHT_ON);
         light.setFire(i, LIGHT_ON);
-      } else {
+      } 
+      else {
         light.setLight(i, LIGHT_OFF);
         light.setFire(i, LIGHT_OFF);
       }
     }
-    // maybe a tone
-    if ( tones < 5 ) {
-      sound.playTone(tones);
-    } else {
-      sound.stopAllTracks();
-    }
     // show
     light.show();
-  } else {
+  } 
+  else {
     // maybe resend
     light.update();
   }
@@ -132,5 +239,21 @@ void setupMode() {
  pin 19 (IRQ 4) reserved for MPR121
  pin 18 (IRQ 5)
  */
+
+
+
+void idleFanfare() {
+  Serial << F("Gameplay: Idle Fanfare !!") << endl;
+
+  Serial << F("Gameplay: Idle fanfare ended") << endl;
+
+  // reset the timer
+  unsigned long kioskTimerInterval = random(KIOSK_FANFARE_MIN, KIOSK_FANFARE_MAX);
+  kioskTimer.interval(kioskTimerInterval);
+
+  Serial << F("Gameplay: idle Fanfare interval reset to ") << kioskTimerInterval << endl;
+  kioskTimer.reset();
+}
+
 
 

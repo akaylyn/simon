@@ -27,10 +27,6 @@
 // disable fanfare - originally used for speeding up debugging
 #define FANFARE_ENABLED true
 
-// define the minimum time between fanfares in kiosk mode  <- influenced by knob 1
-#define KIOSK_FANFARE_MIN 30000UL  // 30 seconds
-#define KIOSK_FANFARE_MAX 300000UL  // 5 minutes
-
 // get this number in a row, and you're super cheatypants.
 #define MAX_SEQUENCE_LENGTH 25 // good luck with that.
 
@@ -95,9 +91,6 @@ void play(char color, boolean correctTone);
 // play failure animation
 void animateFailure();
 
-// setSoundLights off.
-void quiet();
-
 // playback a character array of the current correct sequence
 void playSequence();
 
@@ -119,5 +112,10 @@ void playerFanfare(byte level);
 
 // Get the fanfare level to play.  Returns 0-4
 byte getLevel(int correct);
+
+// wait for all of the buttons to be released.
+void waitForButtonsReleased();
+// wait for a timer to elapse
+void waitForTimer(unsigned long t);
 
 #endif

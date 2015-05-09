@@ -7,6 +7,17 @@
 
 // have: 2K memory, 3 bytes memory per LED, 60 LEDs per meter.
 // so, we can support 2000/3/60=11.1 meters, other memory usage notwithstanding.
+
+// MGD: please include #includes in top level .ino.  
+#include <Adafruit_GFX.h>
+#include <Adafruit_NeoPixel.h>
+#include <Adafruit_NeoMatrix.h>
+// TODO: move to NeoMatrix to take advantage of the 3x stacked strips
+#include <Streaming.h>
+#include <Metro.h>
+#include <EasyTransfer.h>
+#include <LightMessage.h> // common message definition
+
 #include "Light.h"
 void setup() {
   Serial.begin(115200);

@@ -85,6 +85,9 @@ class Light {
     // call this to perform resend and network maintenace
     void update();
     
+    // call this for network maintenance
+    void updateNetwork();
+    
     // take a towerInstruction and execute
     void sendInstruction(towerInstruction &externInst);
 
