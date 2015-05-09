@@ -7,6 +7,7 @@
 #include <Metro.h>
 #include <EasyTransfer.h>
 #include <LightMessage.h> // common message definition
+#include "ConcurrentAnimator.h"
 
 // watchdog timer
 #include <avr/wdt.h>
@@ -14,15 +15,15 @@
 // RIM of LEDs
 #define RIM_PIN 3 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
 // geometry
-#define RIM_N 107*3 // best if divisible by 4
+#define RIM_N 108 // 108*3 best if divisible by 4
 #define RIM_SEG_LENGTH 27 // floor(RIM_N/4)=27
-#define YEL_SEG_START 12 // start yellow at this pixel
-#define BLU_SEG_START YEL_SEG_START+RIM_SEG_LENGTH
-#define RED_SEG_START BLU_SEG_START+RIM_SEG_LENGTH
-#define GRN_SEG_START RED_SEG_START+RIM_SEG_LENGTH
+#define YEL_SEG_START 46 // start yellow at this pixel
+#define GRN_SEG_START YEL_SEG_START+RIM_SEG_LENGTH
+#define RED_SEG_START GRN_SEG_START+RIM_SEG_LENGTH
+#define BLU_SEG_START RED_SEG_START+RIM_SEG_LENGTH
 
 // 4x touch lighting strips
-#define RED_PIN 4 // wire to button DI pin.  Include a 330 Ohm resistor in series.
+#define RED_PIN 4 // wireito button DI pin.  Include a 330 Ohm resistor in series.
 #define GRN_PIN 5 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 #define BLU_PIN 6 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 #define YEL_PIN 7 // wire to button DI pin.  Include a 330 Ohm resistor in series.
@@ -91,7 +92,10 @@ const uint32_t Yel = rimJob.Color(RED_MAX, GRN_MAX, LED_OFF);
 const uint32_t Grn = rimJob.Color(LED_OFF, GRN_MAX, LED_OFF);
 const uint32_t Blu = rimJob.Color(LED_OFF, LED_OFF, BLU_MAX);
 const uint32_t Dead = rimJob.Color(LED_OFF, LED_OFF, LED_OFF);
-
+const uint32_t BTN_COLOR_RED = redL.Color(RED_MAX, LED_OFF, LED_OFF);
+const uint32_t BTN_COLOR_YELLOW = redL.Color(RED_MAX, GRN_MAX, LED_OFF);
+const uint32_t BTN_COLOR_GREEN = redL.Color(LED_OFF, GRN_MAX, LED_OFF);
+const uint32_t BTN_COLOR_BLUE = redL.Color(LED_OFF, LED_OFF, BLU_MAX);
 // track when we need to send update.
 boolean rimUpdated = false;
 boolean redUpdated = false;
@@ -108,10 +112,11 @@ boolean midUpdated = false;
 Metro quietUpdateInterval(STRIP_ADD_PIXEL);
 
 // update the automata on the rim at this interval
-#define STRIP_UPDATE 10
+#define STRIP_UPDATE 75
 Metro stripUpdateInterval(STRIP_UPDATE);
 
 // count memory usage for LEDs, which is reported at startup.
 #define TOTAL_LED_MEM (RIM_N + BUTTON_N*4 + MIDDLE_N)*3
+
 #endif
 

@@ -17,6 +17,7 @@
 #include <Metro.h>
 #include <EasyTransfer.h>
 #include <LightMessage.h> // common message definition
+#include "ConcurrentAnimator.h"
 
 #include "Light.h"
 void setup() {
@@ -105,7 +106,9 @@ void loop() {
   wdt_reset(); // must be called periodically to prevent spurious reboot.
 
   // update the strip automata on an interval
+  /*
   if ( stripUpdateInterval.check() ) {
+
     // compute the next step and flag for show.
     updateRule90(rimJob, PIXEL_TTL); rimUpdated = true;
 
@@ -120,6 +123,7 @@ void loop() {
 
     stripUpdateInterval.reset();
   }
+*/
 
   //check and see if a data packet has come in.
   if (ET.receiveData()) {
@@ -144,8 +148,17 @@ void loop() {
       pressed = true;
     }
 
+    if (!pressed) {
+       setStripColor(redL, LED_OFF, LED_OFF, LED_OFF);
+       setStripColor(grnL, LED_OFF, LED_OFF, LED_OFF);
+       setStripColor(bluL, LED_OFF, LED_OFF, LED_OFF);
+       setStripColor(yelL, LED_OFF, LED_OFF, LED_OFF);
+       setStripColor(rimJob, LED_OFF, LED_OFF, LED_OFF);
+    }
+
     if ( pressed ) {
       digitalWrite(LED_PIN, HIGH);
+      Serial << "pressed" << endl;
     } else {
       digitalWrite(LED_PIN, LOW);
     }
@@ -247,25 +260,25 @@ void buttonPressPattern(uint8_t button) {
 
   switch (button) {
     case 0:  // red
-      buttonPressToButton(redL, Red);
+      buttonPressToButton(redL, BTN_COLOR_RED);
       redUpdated = true;
 
       buttonPressToRim(Red, RED_SEG_START, RIM_SEG_LENGTH);
       break;
     case 2:  // blue
-      buttonPressToButton(bluL, Blu);
+      buttonPressToButton(bluL, BTN_COLOR_BLUE);
       bluUpdated = true;
 
       buttonPressToRim(Blu, BLU_SEG_START, RIM_SEG_LENGTH);
       break;
     case 3:  // yellow
-      buttonPressToButton(yelL, Yel);
+      buttonPressToButton(yelL, BTN_COLOR_YELLOW);
       yelUpdated = true;
 
       buttonPressToRim(Yel, YEL_SEG_START, RIM_SEG_LENGTH);
       break;
     case 1:  // green
-      buttonPressToButton(grnL, Grn);
+      buttonPressToButton(grnL, BTN_COLOR_GREEN);
       grnUpdated = true;
 
       buttonPressToRim(Grn, GRN_SEG_START, RIM_SEG_LENGTH);
@@ -296,9 +309,12 @@ void buttonPressToRim(const uint32_t color, uint16_t segStart, uint16_t segLengt
 
   // clear the segment and lay down this color
   for ( uint16_t i = 1; i < segLength; i++ )  {
-    rimJob.setPixelColor((segStart + i) % RIM_N, color);
+    //rimJob.setPixelColor((segStart + i) % RIM_N, color);
+    int x = (segStart + i) % RIM_N;
+    rimJob.drawPixel(x, 0, color);
+    rimJob.drawPixel(x, 1, color);
+    rimJob.drawPixel(x, 2, color);
   }
-
 }
 
 // unpack and pack functions
@@ -574,4 +590,11 @@ void twinkleRand(Adafruit_NeoPixel &strip, int num, uint32_t c, uint32_t bg) {
 }
 
 // other options for effects at: http://funkboxing.com/wordpress/wp-content/_postfiles/sk_qLEDFX_POST.ino
+
+void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b) {
+  for (int i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, strip.Color(r, g, b));
+  }
+  strip.show();
+}
 

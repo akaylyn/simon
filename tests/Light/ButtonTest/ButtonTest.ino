@@ -40,7 +40,6 @@ AnimationConfig rimConfig;
 AnimationConfig redButtonConfig;
 RgbColor red;
 
-//void (*wipeStrip)(Adafruit_NeoPixel&, int, int, int, uint8_t) = colorWipe;
 AnimateFunc wipeStrip = colorWipe;
 AnimateFunc laserStrip = laserWipe;
 LaserWipePosition laserPos;
