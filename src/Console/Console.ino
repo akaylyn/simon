@@ -25,6 +25,7 @@
 
 //------ "This" units.
 #include "Gameplay.h" // Game Play subunit.  Responsible for Simon game.
+#include "TestModes.h"
 #include "Extern.h" // Extern subunit.  Responsible for interfacing with other projects via RFM12b.
 
 //------ Output units.
@@ -39,8 +40,31 @@
 // define the minimum time between fanfares in kiosk mode  <- influenced by knob 1
 #define KIOSK_FANFARE_MIN 30000UL  // 30 seconds
 #define KIOSK_FANFARE_MAX 300000UL  // 5 minutes
+
 // during idle, do a fanfare of light, music and fire
 Metro kioskTimer(KIOSK_FANFARE_MAX);
+
+void gamePlayModeLoop(bool performStartup);
+void bongoModeLoop(bool performStartup);
+void proximityModeLoop(bool performStartup);
+void lightsTestModeLoop(bool performStartup);
+void fireTestModeLoop(bool performStartup);
+void proximityResetModeLoop(bool performStartup);
+
+#define NUM_INTERACTIVE_MODES 6
+#define MODE_TRACK_OFFSET 699
+
+int currentMode = 0;
+static boolean gamePlayMode = true;
+
+void (*interactiveModefunctions[NUM_INTERACTIVE_MODES])(bool) = {
+  gamePlayModeLoop,
+  bongoModeLoop,
+  proximityModeLoop,
+  lightsTestModeLoop,
+  fireTestModeLoop,
+  proximityResetModeLoop,
+};
 
 void setup() {
   // put your setup code here, to run once:
@@ -54,9 +78,11 @@ void setup() {
   touch.begin();
   sensor.begin();
   mic.begin();
+  
   //------ Output units.
   light.begin(); // moved this up to the front, as synchronization with Light is apparently important.
   if ( !sound.begin() && RUN_UNIT_ON_ERROR || 0) sound.unitTest();
+     
   //------ "This" units.
   gameplayStart(sound);
   externStart();
@@ -67,41 +93,78 @@ void setup() {
 // main loop for the core.
 void loop() {
   boolean fireMode = sensor.fireEnabled();
-  boolean gamePlayMode = sensor.gameEnabled();
-
-  if ( gamePlayMode ) {
-    // play the Simon game; returns true if we're playing
-    if( gameplayUpdate() ) {
-      kioskTimer.reset(); // game's afoot, so reset timer for kiosk mode display
-    } 
-    else {
-      // we're not playing, so check for Extern traffic; returns true if we have traffic.
-      if ( externUpdate() ) {
-        // external traffic handling
-      }
-      // perform Tower network maintenance
-      light.updateNetwork();
-    }
-
-    if( kioskTimer.check() ) {
-      // song and dance;  "come play with me!"
-      idleFanfare();
-    }
-  }
+  
+  boolean switchModes = sensor.modeEnabledHasChanged();
+  
+  if(switchModes) {
+    startupNextModeAndLoop();
+  } 
   else {
-    // assume we're setting up the project on-site, so this is a good time to run unit tests, calibration activities, etc.
+    // Call the current mode loop, without startup.
+    interactiveModefunctions[currentMode](false);
+  }
+}
 
-    // when a button is pressed, send the colors out and make some fire (drum machine mode?)
-//    bongoMode();
+void startupNextModeAndLoop() {
+  Serial << "startupNextModeAndLoop() called" << endl;
+  currentMode++;                        // next mode!
+  currentMode %= NUM_INTERACTIVE_MODES; // wrap around
+  
+  // Play the sound to let the use know what mode we're in
+  sound.stopAll();
+  sound.setLeveling(1, 0); // Level for one track, no music
+  sound.playTrack(MODE_TRACK_OFFSET + currentMode);
+  delay(1500UL); // wait for while the sound plays
+  
+  // startup the next mode
+  interactiveModefunctions[currentMode](true);  
+}
 
-    // when hands are near the project, act like a theramin
-    proximityMode();
-
-    // work with sounds to get auto releveling sorted out
-    //    soundTest();
-
+void gamePlayModeLoop(boolean performStartup) {
+  if(performStartup) {    
+    // set the sound back to default levels
+    sound.setMasterGain();
+    sound.setLeveling();
+    sound.stopAll();      
+  } 
+  
+  // play the Simon game; returns true if we're playing  
+  if( gameplayUpdate() ) {
+    kioskTimer.reset(); // game's afoot, so reset timer for kiosk mode display
+  } 
+  else {
+    // we're not playing, so check for Extern traffic; returns true if we have traffic.
+    if ( externUpdate() ) {
+      // external traffic handling
+    }
+    // perform Tower network maintenance
+    light.updateNetwork();
   }
 
+  if( kioskTimer.check() ) {
+    // song and dance;  "come play with me!"
+    idleFanfare();
+  }
+}
+
+void bongoModeLoop(bool performStartup) {
+  testModes.bongoModeLoop(performStartup);
+}
+
+void proximityModeLoop(bool performStartup) {
+  testModes.proximityModeLoop(performStartup);
+}
+
+void lightsTestModeLoop(bool performStartup) {
+  testModes.lightsTestModeLoop(performStartup);
+}
+
+void fireTestModeLoop(bool performStartup) {
+  testModes.fireTestModeLoop(performStartup);
+}
+
+void proximityResetModeLoop(bool performStartup) {
+  testModes.proximityResetModeLoop(performStartup);
 }
 
 void soundTest() {
@@ -110,59 +173,6 @@ void soundTest() {
 
   while(1);
 
-}
-
-
-// uses the MPR121 device to adjust lights and sound based on Player 1's proximity to sensors
-extern float fscale( float originalMin, float originalMax, float newBegin, float newEnd, float inputValue, float curve); // from Touch.cpp
-void proximityMode() {
-
-  static boolean startupComplete = false;
-  static Metro restartTimer(25000UL); // tones are only 30 seconds long, so we need to restart
-  static int gainMax=TONE_GAIN - 6;
-  static int gainMin=gainMax - 40;
-  static int trTone[N_COLORS];
-  static byte lastDistance[N_COLORS];
-  static byte distanceThreshold = 200;
-  
-  if( ! startupComplete || restartTimer.check() ) {
-    sound.stopAll();
-    sound.setLeveling(4, 0); // prep for 4x tones and no music.
-
-    for( byte i = 0; i < N_COLORS; i++ ) {
-      // start the tones up
-      trTone[i] = sound.playTone(i);
-      // and quietly
-      sound.setVolume(trTone[i], gainMin);
-    }
-
-    startupComplete = true;
-    restartTimer.reset();
-  }
-
-  boolean showLightsNow = false;
-  for( byte i = 0; i < N_COLORS; i++ ) {
-    // read the sensor distance
-    byte dist = touch.distance(i);
-    
-    if( dist != lastDistance[i] ) {
-      // adjust the volume based on the distance
-      int gain = fscale(0, 255, gainMax, gainMin, dist, -10.0); // log10
-      
-      sound.setVolume(trTone[i], gain);  
-      // save it
-      lastDistance[i] = dist;
-      
-      // set lights
-      light.setLight(i, dist < distanceThreshold ? LIGHT_ON : LIGHT_OFF );
-      showLightsNow = true;
-    }
-  }
-  
-  if( showLightsNow ) light.show();
-  // update to towers
-  light.update();
-    
 }
 
 /*
@@ -197,40 +207,6 @@ void proximityMode() {
   }
 */
 
-
-// simply operate the Console in "bongoes" mode.  Will shoot fire.
-void bongoMode() {
-
-  static boolean haveSetLevels = false;
-  if( ! haveSetLevels ) {
-    sound.stopAll();
-    sound.setLeveling(4, 0); // prep for 4x tones and no music.
-    haveSetLevels = true;
-  }
-
-  if ( touch.anyChanged()) {
-    sound.stopTones(); // stop tones
-    // if anything's pressed, pack the instructions
-    for ( byte i = 0; i < N_COLORS; i++ ) {
-      if ( touch.pressed(i) ) {
-        sound.playTone(i);
-        light.setLight(i, LIGHT_ON);
-        light.setFire(i, LIGHT_ON);
-      } 
-      else {
-        light.setLight(i, LIGHT_OFF);
-        light.setFire(i, LIGHT_OFF);
-      }
-    }
-    // show
-    light.show();
-  } 
-  else {
-    // maybe resend
-    light.update();
-  }
-}
-
 /* possible IRQ pins (for attachInterrupt):
  pin 2 (IRQ 0) taken by RFM12b
  pin 3 (IRQ 1) taken by VS1023
@@ -254,6 +230,3 @@ void idleFanfare() {
   Serial << F("Gameplay: idle Fanfare interval reset to ") << kioskTimerInterval << endl;
   kioskTimer.reset();
 }
-
-
-

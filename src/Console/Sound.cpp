@@ -65,6 +65,10 @@ int Sound::randomTrack(const int (&range)[2]) {
   return ( random(range[0], range[1] + 1) );
 }
 
+int Sound::playTrack(int track) {
+  return ( playTrack(track, this->trackGain) );
+}
+
 int Sound::playTrack(int track, int gain) {
   // enforce limits
   int tr = constrain(track, 1, 999);
