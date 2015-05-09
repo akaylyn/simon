@@ -16,9 +16,9 @@
 #define SENSOR_DEBOUCE_TIME 100UL
 
 // remote control
-#define GAME_ENABLE_PIN A8
+#define MODE_ENABLE_PIN A8
   // at system power up, relay is open, meaning pin will read HIGH.
-#define GAME_ENABLED HIGH
+#define MODE_ENABLED HIGH
 
 #define FIRE_ENABLE_PIN A9
   // at system power up, relay is open, meaning pin will read HIGH.
@@ -30,7 +30,7 @@ class Sensor {
     void begin();
     
     // returns true if the sensor indicates an enabled reading
-    boolean gameEnabled();
+    boolean modeEnabledHasChanged();
     boolean fireEnabled();
 };
 

@@ -1,13 +1,13 @@
 #include "Sensor.h"
 
-Bounce gameEnable = Bounce(GAME_ENABLE_PIN, SENSOR_DEBOUCE_TIME);
+Bounce modeEnable = Bounce(MODE_ENABLE_PIN, SENSOR_DEBOUCE_TIME);
 Bounce fireEnable = Bounce(FIRE_ENABLE_PIN, SENSOR_DEBOUCE_TIME);
 
 
 void Sensor::begin() { // remote control
   Serial << "Sensor: startup." << endl;
 
-  pinMode(GAME_ENABLE_PIN, INPUT_PULLUP);
+  pinMode(MODE_ENABLE_PIN, INPUT_PULLUP);
   pinMode(FIRE_ENABLE_PIN, INPUT_PULLUP);
 }
 
@@ -46,23 +46,20 @@ boolean Sensor::fireEnabled() {
   return ( fireMode );
 }
 
-// remote control.  There's a relay that will pull GAME_ENABLE_PIN to LOW when pressed (disable gameplay).
-// goes to HIGH when pressed again (enable gameplay).
-boolean Sensor::gameEnabled() {
+// remote control.  There's a relay that will pull MODE_ENABLE_PIN to LOW when pressed.
+// goes to HIGH when pressed again.  We use this flip-flop to change modes
+boolean Sensor::modeEnabledHasChanged() {
   // track state
-  static boolean gamePlayMode = gameEnable.read() == GAME_ENABLED;
+  static boolean gamePlayMode = modeEnable.read() == MODE_ENABLED;
 
   // is there a change in state?
-  if ( gameEnable.update() ) {
-    Serial << "Game Enable pin change!" << endl;
-    // system enable/disable state has changed.
-    gamePlayMode = gameEnable.read() == GAME_ENABLED;
-    if ( gamePlayMode ) Serial << "Game enabled!" << endl;
-    else  Serial << "Game DISABLED!" << endl;
+  if ( modeEnable.update() ) {
+    Serial << "Mode enable pin change!" << endl;
+    return true;
   }
-
-  // return
-  return ( gamePlayMode );
+  else {
+    return false;
+  }
 
 }
 
