@@ -9,26 +9,26 @@
 typedef void (*AnimateFunc)(Adafruit_NeoPixel&, int, int, int, void*);
 
 struct RgbColor {
-    int red;
-    int green;
-    int blue;
+  int red;
+  int green;
+  int blue;
 };
 
 struct AnimationConfig {
-    char* name;
-    Adafruit_NeoPixel *strip;
-    RgbColor color;
-    void* position;
-    bool ready;
-    Metro timer;
-    AnimationConfig() : timer(1){};
+  char* name;
+  Adafruit_NeoPixel *strip;
+  RgbColor color;
+  void* position;
+  bool ready;
+  Metro timer;
+  AnimationConfig() : timer(1){};
 };
 
 class ConcurrentAnimator {
-    public:
-        void animate(AnimateFunc animate, AnimationConfig &config);
-        void calculateAnimation(AnimateFunc animate, AnimationConfig &config);
-        void push(AnimationConfig &config);
+  public:
+    void animate(AnimateFunc animate, AnimationConfig &config);
+    void calculateAnimation(AnimateFunc animate, AnimationConfig &config);
+    void push(AnimationConfig &config);
 };
 
 #endif

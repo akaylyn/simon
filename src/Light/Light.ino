@@ -8,7 +8,7 @@
 // have: 2K memory, 3 bytes memory per LED, 60 LEDs per meter.
 // so, we can support 2000/3/60=11.1 meters, other memory usage notwithstanding.
 
-// MGD: please include #includes in top level .ino.  
+// MGD: please include #includes in top level .ino.
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_NeoMatrix.h>
@@ -98,7 +98,7 @@ void sendHandshake() {
   // return handshake that we got the instruction.
   byte handShake = 'h';
   LightComms.write(handShake);
-//  LightComms.flush(); // wait for xmit to complete.
+  //  LightComms.flush(); // wait for xmit to complete.
 }
 
 void loop() {
