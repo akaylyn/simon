@@ -44,10 +44,16 @@ Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
 // menuing
 menwiz menu;
 
+// place to paste 3-digit byte
+char buf[3];
+
 // add global variables to bind to menu
 boolean buttonPressed = false;
-int towerLightIndex, towerFireIndex, towerFireMin, towerFireMax;
+int towerLightIndex, towerFireIndex, towerFireMin, towerFireMax, towerFireCooldown;
 int testLightLevel, testFireLevel;
+
+// track which towers are assigned to which channels (for Each2Own)
+byte towerChannels[N_TOWERS] = {I_RED, I_BLU, I_YEL, I_GRN};
 
 #define FIRE_MIN 10
 #define FIRE_MAX 1000
@@ -57,7 +63,10 @@ int testLightLevel, testFireLevel;
 #define LEVEL_MAX 10
 #define LEVEL_STEP 1
 
-#define INTERACTIVE_TIMEOUT 3000
+#define CD_MIN 0
+#define CD_MAX 10
+
+#define INTERACTIVE_TIMEOUT 10000UL
 
 // force overwrite of EEPROM.  useful for bootstrapping new Moteinos.
 #define WRITE_EEPROM_NOW false
@@ -92,45 +101,50 @@ void menuSetup() {
 
   Serial << F("Setting up menu...") << endl;
 
-  _menu *r, *s1, *s11, *s12, *s13, *s14, *s15, *s2, *s21, *s22, *s23, *s24, *s25, *s3;
+  _menu *r, *s1, *s11, *s12, *s13, *s14, *s15, *s16, *s17, *s2, *s21, *s22, *s23, *s24, *s25, *s3;
 
   menu.begin(&lcd, 16, 2); //declare lcd object and screen size to menwiz lib
 
   r = menu.addMenu(MW_ROOT, NULL, F("Main Menu"));
-  
+
   s1 = menu.addMenu(MW_SUBMENU, r, F("Config"));
-    s11 = menu.addMenu(MW_VAR, s1, F("TowerLights"));
-      s11->addVar(MW_LIST, &towerLightIndex);
-      s11->addItem(MW_LIST, F("Each2Own"));
-      s11->addItem(MW_LIST, F("AllIn"));  
-    s12 = menu.addMenu(MW_VAR, s1, F("TowerFire"));
-      s12->addVar(MW_LIST, &towerFireIndex);
-      s12->addItem(MW_LIST, F("Each2Own"));
-      s12->addItem(MW_LIST, F("AllIn"));
-    s13 = menu.addMenu(MW_VAR, s1, F("FireTimeMax"));
-      s13->addVar(MW_AUTO_INT, &towerFireMin, FIRE_MIN, FIRE_MAX, FIRE_STEP);
-    s14 = menu.addMenu(MW_VAR, s1, F("FireTimeMin"));
-      s14->addVar(MW_AUTO_INT, &towerFireMax, FIRE_MIN, FIRE_MAX, FIRE_STEP*10);
-    s15 = menu.addMenu(MW_VAR, s1, F("!!!Send!!!"));
-      s15->addVar(MW_ACTION, configSend);
+  s11 = menu.addMenu(MW_VAR, s1, F("TowerLights"));
+  s11->addVar(MW_LIST, &towerLightIndex);
+  s11->addItem(MW_LIST, F("Each2Own"));
+  s11->addItem(MW_LIST, F("AllIn"));
+  s12 = menu.addMenu(MW_VAR, s1, F("TowerFire"));
+  s12->addVar(MW_LIST, &towerFireIndex);
+  s12->addItem(MW_LIST, F("Each2Own"));
+  s12->addItem(MW_LIST, F("AllIn"));
+  s17 = menu.addMenu(MW_VAR, s1, F("Assign Colors"));
+  s17->addVar(MW_ACTION, towerWhich);
+  s17->setBehaviour(MW_ACTION_CONFIRM, false); // just do it.
+  s14 = menu.addMenu(MW_VAR, s1, F("FireTimeMin"));
+  s14->addVar(MW_AUTO_INT, &towerFireMin, FIRE_MIN, FIRE_MAX, FIRE_STEP);
+  s13 = menu.addMenu(MW_VAR, s1, F("FireTimeMax"));
+  s13->addVar(MW_AUTO_INT, &towerFireMax, FIRE_MIN, FIRE_MAX, FIRE_STEP * 10);
+  s16 = menu.addMenu(MW_VAR, s1, F("FireCooldownX"));
+  s16->addVar(MW_AUTO_INT, &towerFireCooldown, CD_MIN, CD_MAX, 1);
+  s15 = menu.addMenu(MW_VAR, s1, F("!!!Send!!!"));
+  s15->addVar(MW_ACTION, towerConfig);
 
   s2 = menu.addMenu(MW_SUBMENU, r, F("Control"));
-    s24 = menu.addMenu(MW_VAR, s2, F("LightSet"));
-      s24->addVar(MW_AUTO_INT, &testLightLevel, LEVEL_MIN, LEVEL_MAX, LEVEL_STEP);
-    s25 = menu.addMenu(MW_VAR, s2, F("FireSet"));
-      s25->addVar(MW_AUTO_INT, &testFireLevel, LEVEL_MIN, LEVEL_MAX, LEVEL_STEP);
-    s21 = menu.addMenu(MW_VAR, s2, F("Light Test"));
-      s21->addVar(MW_ACTION, lightTest);
-      s21->setBehaviour(MW_ACTION_CONFIRM, false); // just do it.
-    s22 = menu.addMenu(MW_VAR, s2, F("Sound Test"));
-      s22->addVar(MW_ACTION, soundTest);
-      s22->setBehaviour(MW_ACTION_CONFIRM, false); // just do it.
-    s23 = menu.addMenu(MW_VAR, s2, F("Fire Test"));
-      s23->addVar(MW_ACTION, fireTest);
-      s23->setBehaviour(MW_ACTION_CONFIRM, true);  // yeah.
-       
+  s24 = menu.addMenu(MW_VAR, s2, F("LightSet"));
+  s24->addVar(MW_AUTO_INT, &testLightLevel, LEVEL_MIN, LEVEL_MAX, LEVEL_STEP);
+  s25 = menu.addMenu(MW_VAR, s2, F("FireSet"));
+  s25->addVar(MW_AUTO_INT, &testFireLevel, LEVEL_MIN, LEVEL_MAX, LEVEL_STEP);
+  s21 = menu.addMenu(MW_VAR, s2, F("Light Test"));
+  s21->addVar(MW_ACTION, lightTest);
+  s21->setBehaviour(MW_ACTION_CONFIRM, false); // just do it.
+  s23 = menu.addMenu(MW_VAR, s2, F("Fire Test"));
+  s23->addVar(MW_ACTION, fireTest);
+  s23->setBehaviour(MW_ACTION_CONFIRM, true);  // yeah.
+  s22 = menu.addMenu(MW_VAR, s2, F("Sound Test"));
+  s22->addVar(MW_ACTION, soundTest);
+  s22->setBehaviour(MW_ACTION_CONFIRM, false); // just do it.
+
   s3 = menu.addMenu(MW_VAR, r, F("Save Settings"));
-    s3->addVar(MW_ACTION, saveSettings);
+  s3->addVar(MW_ACTION, saveSettings);
 
   // Use the navigation button from the Adafruit I2C shield
   menu.addUsrNav(readButtons, 4);
@@ -140,7 +154,7 @@ void menuSetup() {
   menu.addSplash(splash, 1000);
 
   // After a inactivity, show custom screen with real-time information
-//  menu.addUsrScreen(printInstruction, INTERACTIVE_TIMEOUT);
+  menu.addUsrScreen(printInstruction, INTERACTIVE_TIMEOUT);
 
   // load settings
   menu.readEeprom();
@@ -162,7 +176,7 @@ void setup() {
   lcd.setCursor(0, 0);
   lcd.print(F("LCD: startup"));
   delay(500);
-    
+
   // set up menus
   menuSetup();
 
@@ -184,130 +198,156 @@ void loop() {
     if ( radio.DATALEN == sizeof(tInst) ) {
       // save instruction for lights/flame
       tInst = *(towerInstruction*)radio.DATA;
-      printInstruction();
     }
   }
 
   // do the menus
   menu.draw();
-}
 
-void printInstruction() {
-  static char buf[3];
-
-  strcpy(menu.sbuf, "G");
-  strcat(menu.sbuf, itoa(tInst.lightLevel[I_GRN], buf, 10));
-  strcat(menu.sbuf, itoa(tInst.fireLevel[I_GRN], buf, 10));
-  strcat(menu.sbuf, " R");  // 1st row
-  strcat(menu.sbuf, itoa(tInst.lightLevel[I_RED], buf, 10));
-  strcat(menu.sbuf, itoa(tInst.fireLevel[I_RED], buf, 10));
-
-  strcat(menu.sbuf, "\n"); // 2nd row
-
-  strcat(menu.sbuf, "Y");
-  strcat(menu.sbuf, itoa(tInst.lightLevel[I_YEL], buf, 10));
-  strcat(menu.sbuf, itoa(tInst.fireLevel[I_YEL], buf, 10));
-  strcat(menu.sbuf, " B");
-  strcat(menu.sbuf, itoa(tInst.lightLevel[I_BLU], buf, 10));
-  strcat(menu.sbuf, itoa(tInst.fireLevel[I_BLU], buf, 10));
-
-  menu.drawUsrScreen(menu.sbuf);
+  // check for errors
+  int err = menu.getErrorMessage(false);
+  if ( err > 0 ) {
+    err = menu.getErrorMessage(true); // printing
+    delay(50);
+  }
 }
 
 void lightTest() {
   Serial << F("Light Test!") << endl;
-  byte lightLevel = map(testLightLevel, 0, 10, 0, 255);
+  sendTest( map(testLightLevel, 0, 10, 0, 255), 0, 0);
+}
+void fireTest() {
+  Serial << F("Fire Test!") << endl;
+  sendTest( map(testLightLevel, 0, 10, 0, 255), map(testFireLevel, 0, 10, 0, 255), 0);
+}
+void soundTest() {
+  Serial << F("Sound Test!") << endl;
+  sendTest( map(testLightLevel, 0, 10, 0, 255), 0, 0);
+}
+void sendTest(byte lightLevel, byte fireLevel, byte musicLevel) {
+  strcpy(menu.sbuf, ""); // zero out
 
-  static char buf[3];
-  strcpy(menu.sbuf, "Light:"); // 1st row
+  strcat(menu.sbuf, "L:"); // 1st row
   strcat(menu.sbuf, itoa(lightLevel, buf, 10));
+  strcat(menu.sbuf, " F:"); // 1st row
+  strcat(menu.sbuf, itoa(fireLevel, buf, 10));
+  strcat(menu.sbuf, " M:"); // 1st row
+  strcat(menu.sbuf, itoa(musicLevel, buf, 10));
   strcat(menu.sbuf, "\n"); // 2nd row
-  strcat(menu.sbuf, "|!! |esc");
+  strcat(menu.sbuf, "|!! |done");
   menu.drawUsrScreen(menu.sbuf);
 
   // always a good idea.
   instClear(tInst);
 
-  // wait for escape to be pressed.  
+  // wait for escape to be pressed.
   uint8_t buttons = lcd.readButtons();
-  while( ! ( buttons & BUTTON_SELECT ) ) {
-      buttons = lcd.readButtons();
+  while ( ! ( buttons & BUTTON_SELECT ) ) {
+    buttons = lcd.readButtons();
 
-      tInst.lightLevel[I_RED] = (buttons & BUTTON_RIGHT) ? lightLevel : 0;
-      tInst.lightLevel[I_BLU] = (buttons & BUTTON_DOWN) ? lightLevel : 0;
-      tInst.lightLevel[I_YEL] = (buttons & BUTTON_LEFT) ? lightLevel : 0;
-      tInst.lightLevel[I_GRN] = (buttons & BUTTON_UP) ? lightLevel : 0;
-      
-      sendTowerInst(3);
+    tInst.lightLevel[I_RED] = (buttons & BUTTON_RIGHT) ? lightLevel : 0;
+    tInst.lightLevel[I_BLU] = (buttons & BUTTON_DOWN) ? lightLevel : 0;
+    tInst.lightLevel[I_YEL] = (buttons & BUTTON_LEFT) ? lightLevel : 0;
+    tInst.lightLevel[I_GRN] = (buttons & BUTTON_UP) ? lightLevel : 0;
+
+    tInst.fireLevel[I_RED] = (buttons & BUTTON_RIGHT) ? fireLevel : 0;
+    tInst.fireLevel[I_BLU] = (buttons & BUTTON_DOWN) ? fireLevel : 0;
+    tInst.fireLevel[I_YEL] = (buttons & BUTTON_LEFT) ? fireLevel : 0;
+    tInst.fireLevel[I_GRN] = (buttons & BUTTON_UP) ? fireLevel : 0;
+
+    sendTowerInst(1, 99);
+    delay(10);
   }
-  
-  Serial << lightLevel << endl;    
 }
-void soundTest() {
-  Serial << F("Sound Test!") << endl;
-}
-void fireTest() {
-  Serial << F("Fire Test!") << endl;
-}
-void sendTowerInst(int sendCount) {
-  static towerInstruction lastInst=tInst;
+void sendTowerInst(int sendCount, byte tower) {
+  //  static towerInstruction lastInst = tInst;
+  byte address = tower == 99 ? 0 : towerNodeID[address];
 
   // careful.  Just send deltas.
-  if( memcmp((void*)(&tInst), (void*)(&lastInst), sizeof(tInst)) != 0 ) {
-    Serial << F("Sending iInst!") << endl;
-    for( int i=0; i<sendCount; i++ ) {
-      radio.send(0, (const void*)(&tInst), sizeof(tInst));
-      delay(5);
+  //  if ( memcmp((void*)(&tInst), (void*)(&lastInst), sizeof(tInst)) != 0 ) {
+//  Serial << F("Sending tInst!") << endl;
+  for ( int i = 0; i < sendCount; i++ ) {
+    radio.send(address, (const void*)(&tInst), sizeof(tInst));
+    while (!radio.canSend()); // wait for the transmission to complete
+    delay(5);
+  }
+  //   lastInst = tInst; // save it.
+  // }
+}
+void towerWhich() {
+  Serial << F("towerWhich") << endl;
+
+  for (byte ni = 0; ni < N_TOWERS; ni++ ) {
+
+    strcpy(menu.sbuf, "T:"); // zero out
+    strcat(menu.sbuf, itoa(ni, buf, 10));
+    strcat(menu.sbuf, " set chan\n");
+    strcat(menu.sbuf, "|!! |done");
+    menu.drawUsrScreen(menu.sbuf);
+
+
+    // wait for escape to be pressed.
+    uint8_t buttons = lcd.readButtons();
+    uint8_t lastButton = buttons;
+    while ( ! ( buttons & BUTTON_SELECT ) ) {
+      buttons = lcd.readButtons();
+
+      // always a good idea.
+      instClear(tInst);
+      
+      if( (buttons & BUTTON_RIGHT) ) {
+        towerChannels[ni] = I_RED;
+        tInst.lightLevel[I_RED] = 255;
+      }
+      if( (buttons & BUTTON_DOWN) ) {
+        towerChannels[ni] = I_BLU;
+        tInst.lightLevel[I_BLU] = 255;
+      }
+      if( (buttons & BUTTON_LEFT) ) {
+        towerChannels[ni] = I_YEL;
+        tInst.lightLevel[I_YEL] = 255;
+      }
+      if( (buttons & BUTTON_UP) ) {
+        towerChannels[ni] = I_GRN;
+        tInst.lightLevel[I_GRN] = 255;
+      }
+
+      sendTowerInst(1, ni);
+      delay(10);
+
     }
-    lastInst = tInst; // save it.
+    Serial << F("Tower ") << ni << F(" assigned ") << towerChannels[ni] << endl;
   }
 }
-
-void configSend() {
-  Serial << F("Send configuration.") << endl;
-}
-
 void controlSend() {
   Serial << F("Send control.") << endl;
-  
-  static boolean isOn = false;
-  byte val;
-  
-  // toggle full on and full off
-  if( isOn ) {
-    val = 0;
-  } else {
-    val = 255;
-  }
-  
-  // toggle light and fire
-  switch(1) {
-    case 0: // red
-      tInst.lightLevel[I_RED] = val;
-      tInst.fireLevel[I_RED] = val;
-      break;
-    case 1: // green
-      tInst.lightLevel[I_GRN] = val;
-      tInst.fireLevel[I_GRN] = val;
-      break;
-    case 2: // blue
-      tInst.lightLevel[I_BLU] = val;
-      tInst.fireLevel[I_BLU] = val;
-      break;
-    case 3: // yellow
-      tInst.lightLevel[I_YEL] = val;
-      tInst.fireLevel[I_YEL] = val;
-      break;
-    case 4: // all
-      memset((void*)(&tInst), val, sizeof(tInst));
-      break;
-  }
-  
-  // flip for next call
-  isOn = !isOn;  
-  
-  // send it
-//  commsSend(inst);
+}
+
+
+void printInstruction() {
+  strcpy(menu.sbuf, ""); // clear out buffer this way; direct assignment fails...
+
+  // 1st row
+  strcat(menu.sbuf, itoa(tInst.lightLevel[I_GRN], buf, 10));
+  strcat(menu.sbuf, "G");
+  strcat(menu.sbuf, itoa(tInst.fireLevel[I_GRN], buf, 10));
+  strcat(menu.sbuf, " ");
+  strcat(menu.sbuf, itoa(tInst.lightLevel[I_RED], buf, 10));
+  strcat(menu.sbuf, "R");
+  strcat(menu.sbuf, itoa(tInst.fireLevel[I_RED], buf, 10));
+
+  strcat(menu.sbuf, "\n");
+
+  // 2nd row
+  strcat(menu.sbuf, itoa(tInst.lightLevel[I_YEL], buf, 10));
+  strcat(menu.sbuf, "Y");
+  strcat(menu.sbuf, itoa(tInst.fireLevel[I_YEL], buf, 10));
+  strcat(menu.sbuf, " ");
+  strcat(menu.sbuf, itoa(tInst.lightLevel[I_BLU], buf, 10));
+  strcat(menu.sbuf, "B");
+  strcat(menu.sbuf, itoa(tInst.fireLevel[I_BLU], buf, 10));
+
+  menu.drawUsrScreen(menu.sbuf);
 }
 
 void saveSettings() {
@@ -372,7 +412,7 @@ byte networkStart(boolean overWriteEEPROM) {
 
     return ( networkStart(false) ); // go again after EEPROM save
 
-  } 
+  }
   else {
     Serial << F("Tower: Startup RFM12b radio module. ");
     Serial << F(" NodeID: ") << nodeID;
@@ -405,14 +445,52 @@ void configLoad(towerConfiguration &config) {
 void configPrint(towerConfiguration &config, byte nodeID) {
   Serial << F("Tower (") << nodeID << F(") config: ");
   Serial << F("Color(");
-  for(byte i=0; i<N_COLORS; i++) Serial << config.lightListen[i] << F(" ");
+  for (byte i = 0; i < N_COLORS; i++) Serial << config.lightListen[i] << F(" ");
   Serial << F(") Fire(");
-  for(byte i=0; i<N_COLORS; i++) Serial << config.fireListen[i] << F(" ");
+  for (byte i = 0; i < N_COLORS; i++) Serial << config.fireListen[i] << F(" ");
   Serial << F(") ");
   Serial << F("Flame min(") << config.minFireTime << F(") max(") << config.maxFireTime << F(").");
   Serial << F("Flame cooldown divisor: ") << config.flameCoolDownDivisor << endl;
 }
-// clears all of the instructions 
+
+// configure network
+void towerConfig() {
+  Serial << F("Tower: configuring network.") << endl;
+
+  for ( byte ni = 0; ni < N_TOWERS; ni ++ ) {
+    Serial << F("Tower ") << ni << F(" assigned ") << towerChannels[ni] << endl;
+    // set tower listening channels.
+    for ( byte nc = 0; nc < N_COLORS; nc++ ) {
+      tConfig.lightListen[nc] = towerLightIndex == 0 ? ( towerChannels[ni] == nc ? true : false ) : true; // Each2Own
+      tConfig.fireListen[nc] = towerFireIndex == 0 ? ( towerChannels[ni] == nc ? true : false ) : true; // AllIn
+    }
+    // open time mapping
+    tConfig.minFireTime = towerFireMin;
+    tConfig.maxFireTime = towerFireMax;
+    tConfig.flameCoolDownDivisor = towerFireCooldown;
+
+    sendTowerConfig(tConfig, towerNodeID[ni]);
+  }
+}
+
+// configure a single tower
+void sendTowerConfig(towerConfiguration & config, byte nodeID) {
+  radio.send(nodeID, (const void*)(&config), sizeof(config));
+
+  Serial << F("Tower: sending config: ");
+  Serial << F("Tower (") << nodeID << F(") config: ");
+  Serial << F("Color(");
+  for (byte i = 0; i < N_COLORS; i++) Serial << config.lightListen[i] << F(" ");
+  Serial << F(") Fire(");
+  for (byte i = 0; i < N_COLORS; i++) Serial << config.fireListen[i] << F(" ");
+  Serial << F(") ");
+  Serial << F("Flame min(") << config.minFireTime << F(") max(") << config.maxFireTime << F(").");
+  Serial << F(" Flame cooldown divisor: ") << config.flameCoolDownDivisor << endl;
+
+  while (!radio.canSend()); // wait for the transmission to complete
+}
+
+// clears all of the instructions
 void instClear(towerInstruction & inst) {
   for (int i = 0; i < N_COLORS; i++ ) {
     inst.lightLevel[i] = 0;

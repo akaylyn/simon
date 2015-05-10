@@ -57,7 +57,7 @@ extern const char MW_ver[];
 
 // DIMENSIONS (DIMENSIONAL LIMITS OF STATICALLY ALLOCATED STRUCTURES)
 // ---------------------------------------------------------------------------
-#define MAX_MENU       	15   //maximum number of nodes (absolute supported max number of addMenu calls)
+#define MAX_MENU       	16   //maximum number of nodes (absolute supported max number of addMenu calls)
 #define MAX_OPTXMENU   	9    //maximum number of options/submenus for each node (max number of addItem call for each menu item) 
 
 // VALUE TYPES
