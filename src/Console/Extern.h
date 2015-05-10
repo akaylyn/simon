@@ -12,7 +12,7 @@
 #include <Simon_Common.h> 
 
 #include <RFM12B.h> // Console
-#include "Light.h" // for executing instructions.
+#include "Light.h" // for executing instructions and network maintenance
 
 // once we get radio comms, wait this long  before returning false from externUpdate.
 #define EXTERNAL_COMMS_TIMEOUT 10000UL
