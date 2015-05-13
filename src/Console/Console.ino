@@ -1,4 +1,5 @@
 // Compile for Arduino Mega 2560.
+#include "Console.h"
 
 // The IDE requires all libraries to be #include’d in the main (.ino) file.  Clutter.
 #include <Streaming.h> // <<-style printing
@@ -44,12 +45,7 @@
 // during idle, do a fanfare of light, music and fire
 Metro kioskTimer(KIOSK_FANFARE_MAX);
 
-void gamePlayModeLoop(bool performStartup);
-void bongoModeLoop(bool performStartup);
-void proximityModeLoop(bool performStartup);
-void lightsTestModeLoop(bool performStartup);
-void fireTestModeLoop(bool performStartup);
-void proximityResetModeLoop(bool performStartup);
+
 
 #define NUM_INTERACTIVE_MODES 6
 #define MODE_TRACK_OFFSET 699
@@ -57,7 +53,7 @@ void proximityResetModeLoop(bool performStartup);
 int currentMode = 0;
 static boolean gamePlayMode = true;
 
-void (*interactiveModefunctions[NUM_INTERACTIVE_MODES])(bool) = {
+void (*interactiveModefunctions[NUM_INTERACTIVE_MODES])(boolean) = {
   gamePlayModeLoop,
   bongoModeLoop,
   proximityModeLoop,
@@ -147,23 +143,23 @@ void gamePlayModeLoop(boolean performStartup) {
   }
 }
 
-void bongoModeLoop(bool performStartup) {
+void bongoModeLoop(boolean performStartup) {
   testModes.bongoModeLoop(performStartup);
 }
 
-void proximityModeLoop(bool performStartup) {
+void proximityModeLoop(boolean performStartup) {
   testModes.proximityModeLoop(performStartup);
 }
 
-void lightsTestModeLoop(bool performStartup) {
+void lightsTestModeLoop(boolean performStartup) {
   testModes.lightsTestModeLoop(performStartup);
 }
 
-void fireTestModeLoop(bool performStartup) {
+void fireTestModeLoop(boolean performStartup) {
   testModes.fireTestModeLoop(performStartup);
 }
 
-void proximityResetModeLoop(bool performStartup) {
+void proximityResetModeLoop(boolean performStartup) {
   testModes.proximityResetModeLoop(performStartup);
 }
 

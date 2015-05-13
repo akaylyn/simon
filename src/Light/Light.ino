@@ -8,6 +8,8 @@
 // have: 2K memory, 3 bytes memory per LED, 60 LEDs per meter.
 // so, we can support 2000/3/60=11.1 meters, other memory usage notwithstanding.
 
+#include "Light.h"
+
 // MGD: please include #includes in top level .ino.
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoPixel.h>
@@ -19,7 +21,6 @@
 #include <LightMessage.h> // common message definition
 #include "ConcurrentAnimator.h"
 
-#include "Light.h"
 void setup() {
   Serial.begin(115200);
 

@@ -17,6 +17,7 @@
 #include "Light.h"
 #include "Sound.h"
 #include "Mic.h"
+#include "Fanfare.h"
 
 // when playing, a player can wait this interval between button presses before losing.
 #define PLAYER_TIMEOUT 2000UL // 2 seconds
@@ -106,12 +107,6 @@ void idleUpdate();
 // do a little ditty on an interval as an attractant.
 void idleFanfare();
 
-// gratz Player 1, do some Music, Light, Sound, Fire.
-// level 0-4.  0 is low, 4 is amazing
-void playerFanfare(byte level);
-
-// Get the fanfare level to play.  Returns 0-4
-byte getLevel(int correct);
 
 // wait for all of the buttons to be released.
 void waitForButtonsReleased();
