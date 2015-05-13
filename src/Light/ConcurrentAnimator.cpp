@@ -6,12 +6,10 @@ void ConcurrentAnimator::animate(AnimateFunc animate, AnimationConfig &config) {
 }
 
 void ConcurrentAnimator::calculateAnimation(AnimateFunc animate, AnimationConfig &config) {
-  Serial << "---" << config.name << "---" << endl;
   if (!config.ready) {
-    Serial << "." << config.strip->numPixels();
     return;
   }
-  Serial << "+calcAnimation+";
+  //Serial << "---" << config.name << "---" << endl;
 
   (*animate)((*config.strip),
       config.color.red, config.color.green, config.color.blue, config.position);

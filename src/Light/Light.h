@@ -112,8 +112,10 @@ boolean midUpdated = false;
 Metro quietUpdateInterval(STRIP_ADD_PIXEL);
 
 // update the automata on the rim at this interval
-#define STRIP_UPDATE 75
+#define STRIP_UPDATE 100
+#define FASTER_STIRP_UPDATE 30
 Metro stripUpdateInterval(STRIP_UPDATE);
+Metro fasterStripUpdateInterval(STRIP_UPDATE);
 
 // count memory usage for LEDs, which is reported at startup.
 #define TOTAL_LED_MEM (RIM_N + BUTTON_N*4 + MIDDLE_N)*3
