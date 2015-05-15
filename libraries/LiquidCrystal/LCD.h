@@ -130,7 +130,7 @@ inline static void waitUsec ( uint16_t uSec )
 // Define COMMAND and DATA LCD Rs (used by send method).
 // ---------------------------------------------------------------------------
 #define COMMAND                 0
-#define DATA                    1
+#define DATAt                   1
 #define FOUR_BITS               2
 
 

@@ -159,7 +159,7 @@ public:
     Users should never call this method.
     
     @param      value[in] Value to send to the LCD.
-    @param      mode[in]  DATA=8bit data, COMMAND=8bit cmd, FOUR_BITS=4bit cmd
+    @param      mode[in]  DATAt=8bit data, COMMAND=8bit cmd, FOUR_BITS=4bit cmd
     the LCD.
     */
    virtual void send(uint8_t value, uint8_t mode);

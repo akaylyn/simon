@@ -118,7 +118,7 @@ public:
     Users should never call this method.
     
     @param      value[in] Value to send to the LCD.
-    @param      mode[in] DATA - write to the LCD CGRAM, COMMAND - write a 
+    @param      mode[in] DATAt - write to the LCD CGRAM, COMMAND - write a 
     command to the LCD.
     */
    virtual void send(uint8_t value, uint8_t mode);
@@ -177,7 +177,7 @@ private:
     @discussion Writes 4 bits (the least significant) to the LCD control data lines.
     @param      value[in] Value to write to the LCD
     @param      more[in]  Value to distinguish between command and data.
-    COMMAND == command, DATA == data.
+    COMMAND == command, DATAt == data.
     */
    void write4bits(uint8_t value, uint8_t mode);
    

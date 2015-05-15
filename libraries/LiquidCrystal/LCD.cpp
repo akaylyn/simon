@@ -336,12 +336,12 @@ void LCD::command(uint8_t value)
 #if (ARDUINO <  100)
 void LCD::write(uint8_t value)
 {
-   send(value, DATA);
+   send(value, DATAt);
 }
 #else
 size_t LCD::write(uint8_t value) 
 {
-   send(value, DATA);
+   send(value, DATAt);
    return 1;             // assume OK
 }
 #endif

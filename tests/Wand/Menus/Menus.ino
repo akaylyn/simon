@@ -42,7 +42,7 @@ void setup(){
     s1->addVar(MW_ACTION,myfunc);
   //      tree.navButtons(UP_BOTTON_PIN,DOWN_BOTTON_PIN,LEFT_BOTTON_PIN,RIGHT_BOTTON_PIN,ESCAPE_BOTTON_PIN,CONFIRM_BOTTON_PIN);
 
-  tree.addUsrNav(buttons, 4);
+  tree.addUsrNav(menuButtons, 4);
   
   pinMode(GROUND, OUTPUT);
   digitalWrite(GROUND, LOW); // wire to GN
@@ -68,17 +68,33 @@ void myfunc(){
   Serial.println("ACTION FIRED");
 }
 
-int buttons() {
+int menuButtons() {
   // need to define UP, DOWN, ESCAPE, CONFIRM
   int x=analogRead(J_X);
   int y=analogRead(J_Y);
   
-  if( x>=1000 && y>=1000 ) return( MW_BTC ); // right/confirm
-  if( x<=10 && y>=1000 ) return( MW_BTD ); // down
-  if( x<=10 && y<=10 ) return( MW_BTE ); // left/escape
-  if( x>=1000 && y<=10 ) return( MW_BTU ); // up  
+  static int lastState, currentState;
+  // offset from extremes to score as "yes"
+  const int offSet = 100;
   
-  return( MW_BTNULL );
+  // do want to allow for change-when-held, but only after a delay
+  static unsigned long lastChange = millis();
+  const unsigned long pressAgainInterval = 200UL;
+  
+  if( x>=(1023-offSet) && y>=(1023-offSet) ) currentState = MW_BTC; // right/confirm: +x, +y
+  else if( x<=(0+offSet) && y>=(1023-offSet) ) currentState = MW_BTD; // down: -x, +y
+  else if( x<=(0+offSet) && y<=(0+offSet) ) currentState = MW_BTE; // left/escape: -x, -y
+  else if( x>=(1023-offSet) && y<=(0+offSet) ) currentState = MW_BTU; // up: +x, -y
+  else currentState = MW_BTNULL; // nada
+  
+  if( currentState == lastState && (millis() - lastChange) <= pressAgainInterval) {
+    // nothing new
+    return( MW_BTNULL );
+  } else {
+    lastState = currentState;
+    lastChange = millis();
+    return( currentState );
+  }
 } 
 
 
