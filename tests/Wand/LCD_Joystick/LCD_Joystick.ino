@@ -67,10 +67,10 @@ void loop() {
   lcd.setCursor(0, 1 );        // go to the next line
   lcd.print("X:");  
   lcd.print(analogRead(J_X));
-  lcd.print(" ");
+  lcd.print("   ");
   lcd.setCursor(10, 1);
   lcd.print("Y:");  
   lcd.print(analogRead(J_Y));
-  lcd.print(" ");
+  lcd.print("   ");
   delay(200);
 }
