@@ -1,4 +1,4 @@
-// Compile for Uno
+// Compile for ATMega1284P (Mighty1284p 16MHz using Optiboot).  
 
 // from: http://forums.adafruit.com/viewtopic.php?f=47&t=45258
 
@@ -67,17 +67,16 @@ byte towerChannels[N_TOWERS] = {
 
 // radio pins
 #define D_CS_PIN 10 // default SS pin for RFM module
+// might need to be D4.
 
-#define B_RED 4
-#define B_GRN 5
-#define B_BLU 3
-#define B_YEL 6
-#define B_STK 7
-#define J_X A0
-#define J_Y A1
-#define GROUND 2 // Wire to GND
+#define B_RED 22 
+#define B_GRN 21
+#define B_BLU 23
+#define B_YEL 20
+#define B_STK 19
+#define J_X A0 // D24, A0
+#define J_Y A1 // D25, A1
 // add wire from +3.3V to "5V" on shield.
-
 
 void menuSetup() {
   Serial << F("Setting up menu...") << endl;
@@ -145,9 +144,6 @@ void setup() {
   // Debugging output
   Serial.begin(115200);
   Serial << F("Wand: startup.") << endl;
-
-  pinMode(GROUND, OUTPUT);
-  digitalWrite(GROUND, LOW); // wire to GN
 
   // buttons
   pinMode(B_RED, INPUT); 
@@ -248,7 +244,7 @@ void sendTest(byte lightLevel, byte fireLevel, byte musicLevel) {
 }
 
 void sendTowerInst(int sendCount, byte tower) {
-  byte address = tower == 99 ? 0 : towerNodeID[address];
+  byte address = (tower == 99) ? 0 : towerNodeID[tower];
 
   // careful.  Just send deltas.
   static towerInstruction lastInst = tInst;

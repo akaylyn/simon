@@ -1,19 +1,17 @@
 #include <Streaming.h>
 
-#define B_RED 4
-#define B_GRN 5
-#define B_BLU 3
-#define B_YEL 6
-#define B_STK 7
-#define J_X A0
-#define J_Y A1
-#define GROUND 2 // Wire to GND
+#define B_RED 22 
+#define B_GRN 21
+#define B_BLU 23
+#define B_YEL 20
+#define B_STK 19
+#define J_X A0 // D24, A0
+#define J_Y A1 // D25, A1
 // add wire from +3.3V to "5V" on shield.
 
 
 void setup() {
-  pinMode(GROUND, OUTPUT);
-  digitalWrite(GROUND, LOW); // wire to GN
+//  analogReference(DEFAULT);
   
   // buttons
   pinMode(B_RED, INPUT); 
@@ -25,7 +23,7 @@ void setup() {
   // analog
   pinMode(J_X, INPUT);
   pinMode(J_Y, INPUT);
-    
+  
   Serial.begin(115200);
 }
 
@@ -39,6 +37,7 @@ void loop() {
   Serial << "\tX:" << analogRead(J_X); 
   Serial << "\tY:" << analogRead(J_Y); 
   Serial << endl;
-  
+
   delay(100);
+
 }
