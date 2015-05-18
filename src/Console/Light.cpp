@@ -165,9 +165,9 @@ void Light::show(byte nodeID) {
   ET.sendData();
 }
 
-void Light::sendInstruction(towerInstruction &externInst) {
+void Light::sendInstruction(towerInstruction &externInst, int nodeID) {
   inst = externInst;
-  show();
+  show(nodeID);
 }
 
 // call this to perform resend and network maintenace
@@ -200,7 +200,8 @@ byte Light::networkStart() {
   // check that the tower payloads aren't the same size.
   int size1 = sizeof(towerInstruction);
   int size2 = sizeof(towerConfiguration);
-  if ( size1 == size2 ) {
+  int size3 = sizeof(modeSwitchInstruction);
+  if ( size1 == size2 || size1 == size3 || size2 == size3) {
     Serial << F("Tower: radio instructions are indistinguishable by size!") << endl;
     while (1); // halt
   }
@@ -296,6 +297,12 @@ void Light::towerConfig(towerConfiguration & config, byte nodeID) {
   Serial << F(" Flame cooldown divisor: ") << config.flameCoolDownDivisor << endl;
   
   radio.SendWait(); // wait for the transmission to complete
+}
+
+void Light::sendModeSwitchInstruction(int mode) {
+  modeSwitchInstruction modeSwitchInstr;
+  modeSwitchInstr.currentMode = mode;
+  radio.Send(0, (const void*)(&modeSwitchInstr), sizeof(modeSwitchInstr));
 }
 
 Light light;

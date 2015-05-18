@@ -17,6 +17,8 @@
 towerInstruction inst;
 // structure stores how this Tower acts on those towerInstructions
 towerConfiguration config;
+// structure tells us to switch modes.
+modeSwitchInstruction modeSwitchInstr;
 
 // Need an instance of the Radio Module
 RFM69 radio;
@@ -50,11 +52,10 @@ Metro flameCoolDownTime(1000UL);
 
 // remote control
 #define RESET_PIN A0
-#define GAME_ENABLE_PIN A1
+#define MODE_SWITCH_ENABLE_PIN A1
 #define DEBOUNCE_TIME 100UL // need a long debounce b/c electrical noise from solenoid.
 Bounce systemReset = Bounce(RESET_PIN, DEBOUNCE_TIME);
-Bounce gameEnable = Bounce(GAME_ENABLE_PIN, DEBOUNCE_TIME);
-boolean gameEnableFlag = true;
+int mode = 0;
 boolean systemResetFlag = false;
 
 // RGB lighting tied together
@@ -107,10 +108,10 @@ void setup() {
 
   Serial << F("Configuring input pins.") << endl;
   pinMode(RESET_PIN, INPUT_PULLUP);
-  pinMode(GAME_ENABLE_PIN, INPUT_PULLUP);
+  pinMode(MODE_SWITCH_ENABLE_PIN, INPUT_PULLUP);
 
   Serial << "System Reset: " << systemReseted() << endl;
-  Serial << "Game Enable: " << gameEnabled() << endl;
+  Serial << "In mode: " << mode << endl;
 
   myNodeID = networkStart(WRITE_EEPROM_NOW); // assume that EEPROM has been used to correctly set values
 
@@ -147,15 +148,6 @@ void loop() {
     } else {
       light.setMode(SOLID);
     }
-  }
-
-  // check system enable state
-  if ( gameEnable.update() ) { // gameplay enable state change
-    gameEnableFlag = gameEnabled();
-    Serial << F("Gameplay state change.  State: ");
-    if( gameEnableFlag ) Serial << F("enabled.");
-    else Serial << F("disabled."); 
-    Serial << endl;
   }
 
   // check for comms traffic
@@ -202,6 +194,32 @@ void loop() {
       // ping received.
       Serial << F("ping received.") << endl;
     }
+    else if ( radio.DATALEN == sizeof(modeSwitchInstr)) {
+      modeSwitchInstr = *(modeSwitchInstruction*)radio.DATA;
+      
+        mode = modeSwitchInstr.currentMode;
+        Serial << F("Mode state change.  Going to mode: ") << mode << endl;
+    
+        // If we've gone to one of the test modes, display a color for 1.5 seconds.
+        // This should be the same amount of time that the console is playing a 
+        // sound, so the delay won't get us out of sync
+        if(mode == 1) {
+          light.setColor(red);
+          delay(1500);
+        }
+        else if (mode == 2) {
+          light.setColor(green);
+          delay(1500);
+        }
+        else if (mode == 3) {
+          light.setColor(blue);
+          delay(1500);
+        }
+        else if (mode == 4) {
+          light.setColor(yellow);
+          delay(1500);
+        }
+    }
   }
 
   if ( networkTimeout.check() ) {
@@ -213,14 +231,15 @@ void loop() {
   }
   else if( networkTimedOut ) {
     // comms are quiet, so some test patterns are appropriate
-    if ( !gameEnableFlag ) {
-      // if the gameplay pin is held, use white lighting after comms timeout
-      disabledTestPattern();
-    } 
-    else {
+    if(mode == 0) {
+      // We're in gameplay mode, so use a fancy idle pattern
       // cycle the lights
       idleTestPattern();
     }
+    else {
+      // if we're not 
+      disabledTestPattern();
+    } 
   }
 
 }
@@ -235,23 +254,13 @@ boolean systemReseted() {
   return ( systemReset.read() == LOW );
 }
 
-boolean gameEnabled() {
-  // with EMI, be very sure.
-  Metro readTime(DEBOUNCE_TIME);
-  readTime.reset();
-  while( !readTime.check() ) gameEnable.update();
-
-  // at system power up, relay is open, meaning pin will read HIGH.
-  return ( gameEnable.read() == HIGH );
-}
-
 void resetTestPattern() {
   light.setBlink(1000UL, 100UL);
   light.setColor(red);
 }
 
 void disabledTestPattern() {
-  light.setColor(dimWhite);
+  light.setColor(dimWhite); 
 }
 
 void idleTestPattern() {
@@ -300,16 +309,16 @@ void performInstruction(boolean isJustToMe) {
 
   // check the settings
   if ( isJustToMe || config.lightListen[I_RED] ) {
-    color=mix(color, red, inst.lightLevel[I_RED]);
+    color = mix(color, red, inst.lightLevel[I_RED]);
   }
   if ( isJustToMe || config.lightListen[I_GRN] ) {
-    color=mix(color, green, inst.lightLevel[I_GRN]);
+    color = mix(color, green, inst.lightLevel[I_GRN]);
   }
   if ( isJustToMe || config.lightListen[I_BLU] ) {
-    color=mix(color, blue, inst.lightLevel[I_BLU]);
+    color = mix(color, blue, inst.lightLevel[I_BLU]);
   }
   if ( isJustToMe || config.lightListen[I_YEL] ) {
-    color=mix(color, yellow, inst.lightLevel[I_YEL]);
+    color = mix(color, yellow, inst.lightLevel[I_YEL]);
   }
   // set the color
   light.setColor(color);

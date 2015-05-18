@@ -17,7 +17,6 @@ class TestModes {
     void proximityModeLoop(bool performStartup);
     void lightsTestModeLoop(bool performStartup);
     void fireTestModeLoop(bool performStartup);
-    void proximityResetModeLoop(bool performStartup);
 };
 
 extern TestModes testModes;
