@@ -80,7 +80,7 @@ const HSB white = {
   0, 0, 255}; // at 0 saturation, hue is meaningless
 const HSB black = {
   0, 0, 0}; // off, essentially
-  
+
 // force overwrite of EEPROM.  useful for bootstrapping new Moteinos.
 #define WRITE_EEPROM_NOW false
 
@@ -140,12 +140,13 @@ void loop() {
     if( systemResetFlag ) Serial << F("reset.");
     else Serial << F("normal."); 
     Serial << endl;
-    
+
     // reset pin is held
     if( systemResetFlag ) {
       light.setMode(BLINK);
       resetTestPattern();
-    } else {
+    } 
+    else {
       light.setMode(SOLID);
     }
   }
@@ -196,29 +197,29 @@ void loop() {
     }
     else if ( radio.DATALEN == sizeof(modeSwitchInstr)) {
       modeSwitchInstr = *(modeSwitchInstruction*)radio.DATA;
-      
-        mode = modeSwitchInstr.currentMode;
-        Serial << F("Mode state change.  Going to mode: ") << mode << endl;
-    
-        // If we've gone to one of the test modes, display a color for 1.5 seconds.
-        // This should be the same amount of time that the console is playing a 
-        // sound, so the delay won't get us out of sync
-        if(mode == 1) {
-          light.setColor(red);
-          delay(1500);
-        }
-        else if (mode == 2) {
-          light.setColor(green);
-          delay(1500);
-        }
-        else if (mode == 3) {
-          light.setColor(blue);
-          delay(1500);
-        }
-        else if (mode == 4) {
-          light.setColor(yellow);
-          delay(1500);
-        }
+
+      mode = modeSwitchInstr.currentMode;
+      Serial << F("Mode state change.  Going to mode: ") << mode << endl;
+
+      // If we've gone to one of the test modes, display a color for 1.5 seconds.
+      // This should be the same amount of time that the console is playing a 
+      // sound, so the delay won't get us out of sync
+      if(mode == 1) {
+        light.setColor(red);
+        myDelay(1500UL);
+      }
+      else if (mode == 2) {
+        light.setColor(green);
+        myDelay(1500UL);
+      }
+      else if (mode == 3) {
+        light.setColor(blue);
+        myDelay(1500UL);
+      }
+      else if (mode == 4) {
+        light.setColor(yellow);
+        myDelay(1500UL);
+      }
     }
   }
 
@@ -227,7 +228,7 @@ void loop() {
     networkTimedOut = true;
   }
   if( systemResetFlag ) {
-      resetTestPattern();
+    resetTestPattern();
   }
   else if( networkTimedOut ) {
     // comms are quiet, so some test patterns are appropriate
@@ -277,7 +278,7 @@ void idleTestPattern() {
     delay(1); // only want to trip this test once per period
     Serial << F("Test pattern period: ") << period << F(" direction: ") << direction << endl;    
   }
-  
+
   // HSB to show
   HSB color;
   color.sat = 255;
@@ -288,14 +289,15 @@ void idleTestPattern() {
   const int hueMin = 20;
   const int hueMax = 340;
   color.hue = direction == 1 ? map(inPeriod, 0, period, hueMin, hueMax) : map(inPeriod, 0, period, hueMax, hueMin);
-  
+
   if( amConfigured ) {
     light.setMode(SOLID);
-  } else {
+  } 
+  else {
     light.setMode(BLINK);
     light.setBlink(1000UL, 25UL);
   }
-  
+
   light.setColor(color);
 
 }
@@ -465,4 +467,16 @@ void instClear(towerInstruction & inst) {
     inst.fireLevel[i] = 0;
   }
 }
+
+// alternative to delay(), non-blocking
+void myDelay(unsigned long delayTime) {
+  Metro delayFor(delayTime);
+
+  while( ! delayFor.check() ) {
+    // insert any mission-critical operations here
+    if( flameOnTime.check() ) flameOff();
+  }
+}
+
+
 
