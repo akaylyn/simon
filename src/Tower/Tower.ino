@@ -72,7 +72,6 @@ LED light(LED_R, LED_G, LED_B);
 Timer air;
 const unsigned long shortAirTime = 50UL;
 const unsigned long longAirTime = 100UL;
-int8_t timerOne, timerTwo;
 
 // HSB model 411: http://www.tomjewett.com/colors/hsb.html
 
@@ -389,49 +388,56 @@ void flameOn(int fireLevel, flameEffect_t effect) {
   
   // just making sure
   airOff();
+  Serial << "Air.  start time:" << millis() << endl;
   
   switch( effect ) {
-    case FE_billow: // just straight propane (DEFAULT) "very rich"
+    case FE_veryRich: // just straight propane (DEFAULT) "very rich"
       break; // well, that was easy. 
-    case FE_blowtorch: // as much air as as we can before getting "too lean"
-      timerOne = air.every(shortAirTime, shortAirBurst); // with repeat
-      break;
-    case FE_kickStart:  // toss in some air at the beginning
-      if( flameTime >= 2*shortAirTime ) // don't bother with short bursts of fire; can't do it.
-        timerOne = air.after(shortAirTime, shortAirBurst);
+
+    case FE_kickStart:  // toss in some air at the beginning; can't start for 50ms
+      for( unsigned long i = shortAirTime; i<(flameTime/3UL); i+=longAirTime)
+        air.after(i, shortAirBurst); // load timers
       break;
     case FE_kickMiddle:  // toss in some air in the middle
-      if( flameTime >= 2*shortAirTime ) // don't bother with short bursts of fire; can't do it.
-        timerOne = air.after(flameTime/2+shortAirTime, shortAirBurst);
+      for( unsigned long i = max(shortAirTime,flameTime/3UL); i<(flameTime*2UL/3UL); i+=longAirTime)
+        air.after(i, shortAirBurst); // load timers
       break;
     case FE_kickEnd:  // toss in some air at the end
-      if( flameTime >= 2*shortAirTime ) // don't bother with short bursts of fire; can't do it.
-        timerOne = air.after(flameTime-shortAirTime, shortAirBurst);
+      for( unsigned long i = max(shortAirTime,flameTime*2UL/3UL); i<flameTime; i+=longAirTime)
+        air.after(i, shortAirBurst); // load timers
       break;
+
     case FE_gatlingGun: // short bursts of air throughout
-      timerOne = air.every(longAirTime+shortAirTime, shortAirBurst);
+      air.every(longAirTime+shortAirTime, shortAirBurst);
       break;
+    case FE_randomly:  // toss in some air in a random pattern
+      for( unsigned long i = shortAirTime; i<flameTime; i+=random(longAirTime,longAirTime*5UL))
+        air.after(i, shortAirBurst); // load timers
+      break;
+    case FE_veryLean: // as much air as as we can before getting "too lean"
+      air.every(shortAirTime+shortAirTime, shortAirBurst); 
+      break;
+
   }
 }
 
 // pulse the air on for shortAirTime
 void shortAirBurst() {
-  timerTwo = air.pulseImmediate(AIR, shortAirTime, LOW);
+  Serial << "Air.   short air:" << millis() << endl;
+  air.pulseImmediate(AIR, shortAirTime, LOW);
 }
-
 
 void flameOff() {
   digitalWrite(FLAME, HIGH);
-  digitalWrite(AIR, HIGH);
-  air.stop(timerOne);
-  air.stop(timerTwo);
+  airOff();
+
+  Serial << F("Flame off! ") << endl;
 }
 
-void airOn() {
-  digitalWrite(AIR, LOW);
-}
 void airOff() {
   digitalWrite(AIR, HIGH);
+  // clean out the event timers.
+  for( uint8_t i=0; i<MAX_NUMBER_OF_EVENTS; i++) air.stop(i);
 }
 
 // starts the radio
