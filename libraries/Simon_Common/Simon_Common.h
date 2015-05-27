@@ -15,6 +15,9 @@ const byte consoleNodeID = 1;
 // Towers
 const byte towerNodeID[N_TOWERS] = {2,3,4,5};
 
+// How many different gameplay/test modes we have
+#define NUM_MODES 5
+
 // nodeID=0 is understood to be "everyone" (broadcast).
 
 // RFM12b comms
@@ -54,11 +57,16 @@ typedef struct {
 // EEPROM location for towerConfiguration settings.
 const byte towerConfigLocation = 69;
 
-// during gameplay, this is the information passed from Console to Towers:
+// during gameplay, this is the information passed from Console to Towers to turn off lights and fire:
 typedef struct {
 	byte lightLevel[N_COLORS]; // 0..255.  maps to analogWrite->light level
 	byte fireLevel[N_COLORS]; // 0..255.  maps to timer->fire duration
 } towerInstruction;
+
+// Send to the towers to tell them what mode they're in when we switch modes.
+typedef struct {
+  byte currentMode;
+} modeSwitchInstruction;
 
 
 // predefined Tower configuration settings

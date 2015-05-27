@@ -54,6 +54,11 @@ void TestModes::proximityModeLoop(bool performStartup) {
   
   if( performStartup || restartTimer.check() ) {
     Serial << "Starting up proximityMode" << endl;
+        
+    //Serial << "Resetting the touch sensors" << endl;
+    touch.begin();
+    //Serial << "Done resetting the touch sensors" << endl;
+    
     sound.stopAll();
     sound.setLeveling(4, 0); // prep for 4x tones and no music.
 
@@ -93,18 +98,141 @@ void TestModes::proximityModeLoop(bool performStartup) {
 }
 
 void TestModes::lightsTestModeLoop(bool performStartup) {
-  // TODO: Each prox button will cycle through light colors for the button/tower
-}
-
-void TestModes::fireTestModeLoop(bool performStartup) {
-  // TODO: Each prox button will arm, then fire its tower.
-}
-
-void TestModes::proximityResetModeLoop(bool performStartup) {
+ static int lightColorIndex[N_COLORS];
+ towerInstruction instruction;
+  
   if(performStartup) {
-    //Serial << "Resetting the touch sensors" << endl;
-    touch.begin();
-    //Serial << "Done resetting the touch sensors" << endl;
+      Serial << "Starting up light mode" << endl;
+      
+    sound.stopAll();
+    sound.setLeveling(1, 0);
+  }
+  
+  for(int index = 0; index < N_TOWERS; index++)
+  {    
+    if(touch.changed(index) && touch.pressed(index)) {
+      sound.playTrack(BOOP_TRACK);
+      
+      lightColorIndex[index]++;
+      lightColorIndex[index] %= 6;
+      
+      Serial << "Setting light " << index << " to color " << lightColorIndex[index] << endl;
+      
+      // Send an instruction to go black.  This will (among other things) turn off the console lights off
+      for(int index = 0; index < N_COLORS; index++) {        
+        instruction.lightLevel[index] = 0;
+        instruction.fireLevel[index] = 0; // Oh, and no fire in this mode!
+      }
+      light.sendInstruction(instruction, towerNodeID[index]);
+      
+      // Figure out which new color to send
+      // (In the case of 0, stay black)
+      if(lightColorIndex[index] == 1) {
+        Serial << "Red" << endl;
+        instruction.lightLevel[I_RED] = 255;
+        instruction.lightLevel[I_GRN] = 0;
+        instruction.lightLevel[I_BLU] = 0;
+        instruction.lightLevel[I_YEL] = 0;
+      }
+      else if(lightColorIndex[index] == 2) {
+        Serial << "Green" << endl;
+        instruction.lightLevel[I_RED] = 0;
+        instruction.lightLevel[I_GRN] = 255;
+        instruction.lightLevel[I_BLU] = 0;
+        instruction.lightLevel[I_YEL] = 0;
+      }
+      else if(lightColorIndex[index] == 3) {
+        Serial << "Blue" << endl;
+        instruction.lightLevel[I_RED] = 0;
+        instruction.lightLevel[I_GRN] = 0;
+        instruction.lightLevel[I_BLU] = 255;
+        instruction.lightLevel[I_YEL] = 0;
+      }
+      else if(lightColorIndex[index] == 4) {
+        Serial << "Yellow" << endl;
+        instruction.lightLevel[I_RED] = 0;
+        instruction.lightLevel[I_GRN] = 0;
+        instruction.lightLevel[I_BLU] = 0;
+        instruction.lightLevel[I_YEL] = 255;
+      }
+      else if(lightColorIndex[index] == 5) {
+        Serial << "White" << endl;
+        instruction.lightLevel[I_RED] = 128;
+        instruction.lightLevel[I_GRN] = 128;
+        instruction.lightLevel[I_BLU] = 128;
+        instruction.lightLevel[I_YEL] = 0;
+      }
+      
+      // Send the new color
+      light.sendInstruction(instruction, towerNodeID[index]);
+    }
+  }
+}
+
+#define FIRE_TEST_ARMED_TIMEOUT_MILLIS 5 * 1000
+void TestModes::fireTestModeLoop(bool performStartup) {
+  static Metro armedTimer(FIRE_TEST_ARMED_TIMEOUT_MILLIS);
+  static bool armed[N_TOWERS];
+  
+  if(performStartup) {
+    for(int index = 0; index < N_TOWERS; index++) {
+      armed[index] = false;
+      light.setAllLight(0, true); // Turn all the lights off
+    }
+  }
+  
+  // If our armed timer has timed out and anything is armed, disarm things
+  bool anyArmed = false;
+  for(int index = 0; index < N_TOWERS; index++)
+    if(armed[index])
+        anyArmed = true;
+      
+  
+  if(anyArmed && armedTimer.check()) {
+    for(int index = 0; index < N_TOWERS; index++) {
+      armed[index] = false;     
+    }
+
+    light.setFire(0, 0, false);
+    light.setAllLight(0, true); // Turn all the lights off
+    sound.playTrack(DISARMED_TRACK);
+  }
+  
+  //look for button presses 
+  for(int index = 0; index < N_TOWERS; index++)
+  {
+    if(touch.changed(index) && touch.pressed(index)) {
+      if(sensor.fireEnabled()) {
+        if(armed[index]) {
+          // Fire!
+          Serial << "Firing on tower " << index << endl;
+          light.setFire(I_RED, 255, true, towerNodeID[index]);
+          
+          // Disarm us
+          armed[index] = false;
+          
+          // Turn the lights off
+          light.setFire(0, 0, false);
+          light.setAllLight(0, true);
+        }        
+        else if(!anyArmed) {
+          Serial << "Arming on tower " << index << endl;
+          
+          // Light the tower up
+          light.setFire(0, 0, false);
+          light.setLight(index, 255, true, towerNodeID[index]);
+          
+          armed[index] = true;
+          sound.playTrack(ARMED_TRACK);
+                  
+          armedTimer.reset();
+        }
+        // else, ignore it, so we can only arm one tower at once.
+      }
+      else {
+        sound.playTrack(DISARMED_TRACK);
+      }
+    }
   }
 }
 

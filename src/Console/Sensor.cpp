@@ -3,6 +3,9 @@
 Bounce modeEnable = Bounce(MODE_ENABLE_PIN, SENSOR_DEBOUCE_TIME);
 Bounce fireEnable = Bounce(FIRE_ENABLE_PIN, SENSOR_DEBOUCE_TIME);
 
+#define ARMED_TRACK 900
+#define DISARMED_TRACK 901
+
 
 void Sensor::begin() { // remote control
   Serial << "Sensor: startup." << endl;
@@ -32,14 +35,7 @@ boolean Sensor::fireEnabled() {
     // for tones
     extern Sound sound;
 
-    // this could be replaced by asking Music to play an mp3 file.  For now, we'll just use the tone system.
-    for ( int i = 0; i < 3; i++ ) {
-      // TODO: need a "klaxon" track!!!
-//      sound.playTone(I_RED, !fireMode); // if fireMode, we'll get a RED tone (high freq); false, we get a WRONG tone (low freq)
-//      delay( 250UL ); // wait 0.25 seconds
-//      sound.stop();
-//      delay( 100UL ); // wait 0.1 seconds
-    }
+    sound.playTrack(fireMode ? ARMED_TRACK : DISARMED_TRACK);
   }
 
   // return mode

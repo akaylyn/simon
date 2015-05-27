@@ -45,21 +45,17 @@
 // during idle, do a fanfare of light, music and fire
 Metro kioskTimer(KIOSK_FANFARE_MAX);
 
-
-
-#define NUM_INTERACTIVE_MODES 6
 #define MODE_TRACK_OFFSET 699
 
 int currentMode = 0;
 static boolean gamePlayMode = true;
 
-void (*interactiveModefunctions[NUM_INTERACTIVE_MODES])(boolean) = {
+void (*interactiveModefunctions[NUM_MODES])(boolean) = {
   gamePlayModeLoop,
   bongoModeLoop,
-  proximityModeLoop,
-  lightsTestModeLoop,
+  proximityModeLoop,  
   fireTestModeLoop,
-  proximityResetModeLoop,
+  lightsTestModeLoop
 };
 
 void setup() {
@@ -104,7 +100,10 @@ void loop() {
 void startupNextModeAndLoop() {
   Serial << "startupNextModeAndLoop() called" << endl;
   currentMode++;                        // next mode!
-  currentMode %= NUM_INTERACTIVE_MODES; // wrap around
+  currentMode %= NUM_MODES; // wrap around
+  
+  // Tell the tower's we're in a new mode
+  light.sendModeSwitchInstruction(currentMode);
   
   // Play the sound to let the use know what mode we're in
   sound.stopAll();
@@ -157,10 +156,6 @@ void lightsTestModeLoop(boolean performStartup) {
 
 void fireTestModeLoop(boolean performStartup) {
   testModes.fireTestModeLoop(performStartup);
-}
-
-void proximityResetModeLoop(boolean performStartup) {
-  testModes.proximityResetModeLoop(performStartup);
 }
 
 void soundTest() {

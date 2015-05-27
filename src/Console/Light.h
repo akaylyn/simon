@@ -82,14 +82,18 @@ class Light {
     // call this to showshowNow the light and fire settings
     void show(byte nodeID = 0);
 
-    // call this to perform resend and network maintenace
+    // call this to perform resend and network maintenance
     void update();
     
     // call this for network maintenance
     void updateNetwork();
     
     // take a towerInstruction and execute
-    void sendInstruction(towerInstruction &externInst);
+    void sendInstruction(towerInstruction &externInst, int nodeID = 0);
+    
+    // Send a instruction to switch mode.  
+    // Arguably this doesn't belong in Light, but this is where we do all of our radio, so...
+    void sendModeSwitchInstruction(int mode);
 
   private:
     // storage for light and fire levels.

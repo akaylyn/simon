@@ -26,6 +26,10 @@ const int trLose[2] = {300, 300}; // store LOSE in 300-499
 const int trRock[2] = {501, 501}; // store ROCK in 500-699
 const int trBaff[2] = {700, 701}; // store BAFF in 700-999
 
+#define BOOP_TRACK 100
+#define ARMED_TRACK 900
+#define DISARMED_TRACK 901
+
 // some defaults
 // gains.  remember that polyphonic sounds get stacked, so clipping can easily occur.  gonna have to tune this.
 #define MASTER_GAIN -3 // -70 to +4 dB.  0 is nominal.
