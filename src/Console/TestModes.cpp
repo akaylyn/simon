@@ -193,7 +193,7 @@ void TestModes::fireTestModeLoop(bool performStartup) {
       armed[index] = false;     
     }
 
-    light.setFire(0, 0, false);
+    light.setFire(0, 0, FE_billow, false);
     light.setAllLight(0, true); // Turn all the lights off
     sound.playTrack(DISARMED_TRACK);
   }
@@ -206,20 +206,20 @@ void TestModes::fireTestModeLoop(bool performStartup) {
         if(armed[index]) {
           // Fire!
           Serial << "Firing on tower " << index << endl;
-          light.setFire(I_RED, 255, true, towerNodeID[index]);
+          light.setFire(I_RED, 255, FE_billow, true, towerNodeID[index]);
           
           // Disarm us
           armed[index] = false;
           
           // Turn the lights off
-          light.setFire(0, 0, false);
+          light.setFire(0, 0, FE_billow, false);
           light.setAllLight(0, true);
         }        
         else if(!anyArmed) {
           Serial << "Arming on tower " << index << endl;
           
           // Light the tower up
-          light.setFire(0, 0, false);
+          light.setFire(0, 0, FE_billow, false);
           light.setLight(index, 255, true, towerNodeID[index]);
           
           armed[index] = true;

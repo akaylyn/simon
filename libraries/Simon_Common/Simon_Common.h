@@ -57,10 +57,21 @@ typedef struct {
 // EEPROM location for towerConfiguration settings.
 const byte towerConfigLocation = 69;
 
+enum flameEffect_t {
+	FE_billow, // just straight propane (DEFAULT) "very rich"
+	FE_blowtorch, // as much air as as we can before getting "too lean"
+	FE_kickStart,  // toss in some air at the beginning
+	FE_kickMiddle,  // toss in some air in the middle
+	FE_kickEnd,  // toss in some air at the end
+	FE_gatlingGun // short bursts of air throughout
+// and so on.
+};
+
 // during gameplay, this is the information passed from Console to Towers to turn off lights and fire:
 typedef struct {
 	byte lightLevel[N_COLORS]; // 0..255.  maps to analogWrite->light level
 	byte fireLevel[N_COLORS]; // 0..255.  maps to timer->fire duration
+	flameEffect_t flameEffect; // see below
 } towerInstruction;
 
 // Send to the towers to tell them what mode they're in when we switch modes.

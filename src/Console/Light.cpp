@@ -114,7 +114,7 @@ void Light::setAllLight(byte level, boolean showNow, byte nodeID) {
 }
 
 // set fire level
-void Light::setFire(byte index, byte level, boolean showNow, byte nodeID) {
+void Light::setFire(byte index, byte level, flameEffect_t effect, boolean showNow, byte nodeID) {
   if ( index < I_RED || index > I_YEL ) {
     Serial << F("ERROR: Light::setFire.  Index out of range: ") << index << endl;
     while (1);
@@ -126,20 +126,21 @@ void Light::setFire(byte index, byte level, boolean showNow, byte nodeID) {
 
   // set instructions
   inst.fireLevel[index] = fireAllowed ? level : 0;
+  inst.flameEffect = effect;
 
   if ( showNow ) show(nodeID);
 }
 
-void Light::setAllFire(byte level, boolean showNow, byte nodeID) {
+void Light::setAllFire(byte level, flameEffect_t effect, boolean showNow, byte nodeID) {
   for ( int i = 0; i < N_COLORS; i++ )
-    setFire(i, level, false); // don't send immediately
+    setFire(i, level, effect, false); // don't send immediately
 
   if ( showNow ) show(nodeID);
 }
 
 // set light and fire off
 void Light::setAllOff(boolean showNow, byte nodeID) {
-  setAllFire(LIGHT_OFF, false);
+  setAllFire(LIGHT_OFF, FE_billow, false);
   setAllLight(LIGHT_OFF, false);
 
   if ( showNow ) show(nodeID);

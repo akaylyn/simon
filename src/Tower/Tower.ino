@@ -9,6 +9,7 @@
 #include <SPI.h> // for radio board 
 #include <RFM69.h> // RFM69HW radio transmitter module
 #include <RGBlink.h> // control LEDs
+#include <Timer.h> // control air injector
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
@@ -44,8 +45,8 @@ Metro flameCoolDownTime(1000UL);
 #define LED_G 5 // the PWM pin which drives the green LED
 #define LED_B 6 // the PWM pin which drives the blue LED
 #define LED_W 9 // the PWM pin which drives the white LED (not connected)
-#define FLAME 7 // relay for solenoid
-#define OTHER 8 // relay (not connected)
+#define FLAME 7 // relay for flame effect solenoid
+#define AIR 8 // relay for air solenoid
 
 // radio pins
 #define D_CS_PIN 10 // default SS pin for RFM module
@@ -66,6 +67,12 @@ LED light(LED_R, LED_G, LED_B);
 #define FADE 2
 #define TEST 3
 #define FLASH 4
+
+// Timer control for air solenoid
+Timer air;
+const unsigned long shortAirTime = 50UL;
+const unsigned long longAirTime = 100UL;
+int8_t timerOne, timerTwo;
 
 // HSB model 411: http://www.tomjewett.com/colors/hsb.html
 
@@ -97,8 +104,8 @@ void setup() {
   Serial << F("Configuring output pins.") << endl;
   flameOff(); 
   pinMode(FLAME, OUTPUT); // order is important.  set then output.
-  otherOff(); 
-  pinMode(OTHER, OUTPUT); // order is important.  set then output.
+  airOff(); 
+  pinMode(AIR, OUTPUT); // order is important.  set then output.
   digitalWrite(LED_R, LOW); 
   pinMode(LED_R, OUTPUT);
   digitalWrite(LED_G, LOW); 
@@ -129,6 +136,9 @@ void loop() {
   if ( flameOnTime.check() ) { // time to turn the flame off
     flameOff();
   }
+  
+  // check to see if we need to mess with the air.
+  air.update();
 
   // call the leds update cycle for non-blocking fading
   light.update();
@@ -342,52 +352,86 @@ void performInstruction(boolean isJustToMe) {
     maxFireLevel = max(maxFireLevel, inst.fireLevel[I_YEL]);
   }
   // execute on the longest requested flame length.
-  flameOn(maxFireLevel);
+  flameOn(maxFireLevel, inst.flameEffect);
 
 }
 
-void flameOn(int fireLevel) {
+void flameOn(int fireLevel, flameEffect_t effect) {
 
   // special case for fireLevel==0 i.e. "none"
   if ( fireLevel == 0 ) return;
 
   // only if the cooldown timer is ready
-  if ( flameCoolDownTime.check() ) {
+  if ( flameCoolDownTime.check() ) return;
+  
+  unsigned long flameTime = constrain( // constrain may be overkill, but map doesn't guarantee constraints
+          map(fireLevel, 1, 255, config.minFireTime, config.maxFireTime),
+          config.minFireTime, config.maxFireTime
+  );
 
-    unsigned long flameTime = constrain( // constrain may be overkill, but map doesn't guarantee constraints
-    map(fireLevel, 1, 255, config.minFireTime, config.maxFireTime),
-    config.minFireTime, config.maxFireTime);
+  // SAFETY: never, ever, ever set this pin high without resetting the flameOnTime timer, unless you
+  // have some other way of turning it back off.
 
-    // SAFETY: never, ever, ever set this pin high without resetting the flameOnTime timer, unless you
-    // have some other way of turning it back off.
+  // To put a Fine Point on it: this simple line will unleash 100,000 BTU.  Better take care.
+  digitalWrite(FLAME, LOW); // This line should appear exactly once in a sketch, and be swaddled in all manner of caution.
+  flameOnTime.interval(flameTime);
+  flameOnTime.reset();
 
-    // To put a Fine Point on it: this simple line will unleash 100,000 BTU.  Better take care.
-    digitalWrite(FLAME, LOW); // This line should appear exactly once in a sketch, and be swaddled in all manner of caution.
-    flameOnTime.interval(flameTime);
-    flameOnTime.reset();
+  // set flame cooldown from config
+  unsigned long cooldown = flameTime/config.flameCoolDownDivisor;
+  flameCoolDownTime.interval(cooldown);
 
-    // set flame cooldown from config
-    unsigned long cooldown = flameTime/config.flameCoolDownDivisor;
-    flameCoolDownTime.interval(cooldown);
+  // start cooldown counter
+  flameCoolDownTime.reset();
 
-    // start cooldown counter
-    flameCoolDownTime.reset();
-
-    Serial << F("Flame on! ") << fireLevel << F(" mapped [") << config.minFireTime << F(",") << config.maxFireTime << F("]");
-    Serial << F(" -> ") << flameTime << F("ms.  Cooldown: ") << cooldown << F("ms.") << endl;
+  Serial << F("Flame on! ") << fireLevel << F(" mapped [") << config.minFireTime << F(",") << config.maxFireTime << F("]");
+  Serial << F(" -> ") << flameTime << F("ms.  Cooldown: ") << cooldown << F("ms.") << endl;
+  
+  // just making sure
+  airOff();
+  
+  switch( effect ) {
+    case FE_billow: // just straight propane (DEFAULT) "very rich"
+      break; // well, that was easy. 
+    case FE_blowtorch: // as much air as as we can before getting "too lean"
+      timerOne = air.every(shortAirTime, shortAirBurst); // with repeat
+      break;
+    case FE_kickStart:  // toss in some air at the beginning
+      if( flameTime >= 2*shortAirTime ) // don't bother with short bursts of fire; can't do it.
+        timerOne = air.after(shortAirTime, shortAirBurst);
+      break;
+    case FE_kickMiddle:  // toss in some air in the middle
+      if( flameTime >= 2*shortAirTime ) // don't bother with short bursts of fire; can't do it.
+        timerOne = air.after(flameTime/2+shortAirTime, shortAirBurst);
+      break;
+    case FE_kickEnd:  // toss in some air at the end
+      if( flameTime >= 2*shortAirTime ) // don't bother with short bursts of fire; can't do it.
+        timerOne = air.after(flameTime-shortAirTime, shortAirBurst);
+      break;
+    case FE_gatlingGun: // short bursts of air throughout
+      timerOne = air.every(longAirTime+shortAirTime, shortAirBurst);
+      break;
   }
 }
 
+// pulse the air on for shortAirTime
+void shortAirBurst() {
+  timerTwo = air.pulseImmediate(AIR, shortAirTime, LOW);
+}
+
+
 void flameOff() {
   digitalWrite(FLAME, HIGH);
+  digitalWrite(AIR, HIGH);
+  air.stop(timerOne);
+  air.stop(timerTwo);
 }
 
-void otherOn() {
-  digitalWrite(OTHER, LOW);
+void airOn() {
+  digitalWrite(AIR, LOW);
 }
-
-void otherOff() {
-  digitalWrite(OTHER, HIGH);
+void airOff() {
+  digitalWrite(AIR, HIGH);
 }
 
 // starts the radio

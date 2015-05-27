@@ -44,8 +44,8 @@ void playerFanfare(byte level) {
      mic.update();
 
       // clear packet  
-      light.setAllLight(0,false,0);
-      light.setAllFire(0,false,0);
+      light.setAllLight(0);
+      light.setAllFire(0);
       
       for(byte i = 0; i<NUM_FREQUENCY_BANDS; i++) {
          if( mic.getBeat(i) ) {
@@ -62,41 +62,41 @@ void playerFanfare(byte level) {
         Serial << "Fireballv3: " << (fire) << " avg: " << (mic.getAvg(band)) << endl;
         //light.setFire(I_RED,(int)((mic.getAvg(band)/1024.0)*255),false);
 //        light.setFire(I_RED,fire,false);
-        light.setAllFire(fire,false,0);
+        light.setAllFire(fire);
 //        light.show(tower);
         light.show();
         hearBeat = true;
       } else if (!mic.getBeat(band)) {
 //        light.setFire(I_RED,0,false,tower);
 //        light.setFire(I_RED,0,false);
-        light.setAllFire(0,false,0);
+        light.setAllFire(0);
 //        light.show(tower);
         light.show();
         hearBeat = false;
       }
         // clear packet  
-      light.setAllLight(0,false,0);
-      light.setAllFire(0,false,0);
+      light.setAllLight(0);
+      light.setAllFire(0);
     
     if (active > 0) {
        switch(active) {
          case 0:
-           light.setAllLight(0,false,0);
+           light.setAllLight(0);
            break;
          case 1:
          case 2:
-           light.setLight(I_RED,255,false,0);
+           light.setLight(I_RED,255);
            break;
          case 3:
          case 4:
-           light.setLight(I_GRN,255,false,0);
+           light.setLight(I_GRN,255);
            break;
          case 5:
          case 6:
-           light.setLight(I_BLU,255,false,0);
+           light.setLight(I_BLU,255);
            break;
          default:
-           light.setAllLight(255,false,0);
+           light.setAllLight(255);
            active = 0;
            break;
        }
