@@ -58,13 +58,18 @@ typedef struct {
 const byte towerConfigLocation = 69;
 
 enum flameEffect_t {
-	FE_billow, // just straight propane (DEFAULT) "very rich"
-	FE_blowtorch, // as much air as as we can before getting "too lean"
+	// no air.  just straight propane.
+	FE_veryRich, // "very rich"
+	
+	// add some air to 1/3rd of the flame time; not notably different for small (<100ms) flames
 	FE_kickStart,  // toss in some air at the beginning
 	FE_kickMiddle,  // toss in some air in the middle
 	FE_kickEnd,  // toss in some air at the end
-	FE_gatlingGun // short bursts of air throughout
-// and so on.
+	
+	// add air throughout flame time
+	FE_gatlingGun, // staccato bursts of air throughout
+	FE_randomly, // air tossed in throughout in a random pattern
+	FE_veryLean, // as much air as as we can before getting "too lean"
 };
 
 // during gameplay, this is the information passed from Console to Towers to turn off lights and fire:
