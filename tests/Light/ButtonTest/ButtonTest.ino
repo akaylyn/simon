@@ -47,7 +47,7 @@ RgbColor blue;
 RgbColor yellow;
 
 AnimateFunc wipeStrip = colorWipe;
-AnimateFunc laserStrip = laserWipeEdge;
+AnimateFunc laserStrip = laserWipe;
 LaserWipePosition redLaserPos;
 LaserWipePosition greenLaserPos;
 LaserWipePosition blueLaserPos;
