@@ -140,7 +140,7 @@ void Light::setAllFire(byte level, flameEffect_t effect, boolean showNow, byte n
 
 // set light and fire off
 void Light::setAllOff(boolean showNow, byte nodeID) {
-  setAllFire(LIGHT_OFF, FE_billow, false);
+  setAllFire(LIGHT_OFF, FE_veryRich, false);
   setAllLight(LIGHT_OFF, false);
 
   if ( showNow ) show(nodeID);

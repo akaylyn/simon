@@ -73,8 +73,8 @@ class Light {
     void setAllLight(byte level, boolean showNow = false, byte nodeID = 0);
 
     // set fire level
-    void setFire(byte index, byte level, flameEffect_t effect = FE_billow, boolean showNow = false, byte nodeID = 0);
-    void setAllFire(byte level, flameEffect_t effect = FE_billow, boolean showNow = false, byte nodeID = 0);
+    void setFire(byte index, byte level, flameEffect_t effect = FE_veryRich, boolean showNow = false, byte nodeID = 0);
+    void setAllFire(byte level, flameEffect_t effect = FE_veryRich, boolean showNow = false, byte nodeID = 0);
 
     // set light and fire off
     void setAllOff(boolean showNow = true, byte nodeID = 0);
