@@ -8,8 +8,8 @@
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
 
-#define AIR 13 // relay for air solenoid
-#define FLAME 12 // relay for fire solenoid
+#define FLAME 7 // relay for flame effect solenoid
+#define AIR 8 // relay for air solenoid
 
 // Timer control for air solenoid
 Timer air;
@@ -44,7 +44,10 @@ void loop() {
   // execute on the longest requested flame length.
   static boolean runNow = true;
   if( runNow ) {
-    flameOn(255, FE_randomly);
+//    flameOn(255, FE_veryRich);
+//    flameOn(50, FE_kickStart);
+    flameOn(200, FE_randomly);
+//    flameOn(50, FE_veryLean);
     runNow=false;
   }
 
@@ -106,7 +109,7 @@ void flameOn(int fireLevel, flameEffect_t effect) {
       air.every(longAirTime+shortAirTime, shortAirBurst);
       break;
     case FE_randomly:  // toss in some air in a random pattern
-      for( unsigned long i = shortAirTime; i<flameTime; i+=random(longAirTime,longAirTime*5UL))
+      for( unsigned long i = shortAirTime; i<flameTime; i+=random(shortAirTime*3UL,shortAirTime*10UL))
         air.after(i, shortAirBurst); // load timers
       break;
     case FE_veryLean: // as much air as as we can before getting "too lean"

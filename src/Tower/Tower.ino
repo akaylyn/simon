@@ -127,7 +127,6 @@ void setup() {
 
   // start with a HSV test
   light.setMode(SOLID);
-
 }
 
 void loop() {
@@ -170,7 +169,6 @@ void loop() {
         inst = *(towerInstruction*)radio.DATA;
         // do it.  filter instruction based on broadcast mode or directed to this Tower specifically.
         performInstruction(radio.TARGETID == myNodeID);
-
 
         Serial << F("I") << endl;
       } 
@@ -361,8 +359,8 @@ void flameOn(int fireLevel, flameEffect_t effect) {
   if ( fireLevel == 0 ) return;
 
   // only if the cooldown timer is ready
-  if ( flameCoolDownTime.check() ) return;
-  
+  if ( !flameCoolDownTime.check() ) return;
+
   unsigned long flameTime = constrain( // constrain may be overkill, but map doesn't guarantee constraints
           map(fireLevel, 1, 255, config.minFireTime, config.maxFireTime),
           config.minFireTime, config.maxFireTime
@@ -384,12 +382,12 @@ void flameOn(int fireLevel, flameEffect_t effect) {
   flameCoolDownTime.reset();
 
   Serial << F("Flame on! ") << fireLevel << F(" mapped [") << config.minFireTime << F(",") << config.maxFireTime << F("]");
-  Serial << F(" -> ") << flameTime << F("ms.  Cooldown: ") << cooldown << F("ms.") << endl;
+  Serial << F(" -> ") << flameTime << F("ms.  Cooldown: ") << cooldown << F("ms."); 
+  Serial << F(" Effect: ") << effect << endl;
   
   // just making sure
   airOff();
-  Serial << "Air.  start time:" << millis() << endl;
-  
+
   switch( effect ) {
     case FE_veryRich: // just straight propane (DEFAULT) "very rich"
       break; // well, that was easy. 
@@ -411,7 +409,7 @@ void flameOn(int fireLevel, flameEffect_t effect) {
       air.every(longAirTime+shortAirTime, shortAirBurst);
       break;
     case FE_randomly:  // toss in some air in a random pattern
-      for( unsigned long i = shortAirTime; i<flameTime; i+=random(longAirTime,longAirTime*5UL))
+      for( unsigned long i = shortAirTime; i<flameTime; i+=random(shortAirTime*3UL,shortAirTime*10UL))
         air.after(i, shortAirBurst); // load timers
       break;
     case FE_veryLean: // as much air as as we can before getting "too lean"
@@ -423,7 +421,7 @@ void flameOn(int fireLevel, flameEffect_t effect) {
 
 // pulse the air on for shortAirTime
 void shortAirBurst() {
-  Serial << "Air.   short air:" << millis() << endl;
+//  Serial << "Air.   short air:" << millis() << endl;
   air.pulseImmediate(AIR, shortAirTime, LOW);
 }
 
@@ -431,7 +429,7 @@ void flameOff() {
   digitalWrite(FLAME, HIGH);
   airOff();
 
-  Serial << F("Flame off! ") << endl;
+//  Serial << F("Flame off! ") << endl;
 }
 
 void airOff() {
