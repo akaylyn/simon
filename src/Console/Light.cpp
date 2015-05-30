@@ -128,8 +128,8 @@ void Light::setFire(byte index, byte level, flameEffect_t effect, boolean showNo
   inst.fireLevel[index] = fireAllowed ? level : 0;
   inst.flameEffect = effect;
 
-  Serial << "setFire: " << index << " level: " << inst.fireLevel[index] << " effect: " << inst.flameEffect << endl;
-  delay(25);
+//  Serial << "setFire: " << index << " level: " << inst.fireLevel[index] << " effect: " << inst.flameEffect << endl;
+//  delay(25);
 
   if ( showNow ) show(nodeID);
 }

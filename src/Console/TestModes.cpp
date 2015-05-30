@@ -17,6 +17,9 @@ void TestModes::bongoModeLoop(bool performStartup) {
     sound.stopAll();
     sound.setLeveling(4, 0); // prep for 4x tones and no music.
   }
+  
+  // track the last time we fired
+  static unsigned long lastFireTime = millis();
 
   if ( touch.anyChanged()) {
     sound.stopTones(); // stop tones
@@ -25,7 +28,11 @@ void TestModes::bongoModeLoop(bool performStartup) {
       if ( touch.pressed(i) ) {
         sound.playTone(i);
         light.setLight(i, LIGHT_ON);
-        light.setFire(i, LIGHT_ON, FE_gatlingGun);
+
+        // only allow full-on every 10s.
+        byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 0, 255);
+        light.setFire(i, fireLevel, FE_gatlingGun);
+        lastFireTime = millis();
        } 
       else {
         light.setLight(i, LIGHT_OFF);
@@ -52,6 +59,9 @@ void TestModes::proximityModeLoop(bool performStartup) {
   static byte lastDistance[N_COLORS];
   static byte distanceThreshold = 200;
   
+  // track the last time we fired
+  static unsigned long lastFireTime = millis();
+
   if( performStartup || restartTimer.check() ) {
     Serial << "Starting up proximityMode" << endl;
         
@@ -82,12 +92,24 @@ void TestModes::proximityModeLoop(bool performStartup) {
       int gain = fscale(0, 255, gainMax, gainMin, dist, -10.0); // log10
       
       sound.setVolume(trTone[i], gain);  
-      // save it
-      lastDistance[i] = dist;
       
       // set lights
-      light.setLight(i, dist < distanceThreshold ? LIGHT_ON : LIGHT_OFF );
+//      light.setLight(i, dist < distanceThreshold ? LIGHT_ON : LIGHT_OFF );
+      light.setLight(i, 255 - dist);
+      if( dist<10 ) {
+        // only allow full-on every 10s.
+        byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 0, 255);
+        light.setFire(i, fireLevel, FE_gatlingGun);
+        lastFireTime = millis();        
+      } else {
+        light.setFire(i, 0, FE_gatlingGun);
+      }
+      
       showLightsNow = true;
+      
+      // save it
+      lastDistance[i] = dist;
+
     }
   }
   
