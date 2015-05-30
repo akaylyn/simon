@@ -2,6 +2,8 @@
 #include <IRremote.h>
 #include <Streaming.h>
 
+#define LED_W 9 // the PWM pin which drives the white LED (not connected)
+
 IRsend irsend;
 
 #define K24_OFF          0xF740BF
