@@ -25,11 +25,11 @@ void TestModes::bongoModeLoop(bool performStartup) {
       if ( touch.pressed(i) ) {
         sound.playTone(i);
         light.setLight(i, LIGHT_ON);
-        light.setFire(i, LIGHT_ON);
-      } 
+        light.setFire(i, LIGHT_ON, FE_gatlingGun);
+       } 
       else {
         light.setLight(i, LIGHT_OFF);
-        light.setFire(i, LIGHT_OFF);
+        light.setFire(i, LIGHT_OFF, FE_gatlingGun);
       }
     }
     // show

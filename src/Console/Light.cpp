@@ -32,11 +32,11 @@ boolean listenYel[N_COLORS]={false, false, false, true};
 
 // use the above configurations to layout the tower responses
 // e.g. respond to everything
-boolean *towerColor[N_TOWERS] = {listenAll, listenAll, listenAll, listenAll};
-boolean *towerFire[N_TOWERS] = {listenAll, listenAll, listenAll, listenAll};
+//boolean *towerColor[N_TOWERS] = {listenAll, listenAll, listenAll, listenAll};
+//boolean *towerFire[N_TOWERS] = {listenAll, listenAll, listenAll, listenAll};
 // e.g. respond to single colors
-//boolean *towerColor[N_TOWERS] = {listenRed, listenGrn, listenBlu, listenYel};
-//boolean *towerFire[N_TOWERS] = {listenRed, listenGrn, listenBlu, listenYel};
+boolean *towerColor[N_TOWERS] = {listenRed, listenGrn, listenBlu, listenYel};
+boolean *towerFire[N_TOWERS] = {listenRed, listenGrn, listenBlu, listenYel};
 
 // minimum accumulator opening time.
 unsigned long minFireTime = 50UL;
@@ -127,6 +127,9 @@ void Light::setFire(byte index, byte level, flameEffect_t effect, boolean showNo
   // set instructions
   inst.fireLevel[index] = fireAllowed ? level : 0;
   inst.flameEffect = effect;
+
+  Serial << "setFire: " << index << " level: " << inst.fireLevel[index] << " effect: " << inst.flameEffect << endl;
+  delay(25);
 
   if ( showNow ) show(nodeID);
 }
