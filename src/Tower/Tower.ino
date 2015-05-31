@@ -233,6 +233,7 @@ void loop() {
   if ( networkTimeout.check() ) {
     Serial << F("Network timeout.") << endl;
     networkTimedOut = true;
+    Serial << F("Free RAM: ") << freeRam() << endl;
   }
   if( systemResetFlag ) {
     resetTestPattern();
@@ -255,7 +256,9 @@ void loop() {
 boolean systemReseted() {
   // with EMI, be very sure.
   Metro readTime(DEBOUNCE_TIME);
+  readTime.interval(DEBOUNCE_TIME);
   readTime.reset();
+  
   while( !readTime.check() ) systemReset.update();
 
   // at system power up, relay is open, meaning pin will read HIGH.
@@ -519,6 +522,8 @@ void instClear(towerInstruction & inst) {
 // alternative to delay(), non-blocking
 void myDelay(unsigned long delayTime) {
   Metro delayFor(delayTime);
+  delayFor.interval(delayTime);
+  delayFor.reset();
 
   while( ! delayFor.check() ) {
     // insert any mission-critical operations here
@@ -526,5 +531,9 @@ void myDelay(unsigned long delayTime) {
   }
 }
 
-
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
 
