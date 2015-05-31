@@ -3,8 +3,6 @@
 #include <Streaming.h>
 #include <Simon_Common.h> // I_RED, etc.
 
-#define LED_W 9 // the PWM pin which drives the white LED (not connected)
-
 #define K24_OFF          0xF740BF
 #define K24_ON           0xF7C03F
 
@@ -71,8 +69,8 @@ void loop() {
   flood.setColor(I_RED); delay(1000);
   flood.setColor(I_GRN); delay(1000);
   flood.setColor(I_BLU); delay(1000);
-  flood.setColor(I_YEL); delay(1000);
-  flood.setColor(99); delay(1000);
+//  flood.setColor(I_YEL); delay(1000);
+//  flood.setColor(99); delay(1000);
   
   /*
   
