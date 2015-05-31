@@ -55,11 +55,13 @@ void setup()
   flood.sendMultiple(K24_OFF, 4);
   
   flood.begin();
-  
+ 
 }
 
 void loop() {
   
+  Serial << F("Free RAM: ") << freeRam() << endl;
+ 
   static byte bright=0;
   bright+=1;
   if( bright> N_BRIGHT_STEPS) bright = 0;
@@ -71,55 +73,6 @@ void loop() {
   flood.setColor(I_BLU); delay(1000);
 //  flood.setColor(I_YEL); delay(1000);
 //  flood.setColor(99); delay(1000);
-  
-  /*
-  
-  Serial << "Test 24-key functions." << endl;
-  send(K24_ON); Serial << "24 on." << endl;
-  delay(500);
-  send(K24_ON); Serial << "24 on." << endl;
-  sendMultiple(K24_UP, N_BRIGHT_STEPS, 100); Serial << "UP." << endl;
-
-  send(K24_RED); Serial << "red toggled." << endl;
-  send(K24_UP);
-  
-  delay(2000);
-  */
-  
-/* 
-  send(K24_RED); Serial << "red toggled." << endl;
-  upDown(K24_UP, K24_DOWN, N_BRIGHT_STEPS, 200);
-  send(K24_RED); Serial << "red toggled." << endl;
-
-  send(K24_GRN); Serial << "grn toggled." << endl;
-  upDown(K24_UP, K24_DOWN, N_BRIGHT_STEPS, 200);
-  send(K24_GRN); Serial << "grn toggled." << endl;
-
-  send(K24_BLU); Serial << "blu toggled." << endl;
-  upDown(K24_UP, K24_DOWN, N_BRIGHT_STEPS, 200);
-  send(K24_BLU); Serial << "blu toggled." << endl;
-
-  send(K24_YEL); Serial << "yel toggled." << endl;
-  upDown(K24_UP, K24_DOWN, N_BRIGHT_STEPS, 200);
-  send(K24_YEL); Serial << "yel toggled." << endl;
-  
-  send(K24_WHT); Serial << "wht toggled." << endl;
-  upDown(K24_UP, K24_DOWN, N_BRIGHT_STEPS, 200);
-  send(K24_WHT); Serial << "wht toggled." << endl;
-  
-  send(K24_FADE); Serial << "fade toggled." << endl;
-  sendMultiple(K24_UP, N_BRIGHT_STEPS, 5);
-  delay(5000);
-  sendMultiple(K24_DOWN, N_BRIGHT_STEPS, 5);
-  send(K24_FADE); Serial << "fade toggled." << endl;
-  
-  Serial << "End 24-key tests." << endl;
-*/
-/*
-  send(K24_OFF); Serial << "24 off." << endl;
-  delay(500);
-  send(K24_OFF); Serial << "24 off." << endl;
-  */
   
 }
 
@@ -151,12 +104,14 @@ void Flood::setColor(byte color) {
 
 void Flood::setBright(byte level) {
   if( level > N_BRIGHT_STEPS ) level = N_BRIGHT_STEPS;
-  
+
   Serial << "Bright: " << level << endl;
+  
+  byte diff = abs(level-currentBright);
   if( level > currentBright ) {
-    sendMultiple(K24_UP, level - currentBright);
+    sendMultiple(K24_UP, diff);
   } else if( level < currentBright) {
-    sendMultiple(K24_DOWN, currentBright - level);
+    sendMultiple(K24_DOWN, diff);
   }
   // track
   currentBright = level;
@@ -176,4 +131,9 @@ void Flood::sendMultiple(unsigned long data, byte repeats) {
   }
 }
 
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
 

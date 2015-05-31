@@ -660,9 +660,7 @@ void Flood::setBright(byte level) {
 void Flood::send(unsigned long data) {
   Serial << F("Flood: send: ") << _HEX(data) << endl;
   // simple wrapper
-  noInterrupts();
   irsend.sendNEC(data, 32);
-  interrupts();
 }
 
 void Flood::sendMultiple(unsigned long data, byte repeats) {
