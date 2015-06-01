@@ -139,6 +139,9 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
 
+  Serial << F("Pausing after boot 1 sec...") << endl;
+  myDelay(1000UL);
+  
   // random seed.
   randomSeed(analogRead(A3)); // or some other unconected pin
 
@@ -175,6 +178,9 @@ void setup() {
   
   // start the IR control of the floodlight
   flood.begin();
+  
+  Serial << F("Free RAM: ") << freeRam() << endl;
+
 }
 
 void loop() {
@@ -280,6 +286,7 @@ void loop() {
 
   if ( networkTimeout.check() ) {
     Serial << F("Network timeout.") << endl;
+    Serial << F("Free RAM: ") << freeRam() << endl;
     networkTimedOut = true;
   }
   if( systemResetFlag ) {
@@ -303,7 +310,9 @@ void loop() {
 boolean systemReseted() {
   // with EMI, be very sure.
   Metro readTime(DEBOUNCE_TIME);
+  readTime.interval(DEBOUNCE_TIME);
   readTime.reset();
+  
   while( !readTime.check() ) systemReset.update();
 
   // at system power up, relay is open, meaning pin will read HIGH.
@@ -330,7 +339,7 @@ void idleTestPattern() {
   if( inPeriod == 0 ) {
     period = random(TEST_PATTERN_PERIOD / 2, TEST_PATTERN_PERIOD * 2);
     direction *= -1;
-    delay(1); // only want to trip this test once per period
+    myDelay(1); // only want to trip this test once per period
     Serial << F("Test pattern period: ") << period << F(" direction: ") << direction << endl;    
   }
 
@@ -617,12 +626,13 @@ void Flood::begin() {
 }
 
 void Flood::on() {
-  send(K24_ON);
+  sendMultiple(K24_ON,2);
   this->isOn = true;
 }
 void Flood::off() {
-  send(K24_OFF);
-  this->isOn = false;
+//  send(K24_OFF);
+  send(K24_SMOOTH);
+//  this->isOn = false;
 }
 
 void Flood::setColor(byte color) {
@@ -666,10 +676,15 @@ void Flood::send(unsigned long data) {
 void Flood::sendMultiple(unsigned long data, byte repeats) {
   send(data); 
   for( byte i=1; i < repeats; i++ ) {
-    delay(8); // need a 8ms interval before resend
+    myDelay(8); // need a 8ms interval before resend
     send(data); 
 //    send(K24_REPEAT);
   }
 }
 
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
 
