@@ -35,27 +35,18 @@ const byte towerNodeID[N_TOWERS] = {2,3,4,5};
 #define I_BLU 2
 #define I_YEL 3
 
-// during startup, Console defines which Tower(s) respond to color and fire signals in towerInstruction:
-typedef struct {
-	// what color(s) should a tower respond to?
-	// e.g. lightListen={true, true, true, true} means the tower will show all colors
-	// e.g. lightListen={false, true, false, true} means the tower will show green and yellow
-	boolean lightListen[N_COLORS]; 
-	// what fires(s) should a tower respond to?
-	// e.g. as above
-	boolean fireListen[N_COLORS];  
-	// lighting instructions require no rescaling
-	// fire instructions need to rescale [0,255] to [min solenoid opening time, max solenoid opening time]
-	// e.g. opening time = map(inst.fireLevel, 0, 255, minFireTime, maxFireTime);
-	unsigned long minFireTime; 
-	unsigned long maxFireTime; 
-	// once the accumulator recloses, don't reopen for a time span which is the prior opening time
-	// divided by this number.
-	// e.g if the solenoid was just open for 50 ms, it won't open again for 50ms/flameCoolDownDivisor
-	unsigned int flameCoolDownDivisor; // enforce a flame shutdown of this interval between poofs
-} towerConfiguration;
-// EEPROM location for towerConfiguration settings.
-const byte towerConfigLocation = 69;
+// solenoids take ~50ms to open fully.  Shorter requests are bumped up.
+const unsigned long minPropaneTime = 50UL; 
+// don't leave the solenoids open for longer than these intervals.  Longer requests are bumped down.
+const unsigned long maxPropaneTime = 2000UL; 
+// after opening the flame solenoid for N ms, don't reopen for N * ?ClosedMultiplier ms.
+const unsigned int propaneClosedMultiplier = 1;
+
+// can add air to the propane for different effects
+// by testing, we want to pulse the air 
+const unsigned long airPulseTime = 50UL;
+// by testing, we want to delay introduction of the air
+const unsigned long delayAirTime = 50UL;
 
 enum flameEffect_t {
 	// no air.  just straight propane.
@@ -72,11 +63,13 @@ enum flameEffect_t {
 	FE_veryLean, // as much air as as we can before getting "too lean"
 };
 
-// during gameplay, this is the information passed from Console to Towers to turn off lights and fire:
+// during gameplay, this is the information passed from Console to Towers to control lights and fire:
 typedef struct {
-	byte lightLevel[N_COLORS]; // 0..255.  maps to analogWrite->light level
-	byte fireLevel[N_COLORS]; // 0..255.  maps to timer->fire duration
-	flameEffect_t flameEffect; // see below
+	byte red; // red level
+	byte green; // green level
+	byte blue; // blue level
+	byte flame; // flame duration in 10's of ms.
+	flameEffect_t effect; // see above
 } towerInstruction;
 
 // Send to the towers to tell them what mode they're in when we switch modes.
