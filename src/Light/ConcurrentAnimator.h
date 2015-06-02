@@ -5,8 +5,7 @@
 #include <Metro.h>
 #include <Streaming.h>
 #include <Arduino.h>
-
-typedef void (*AnimateFunc)(Adafruit_NeoPixel&, int, int, int, void*);
+#include "Animations.h" // has AnimateFunc
 
 struct RgbColor {
   int red;

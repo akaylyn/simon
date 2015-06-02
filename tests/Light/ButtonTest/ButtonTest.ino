@@ -8,10 +8,13 @@
 #include <avr/wdt.h> // watchdog timer
 #include "Light.h"
 #include "Animations.h"
+//#include "Animations.cpp"
 #include "ConcurrentAnimator.h"
 #include "ButtonTest.h"
 
 #define PIN 4
+
+extern Animations animations;
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -46,8 +49,6 @@ RgbColor green;
 RgbColor blue;
 RgbColor yellow;
 
-AnimateFunc wipeStrip = colorWipe;
-AnimateFunc laserStrip = laserWipe;
 LaserWipePosition redLaserPos;
 LaserWipePosition greenLaserPos;
 LaserWipePosition blueLaserPos;
@@ -123,6 +124,8 @@ void setup() {
   yellowButtonConfig.strip = &yelL;
   yellowButtonConfig.color = yellow;
   yellowButtonConfig.position = &yellowLaserPos;
+
+  Serial << "Setup Complete" << endl;
 }
 
 /******************************************************************************
@@ -131,119 +134,16 @@ void setup() {
 void loop() {
   if (fasterStripUpdateInterval.check()) {
     //animator.animate(wipeStrip, rimConfig);
-    animator.animate(laserStrip, redButtonConfig);
-    animator.animate(laserStrip, greenButtonConfig);
-    animator.animate(laserStrip, blueButtonConfig);
-    animator.animate(laserStrip, yellowButtonConfig);
+    Serial << "1";
+    animator.animate(animations.Btn.LaserWipe, redButtonConfig);
+    Serial << "2";
+    animator.animate(animations.Btn.LaserWipe, greenButtonConfig);
+    animator.animate(animations.Btn.LaserWipe, blueButtonConfig);
+    animator.animate(animations.Btn.LaserWipe, yellowButtonConfig);
 
     fasterStripUpdateInterval.reset();
   }
 }
-
-void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int c, int wait) {
-  for (uint16_t x = 0; x < matrix.width(); x++) {
-    matrix.drawPixel(x, 0, c);
-    matrix.drawPixel(x, 1, c);
-    matrix.drawPixel(x, 2, c);
-    matrix.show();
-  }
-}
-
-// Fill the dots one after the other with a color
-// returns the position of the led that was lit
-void colorWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
-  int* pos = (int*) posData;
-  int next = (*pos);
-
-  if (next > strip.numPixels()) {
-    next = 0;
-  } else {
-    ++next;
-  }
-
-  strip.setPixelColor(next, strip.Color(r, g, b));
-  Serial << F("Set pixel: ") << next << endl;
-  posData = (void*) next;
-}
-
-// color wipes the last 8 pixels
-void laserWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
-  LaserWipePosition* pos = static_cast<LaserWipePosition*>(posData);
-
-  // next is relative to the previous position
-  int next = pos->prev;
-  int end = strip.numPixels() - 1;
-  int start = end - 7;
-
-  // first pixel on, direction set
-  if (pos->prev == 0) {
-    next = start;
-  }
-
-  // reverse direction if at an edge
-  if (pos->prev == end) {
-    pos->dir = 1;
-  }
-  else if (pos->prev == start) {
-    pos->dir = 0;
-  }
-
-  // proceed to the next position
-  if (pos->dir == 1) {
-    --next;
-  } else {
-    ++next;
-  }
-
-  // clear out the last color and set the next one
-  strip.setPixelColor(pos->prev, strip.Color(LED_OFF, LED_OFF, LED_OFF));
-  strip.setPixelColor(next, strip.Color(r, g, b));
-  pos->prev = next;
-}
-
-// color wipes the outside of the rim
-void laserWipeEdge(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
-  LaserWipePosition* pos = static_cast<LaserWipePosition*>(posData);
-
-  // next is relative to the previous position
-  int next = pos->prev;
-  int end = end + 31;
-  int start = 9;
-
-  /*
-  // first pixel on, direction set
-  if (pos->prev == 0) {
-    next = start;
-  }
-
-  // reverse direction if at an edge
-  if (pos->prev == end) {
-    pos->dir = 1;
-  }
-  else if (pos->prev == start) {
-    pos->dir = 0;
-  }
-
-  // proceed to the next position
-  if (pos->dir == 1) {
-    --next;
-  } else {
-    ++next;
-  }
-  */
-  if (next == end) {
-    next++;
-  }
-  else if (next > end + 2 || next < end) {
-    ++next;
-    strip.setPixelColor(pos->prev, strip.Color(LED_OFF, LED_OFF, LED_OFF));
-    strip.setPixelColor(next, strip.Color(r, g, b));
-    pos->prev = next;
-  }
-
-  // clear out the last color and set the next one
-}
-
 
 
 void rainbow(uint8_t wait) {

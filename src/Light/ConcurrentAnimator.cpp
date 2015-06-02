@@ -9,7 +9,7 @@ void ConcurrentAnimator::calculateAnimation(AnimateFunc animate, AnimationConfig
   if (!config.ready) {
     return;
   }
-  //Serial << "---" << config.name << "---" << endl;
+  Serial << "---" << config.name << "---" << endl;
 
   (*animate)((*config.strip),
       config.color.red, config.color.green, config.color.blue, config.position);
