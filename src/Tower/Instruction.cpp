@@ -1,6 +1,6 @@
 #include "Instruction.h"
 
-void Instruction::Instruction(byte nodeID) {
+Instruction::Instruction(byte nodeID) {
   this->nodeID = networkStart(nodeID);
 }
 

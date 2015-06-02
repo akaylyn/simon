@@ -22,9 +22,9 @@ class Instruction {
     // Need an instance of the Radio Module
     RFM69 radio;
     // store my NODEID
-    byte myNodeID;
+    byte nodeID;
     // gets the network setup
-    void networkStart(byte nodeID);
+    byte networkStart(byte nodeID);
 };
 
 

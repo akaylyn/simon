@@ -12,24 +12,18 @@
 #include <RFM69.h> // RFM69HW radio transmitter module
 #include <EEPROM.h> // saving and loading radio settings
 #include "Instruction.h"
-// boostrap the tower nodeID to this value (2,3,4,5), overwriting EEPROM.
-// set "0" to read EEPROM value
-#define HARD_SET_NODE_ID_TO 0
-// instantiate
-Instruction instruction(HARD_SET_NODE_ID_TO);
 
 // perform lighting
 #include <RGBlink.h> // control LEDs
 #include <IRremote.h> // control IR Rx lighting
 #include <QueueArray.h> // queing for IR transmissions
+#include <Metro.h> // countdown timers
 #include "Light.h"
 // pin locations for outputs
 #define PIN_R 6 // the PWM pin which drives the red LED
 #define PIN_G 5 // the PWM pin which drives the green LED
 #define PIN_B 9 // the PWM pin which drives the blue LED
 #define PIN_IR 3 // the PWM pin which drives the IR floodlight
-// instantiate
-Light light(PIN_R, PIN_G, PIN_B, PIN_IR);
 
 // perform fire
 #include <Metro.h> // countdown timers
@@ -38,7 +32,13 @@ Light light(PIN_R, PIN_G, PIN_B, PIN_IR);
 // pin locations for outputs
 #define PIN_FLAME 7 // relay for flame effect solenoid
 #define PIN_AIR 8 // relay for air solenoid
+
 // instantiate
+// boostrap the tower nodeID to this value (2,3,4,5), overwriting EEPROM.
+// set "0" to read EEPROM value
+#define HARD_SET_NODE_ID_TO 0
+Instruction instruction(HARD_SET_NODE_ID_TO);
+Light light(PIN_R, PIN_G, PIN_B, PIN_IR);
 Fire fire(PIN_FLAME, PIN_AIR);
 
 // remote control
@@ -98,7 +98,7 @@ void loop() {
     if (systemReset.read() == LOW) {
       Serial << F("reset.") << endl;
       
-      setInstr(inst, c_red); 
+      setInst(inst, c_red); 
       newInstructions = true;
       light.effect(BLINK);
     } else{
@@ -134,21 +134,23 @@ int freeRam () {
 }
 
 void setInst(towerInstruction &inst, RGB color) {
-  inst.red = RGB.red;
-  inst.green = RGB.green;
-  inst.blue = RGB.blue;
+  inst.red = color.red;
+  inst.green = color.green;
+  inst.blue = color.blue;
   inst.flame = 0; // just to be sure
 }
 
-void idleTestPattern(towerInstruction &inst) {
+boolean idleTestPattern(towerInstruction &inst) {
   // how many colors to cycle through
-  const RGB colors=[N_COLORS] = {c_red, c_blu, c_yel, c_grn};
+  const RGB colors[N_COLORS] = {c_red, c_blu, c_yel, c_grn};
   
   // where are we?
   static byte c = 0;
-  c = (c==N_NCOLOR) ? 0 : c+1;
+  c = (c==N_COLORS) ? 0 : c+1;
   
   setInst(inst, colors[c]);
+  
+  return( true );
 }
 
 

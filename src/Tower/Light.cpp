@@ -1,16 +1,16 @@
 #include "Light.h"
 
-void Light::Light(byte redPin, byte greenPin, byte bluePin, byte floodPin) {
+Light::Light(byte redPin, byte greenPin, byte bluePin, byte floodPin) {
   // constructors
-  tank(redPin, greenPin, bluePin);
-  flood(floodPin);
+  this->tank = new LED(redPin, greenPin, bluePin);
+  this->flood = new Flood(floodPin);
   // tank effect
-  tank.effect(SOLID);
+  this->effect(SOLID);
 }
 
 void Light::effect(lightEffect_t effect, uint16_t onTime, uint16_t offTime) {
-  tank.setMode(effect);
-  tank.setBlink(onTime, offTime);
+  tank->setMode(effect);
+  tank->setBlink(onTime, offTime);
 }
 
 void Light::perform(towerInstruction &inst) {
@@ -21,22 +21,29 @@ void Light::perform(towerInstruction &inst) {
   rgb.blue = inst.blue;
   
   // apply
-  flood.writeRGB(rgb); 
-  tank.writeRGB(rgb);
+  flood->writeRGB(rgb); 
+  tank->writeRGB(rgb);
 }
 
 void Light::update() {
   // run the update functions
-  flood.update(); 
-  tank.update();
+  flood->update(); 
+  tank->update();
 }
 
-void Flood::Flood(byte floodPin) {
+Flood::Flood(byte floodPin, unsigned long sendInterval, byte sendCount) {
   if( floodPin != 3 ) {
     Serial << F("Light: ERROR.  floodPin must be 3.  Halting.") << endl;
     while(1);
   }
   pinMode(3, OUTPUT);
+  
+  // instantiate
+  this->ir = new IRsend();
+  
+  // save parameters
+  this->sendInterval = sendInterval;
+  this->sendCount = sendCount;
   
   // turn it on
   this->on(); 
@@ -46,17 +53,19 @@ void Flood::Flood(byte floodPin) {
 
   // set to white
   RGB rgb;
-  rgb.red = rgb.green = rgb.blue = 255;
-  flood.writeRGB(RGB);
+  rgb.red = 255;
+  rgb.green = 255;
+  rgb.blue = 255;
+  this->writeRGB(rgb);
 }
 
 
 void Flood::on() {
-  queCode(K24_ON);
+  this->queCode(K24_ON);
   this->isOn = true;
 }
 void Flood::off() {
-  queCode(K24_OFF);
+  this->queCode(K24_OFF);
 //  send(K24_SMOOTH);
   this->isOn = false;
 }
@@ -66,18 +75,17 @@ void Flood::setBright(byte level) {
   
   Serial << F("Flood: bright: ") << level << endl;
   if( level > currentBright ) {
-    for( byte sends=level-currentBright); sends > 0; sends--) queCode(K24_UP);
+    for( byte sends=level-currentBright; sends > 0; sends--) this->queCode(K24_UP);
   } else if( level < currentBright) {
-    for( byte sends=currentBright-level); sends > 0; sends--) queCode(K24_DOWN);
+    for( byte sends=currentBright-level; sends > 0; sends--) this->queCode(K24_DOWN);
   }
   // track
-  currentBright = level;
+  this->currentBright = level;
 }
 
 void Flood::sendCode(unsigned long data) {
   Serial << F("Flood: send: ") << _HEX(data) << endl;
-  // simple wrapper
-  irsend.sendNEC(data, 32);
+  ir->sendNEC(data, 32);
 }
 
 void Flood::queCode(unsigned long data) {
@@ -87,7 +95,7 @@ void Flood::queCode(unsigned long data) {
 
 void Flood::update() {
   // send on an interval
-  static Metro canSend(sendInterval);
+  static Metro canSend(this->sendInterval);
   
   // check the que and the timer
   if( canSend.check() & !que.isEmpty() ) {
@@ -132,20 +140,20 @@ void Flood::writeRGB(RGB color) {
 }
 
 // helper functions
-byte avgIntensity(unsigned long c1, unsigned long c2, unsigned long c3) {
+byte Flood::avgIntensity(unsigned long c1, unsigned long c2, unsigned long c3) {
   unsigned long sum = c1 + c2 + c3;
   return( sum/3UL );
 }
-byte avgIntensity(unsigned long c1, unsigned long c2) {
+byte Flood::avgIntensity(unsigned long c1, unsigned long c2) {
   unsigned long sum = c1 + c2;
   return( sum/2UL );
 }
-byte intensityToBrightness(byte intensity) {
+byte Flood::intensityToBright(byte intensity) {
   // serious "magic number" time
   // we only have N_BRIGHT_STEPS=5 color steps into which we map 0-255
   const byte cutoff[N_BRIGHT_STEPS] = {0, 8, 26, 82, 255};
   
-  for( b=0; b<N_BRIGHT_STEPS; b++ ) {
+  for( byte b=0; b<N_BRIGHT_STEPS; b++ ) {
     if( intensity <= cutoff[b] ) return( b );
   }
 }

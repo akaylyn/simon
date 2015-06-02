@@ -20,17 +20,13 @@ class Fire {
 
     void stop();
 
-
-  protected:
     // pin control
     byte firePin, airPin;
  
-    void airBurst();
-    // Timer control for solenoids
-    Timer solenoids;
-  
 };
 
+// due to callback requirements for Timer library, I have to use a non-member function
+void airBurst();
 
 // pin state definitions
 #define OFF HIGH

@@ -1,5 +1,8 @@
 #include "Fire.h"
 
+// since the callback is outside the class, then the timers need to be outside the class.
+Timer solenoids;
+  
 Fire::Fire(byte firePin, byte airPin) {
   this->firePin = firePin;
   this->airPin = airPin;
@@ -36,7 +39,7 @@ void Fire::perform(towerInstruction &inst) {
   lockoutTimer.reset();
   
   // reset timers
-  stop();
+  this->stop();
   
   // fire it up.
   solenoids.pulseImmediate(firePin, flameTime, ON);
@@ -51,28 +54,28 @@ void Fire::perform(towerInstruction &inst) {
 
     case FE_kickStart:  // toss in some air at the beginning; can't start for 50ms
       for ( unsigned long i = delayAirTime; i < (flameTime / 3UL); i += airPulseTime * 2UL)
-        solenoids.after(i, this->airBurst); // load timers
+        solenoids.after(i, airBurst); // load timers
       break;
     case FE_kickMiddle:  // toss in some air in the middle
       for ( unsigned long i = max(delayAirTime, flameTime / 3UL); i < (flameTime * 2UL / 3UL); i += airPulseTime * 2UL)
-        solenoids.after(i, this->airBurst); // load timers
+        solenoids.after(i, airBurst); // load timers
       break;
     case FE_kickEnd:  // toss in some air at the end
       for ( unsigned long i = max(delayAirTime, flameTime * 2UL / 3UL); i < flameTime; i += airPulseTime * 2UL)
-        solenoids.after(i, this->airBurst); // load timers
+        solenoids.after(i, airBurst); // load timers
       break;
 
     case FE_gatlingGun: // short bursts of air throughout
       for ( unsigned long i = delayAirTime; i < flameTime; i += airPulseTime * 3UL)
-        solenoids.after(i, this->airBurst); // load timers
+        solenoids.after(i, airBurst); // load timers
       break;
     case FE_randomly:  // toss in some air in a random pattern
       for ( unsigned long i = delayAirTime; i < flameTime; i += random(airPulseTime * 3UL, airPulseTime * 10UL))
-        solenoids.after(i, this->airBurst); // load timers
+        solenoids.after(i, airBurst); // load timers
       break;
     case FE_veryLean: // as much air as as we can before getting "too lean"
       for ( unsigned long i = delayAirTime; i < flameTime; i += airPulseTime * 2UL)
-        solenoids.after(i, this->airBurst); // load timers
+        solenoids.after(i, airBurst); // load timers
       break;
   }
 
@@ -80,9 +83,10 @@ void Fire::perform(towerInstruction &inst) {
 }
 
 // pulse the air on 
-void Fire::airBurst() {
+void airBurst() {
   //  Serial << "Air.   short air:" << millis() << endl;
-  solenoids.pulseImmediate(airPin, airPulseTime, ON);
+  extern Fire fire;
+  solenoids.pulseImmediate(fire.airPin, airPulseTime, ON);
 }
 
 void Fire::stop() {

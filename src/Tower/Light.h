@@ -8,38 +8,17 @@
 #include <RGBlink.h> // control LEDs
 #include <IRremote.h> // control IR Rx lighting
 #include <QueueArray.h> // queing for IR transmissions
+#include <Metro.h> // countdown timers
 
 #include <Streaming.h> // <<-style printing
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
 
-// different lighting modes available.
-enum lightEffect_t {
-  SOLID = 0, // always on
-  BLINK = 1, // blinking with intervals
-  FADE = 2 // soft fading
-}
-
-class Light {
-  public:
-
-  Light(byte redPin, byte greenPin, byte bluePin, byte floodPin);
-  void update();
-  void perform(towerInstruction &inst);
-  void effect(lightEffect_t effect = SOLID, uint16_t onTime = 1000UL, uint16_t offTime = 100UL);
-
-  private:
-  // RGB lighting tied together on tank
-  LED tank;
-  // RGB lighting flood
-  Flood flood;
-};
-
 class Flood {
   public:
     // startup
-    Flood(byte floodPin);
+    Flood(byte floodPin, unsigned long sendInterval = 10UL, byte sendCount = 2);
 
     // update routine for resends
     void update();
@@ -50,6 +29,7 @@ class Flood {
     void on();
     void off();
 
+    void setBright(byte level);
     void queCode(unsigned long data);
     void sendCode(unsigned long data);
 
@@ -59,14 +39,43 @@ class Flood {
 
     // que control for IR blaster
     QueueArray <unsigned long> que;
-    const unsigned long sendInterval = 10UL; // Need to wait before resending IR packets.
-    const byte sendCount = 2; // NEC IR protocol requires packets get sent in triplicate. Testing suggests duplicate is enough.
+    unsigned long sendInterval; // Need to wait before resending IR packets.
+    byte sendCount; // NEC IR protocol requires packets get sent in triplicate. Testing suggests duplicate is enough.
 
     // Use NEC IR protocol
-    IRsend ir;
+    IRsend *ir;
+    
+    byte avgIntensity(unsigned long c1, unsigned long c2, unsigned long c3);
+    byte avgIntensity(unsigned long c1, unsigned long c2);
+    byte intensityToBright(byte intensity);
+
 };
 
-/ NEC IR protocol commands
+
+// different lighting modes available.
+enum lightEffect_t {
+  SOLID = 0, // always on
+  BLINK = 1, // blinking with intervals
+  FADE = 2 // soft fading
+};
+
+class Light {
+  public:
+
+  Light(byte redPin, byte greenPin, byte bluePin, byte floodPin);
+  void update();
+  void perform(towerInstruction &inst);
+  void effect(lightEffect_t effect = SOLID, uint16_t onTime = 1000UL, uint16_t offTime = 100UL);
+
+  private:
+  
+  // RGB lighting tied together on tank
+  LED *tank;
+  // RGB lighting flood
+  Flood *flood;
+};
+
+// NEC IR protocol commands
 // 8 bits address and complement; 8 bits command and complement
 //                     command   comp c
 #define K24_OFF          0xF740BF // 0000 0000 1111 0111 0100 0000 1011 1111
