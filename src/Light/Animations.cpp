@@ -1,15 +1,10 @@
 #include "Animations.h"
 
-Animations animations;
+//Animations animations;
+//extern Animations animations;
+/*animations.i = 1;
 
-#include "Animations/ColorWipe.h"
-#include "Animations/LaserWipe.h"
-
-/*
-ButtonAnimations btn;
 RimAnimations rim;
-
-animations.Btn = btn;
-animations.Rim = rim;
+animations.name = "test";
+animations.rim = rim;
 */
-

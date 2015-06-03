@@ -1,7 +1,5 @@
 #include "LaserWipe.h"
 
-#include "Animations.h"
-#include "Light.h"
 extern Animations animations;
 
 // color wipes the last 8 pixels on the buttons

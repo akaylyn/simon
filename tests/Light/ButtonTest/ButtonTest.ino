@@ -8,9 +8,9 @@
 #include <avr/wdt.h> // watchdog timer
 #include "Light.h"
 #include "Animations.h"
-//#include "Animations.cpp"
-#include "ConcurrentAnimator.h"
 #include "ButtonTest.h"
+#include "ConcurrentAnimator.h"
+#include "All.h"
 
 #define PIN 4
 

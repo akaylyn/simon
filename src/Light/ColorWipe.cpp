@@ -1,5 +1,5 @@
+#include "ColorWipe.h"
 #include "Animations.h"
-//#include "Light.h"
 
 extern Animations animations;
 
@@ -11,7 +11,7 @@ void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int c, int wait) {
     matrix.show();
   }
 }
-animations.Rim.ColorWipe = colorWipeMatrix;
+animations.Test = colorWipeMatrix;
 
 // Fill the dots one after the other with a color
 // returns the position of the led that was lit

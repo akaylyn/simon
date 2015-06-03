@@ -2,6 +2,8 @@
 #define Animations_h
 
 #include <Adafruit_Neopixel.h>
+#include <Adafruit_NeoMatrix.h>
+
 // Animations are defined within the Animations directory
 
 typedef void (*AnimateFunc)(Adafruit_NeoPixel&, int, int, int, void*);
@@ -17,10 +19,15 @@ struct RimAnimations {
     AnimateFunc ColorWipe;
 };
 
-struct Animations {
-    RimAnimations Rim;
-    ButtonAnimations Btn;
-};
+class Animations {
+    public:
+        int i;
+        RimAnimations Rim;
+        ButtonAnimations Btn;
+    //    Animations(){};
+        AnimateFunc Test;
+} animations;
+animations.i = 1;
 
 #endif
 
