@@ -93,6 +93,7 @@ FiniteStateMachine& FiniteStateMachine::transitionTo(State& state){
 	return *this;
 }
 
+
 FiniteStateMachine& FiniteStateMachine::immediateTransitionTo(State& state){
 	currentState->exit();
 	currentState = nextState = &state;

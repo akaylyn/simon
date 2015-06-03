@@ -37,32 +37,23 @@
 #include "Fire.h"
 #include "Sound.h"
 #include "Mic.h"
+#include "Simon.h"
 
-// Number of correct <= num that achieves the level
-#define FANFARE_NONE 0
-#define FANFARE_1 1
-#define FANFARE_2 2
-#define FANFARE_3 3
-#define FANFARE_4 4
+// fanfare mapping
+enum fanfare_t {
+  LEVEL1=0, // won, a little
+  LEVEL2, // won more
+  LEVEL3,  
+  LEVEL4, // etc.
+  
+  N_LEVELS, // 4
+  
+  NONE, // nada
+  IDLE, // system was idle long enough to trigger a fanfare
+  CONSOLATION, // player didn't get very far
+  MAXOUT // must of had a pen and paper, because they max'd at 32 correct
+};
 
-/* // Real levels
-#define FANFARE_LEVEL0 8
-#define FANFARE_LEVEL1 12
-#define FANFARE_LEVEL2 16
-#define FANFARE_LEVEL3 20
-*/
-// Testing levels
-#define FANFARE_LEVEL1 2
-#define FANFARE_LEVEL2 3
-#define FANFARE_LEVEL3 4
-#define FANFARE_LEVEL4 5
-
-// gratz Player 1, do some Music, Light, Sound, Fire.
-// level 0-4.  0 is low, 4 is amazing
-void playerFanfare(byte level);
-
-// Get the fanfare level to play.  Returns 0-4
-byte getLevel(int correct);
-
+void playerFanfare(fanfare_t level);
 
 #endif

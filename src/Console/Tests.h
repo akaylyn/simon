@@ -1,6 +1,6 @@
 // Responsible for sensor readings
-#ifndef TestModes_h
-#define TestModes_h
+#ifndef Tests_h
+#define Tests_h
 
 #include <Arduino.h>
 

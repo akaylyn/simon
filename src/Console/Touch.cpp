@@ -2,19 +2,17 @@
 
 #include "Touch.h"
 
-// buttons
-Bounce redButton = Bounce(BUTTON_RED, BUTTON_DEBOUNCE_TIME);
-Bounce grnButton = Bounce(BUTTON_GRN, BUTTON_DEBOUNCE_TIME);
-Bounce bluButton = Bounce(BUTTON_BLU, BUTTON_DEBOUNCE_TIME);
-Bounce yelButton = Bounce(BUTTON_YEL, BUTTON_DEBOUNCE_TIME);
-
 // MPR121 object instantiated in the library.
 
-boolean Touch::begin() {
+boolean Touch::begin(byte sensorIndex[N_COLORS]) {
 
   Serial << F("Touch: startup.") << endl;
 
   // following Examples->BareConductive_MPR->SimpleTouch
+
+  // store it
+  for( byte i=0; i<N_COLORS; i++ )
+    this->sensorIndex[i] = sensorIndex[i];
 
   // 0x5A is the MPR121 I2C address on the Bare Touch Board
   Wire.begin();
@@ -73,10 +71,11 @@ boolean Touch::begin() {
   pinMode(BUTTON_BLU, INPUT_PULLUP);
   pinMode(BUTTON_YEL, INPUT_PULLUP);
 
-  button[I_RED] = &redButton;
-  button[I_GRN] = &grnButton;
-  button[I_BLU] = &bluButton;
-  button[I_YEL] = &yelButton;
+  // buttons
+  button[I_RED] = new Bounce(BUTTON_RED, BUTTON_DEBOUNCE_TIME);
+  button[I_GRN] = new Bounce(BUTTON_GRN, BUTTON_DEBOUNCE_TIME);
+  button[I_BLU] = new Bounce(BUTTON_BLU, BUTTON_DEBOUNCE_TIME);
+  button[I_YEL] = new Bounce(BUTTON_YEL, BUTTON_DEBOUNCE_TIME);
 
   Serial << F("Button: startup complete.") << endl;
 
@@ -85,14 +84,14 @@ boolean Touch::begin() {
 
 // Returns true if the state of a specific button has changed
 // based on what it was previously.
-boolean Touch::changed(byte index) {
+boolean Touch::changed(color index) {
   boolean ret = false;
 
   // capsense
   static boolean previousState[N_COLORS];
 
   MPR121.updateTouchData();
-  boolean currentState = MPR121.getTouchData(index);
+  boolean currentState = MPR121.getTouchData(sensorIndex[index]);
 
   if (previousState[index] != currentState) {
     previousState[index] = currentState;
@@ -100,7 +99,7 @@ boolean Touch::changed(byte index) {
   }
 
   // hard buttons
-  ret |= button[index]->update();
+  ret |= button[sensorIndex[index]]->update();
 
   // return
   return ( ret );
@@ -108,75 +107,83 @@ boolean Touch::changed(byte index) {
 }
 // returns true if any of the buttons are pressed.
 boolean Touch::anyChanged() {
-  return (
-  changed(I_RED) ||
-    changed(I_GRN) ||
-    changed(I_BLU) ||
-    changed(I_YEL)
-    );
+  return ( changed(I_RED) || changed(I_GRN) || changed(I_BLU) || changed(I_YEL) );
 }
 
 
 // returns true WHILE a specific sensor IS PRESSED
 // this function will be called after touchChanged() asserts a change.
-boolean Touch::pressed(byte index) {
+boolean Touch::pressed(color index) {
   boolean ret = false;
 
   // capsense
   MPR121.updateTouchData();
-  ret |= MPR121.getTouchData(index);
+  ret |= MPR121.getTouchData(sensorIndex[index]);
 
   // hard buttons
   // call the updater for debouncing first.
-  boolean toss = button[index]->update();
+  boolean toss = button[sensorIndex[index]]->update();
 
-  ret |= button[index]->read() == PRESSED_BUTTON;
+  ret |= button[sensorIndex[index]]->read() == PRESSED_BUTTON;
 
   // return
   return ( ret );
 }
 
 // returns true if any of the buttons have switched states.
-// avoid short-circuit eval so that each button gets an update
 boolean Touch::anyPressed() {
-  return (
-  pressed(I_RED) ||
-    pressed(I_GRN) ||
-    pressed(I_BLU) ||
-    pressed(I_YEL)
-    );
+  return ( pressed(I_RED) || pressed(I_GRN) || pressed(I_BLU) || pressed(I_YEL) );
 }
 
-// returns "distance" an object is to the sensor, scaled [0, 32767]
-// realistically, we have 10-bit resolution?
+// returns the first pressed button found
+color Touch::whatPressed() {
+  if( pressed(I_RED) ) return (I_RED);
+  if( pressed(I_GRN) ) return (I_GRN);
+  if( pressed(I_BLU) ) return (I_BLU);
+  if( pressed(I_YEL) ) return (I_YEL);
+  // otherwise, signal "Boo!"
+  return(N_COLORS);
+}
+
+// returns "distance" an object is to the sensor, scaled [0, 255]
+// realistically, we see distance readings in [0,50], so scaling to a byte is reasonable
 // for distance/proximity, see http://cache.freescale.com/files/sensors/doc/app_note/AN3893.pdf
-byte Touch::distance(byte sensorIndex) {
+byte Touch::distance(byte index) {
 
   // for this, we need the filtered data
   int sensorRead = 0;
   for( int i=0; i<10; i++ ) {
     // average ten readings
     boolean bar = MPR121.updateFilteredData();
-    sensorRead += MPR121.getFilteredData(sensorIndex);
+    sensorRead += MPR121.getFilteredData(index);
   }
   sensorRead /= 10;
   
   // track sensor returns for 12 sensors and the virtual 13th.
   static int minRead[13] = { 350,350,350,350,350,350,350,350,350,350,350,350,350 }; // 300 seems to be the normal low end, but let's leave some room for drift
-  minRead[sensorIndex] = min(minRead[sensorIndex], sensorRead); 
+  minRead[index] = min(minRead[index], sensorRead); 
 
-  int delta = sensorRead - minRead[sensorIndex];
+  int delta = sensorRead - minRead[index];
   
   // track deltas 12 sensors and the virtual 13th.
   static int maxDelta[13] = { 0,0,0,0,0,0,0,0,0,0,0,0,0 };
-  maxDelta[sensorIndex] = max(maxDelta[sensorIndex], delta); 
+  maxDelta[index] = max(maxDelta[index], delta); 
 
   // nonlinear transform to get higher sensitivity at larger distances
-  float distance = fscale(0, maxDelta[sensorIndex], 0, 255, delta, -3.0);
+  byte distance = fscale(0, maxDelta[index], 0, 255, delta, -3.0);
 //  Serial << F("Proximity: distance=") << distance << F(" delta=") << delta << F(" curr=") << sensorRead << F(" minR=") << minRead[sensorIndex] << F(" maxD=") << maxDelta[sensorIndex] << endl;
   
   return( distance );
 
+}
+
+byte Touch::distance(color index) {
+  // reference color
+  return( distance(sensorIndex[index]) );
+}
+
+byte Touch::proximity() {
+  return( distance(12) );
 }
 
 // snagged this from https://github.com/BareConductive/midi_theremin/blob/public/midi_theremin/midi_theremin.ino

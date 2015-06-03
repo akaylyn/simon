@@ -26,8 +26,8 @@
 #include "Sensor.h" // Sensor subunit.  Responsible for game and fire enable
 
 //------ "This" units.
-#include "Gameplay.h" // Game Play subunit.  Responsible for Simon game.
-#include "TestModes.h"
+#include "Simon.h" // Game Play subunit.  Responsible for Simon game.
+#include "Tests.h"
 
 //------ Output units.
 #include "Fire.h" // Fire subunit.  Responsible for UX output on remote Towers (fire)
@@ -70,7 +70,8 @@ void setup() {
   network.begin();
   
   //------ Input units.
-  touch.begin();
+  byte touchMapToColor[N_COLORS] = {I_RED, I_GRN, I_BLU, I_YEL};
+  touch.begin(touchMapToColor);
   sensor.begin();
   mic.begin();
   
@@ -86,13 +87,12 @@ void setup() {
   nodeID AllIn[N_COLORS] = { BROADCAST, BROADCAST, BROADCAST, BROADCAST };
   
   fire.begin(Each2Own); //
+  
   Serial1.begin(19200);
   light.begin(Each2Own, &Serial1); // 
-  if ( !sound.begin() && RUN_UNIT_ON_ERROR || 0) sound.unitTest();
+  
+  sound.begin();
      
-  //------ "This" units.
-  gameplayStart(sound);
-
   Serial << F("STARTUP: complete.") << endl;
 }
 
@@ -109,6 +109,10 @@ void loop() {
     // Call the current mode loop, without startup.
     interactiveModefunctions[currentMode](false);
   }
+  
+  // perform Tower resends; you should do this always if you want meaningful sychronization with Towers
+  network.update();
+
 }
 
 void startupNextModeAndLoop() {
@@ -140,18 +144,8 @@ void gamePlayModeLoop(boolean performStartup) {
   } 
   
   // play the Simon game; returns true if we're playing  
-  if( gameplayUpdate() ) {
-    kioskTimer.reset(); // game's afoot, so reset timer for kiosk mode display
-  } 
-  else {
-    // perform Tower resends
-    network.update();
-  }
+  simon.update();
 
-  if( kioskTimer.check() ) {
-    // song and dance;  "come play with me!"
-    idleFanfare();
-  }
 }
 
 void bongoModeLoop(boolean performStartup) {

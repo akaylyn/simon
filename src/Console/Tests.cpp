@@ -1,4 +1,4 @@
-#include "TestModes.h"
+#include "Tests.h"
 
 //------ Input units.
 #include "Touch.h" // Touch subunit. Responsible for UX input.
@@ -21,30 +21,22 @@ void TestModes::bongoModeLoop(bool performStartup) {
   // track the last time we fired
   static unsigned long lastFireTime = millis();
 
-  if ( touch.anyChanged()) {
-    sound.stopTones(); // stop tones
+  if ( touch.anyPressed()) {
     // if anything's pressed, pack the instructions
-    for ( byte i = 0; i < N_COLORS; i++ ) {    
-      if ( touch.pressed(i) ) {
-        sound.playTone(i);
-        colorInstruction c = cMap[i];
-        light.setLight((color)i, c);
+    color pressed = touch.whatPressed();
+    sound.playTone(pressed);
+    colorInstruction c = cMap[pressed];
+    light.setLight(pressed, c);
 
-        // only allow full-on every 10s.
-        byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 5, 50);
-        fire.setFire((color)i, fireLevel, gatlingGun);
-        lastFireTime = millis();
-       } 
-      else {
-        light.clear();
-        fire.clear();
-      }
-    }
-  } 
-  else {
-    // maybe resend
-    network.update();
+    // only allow full-on every 10s.
+    byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 50UL, 500UL) / 10;
+    fire.setFire(pressed, fireLevel, gatlingGun);
+    lastFireTime = millis();
+  } else { 
+    light.clear(); // stop lights.
+    sound.stopTones(); // stop tones
   }
+
 }
 
 // uses the MPR121 device to adjust lights and sound based on Player 1's proximity to sensors
@@ -64,10 +56,6 @@ void TestModes::proximityModeLoop(bool performStartup) {
   if( performStartup || restartTimer.check() ) {
     Serial << "Starting up proximityMode" << endl;
         
-    //Serial << "Resetting the touch sensors" << endl;
-    touch.begin();
-    //Serial << "Done resetting the touch sensors" << endl;
-    
     sound.stopAll();
     sound.setLeveling(4, 0); // prep for 4x tones and no music.
 
@@ -84,7 +72,7 @@ void TestModes::proximityModeLoop(bool performStartup) {
   boolean showLightsNow = false;
   for( byte i = 0; i < N_COLORS; i++ ) {
     // read the sensor distance
-    byte dist = touch.distance(i);
+    byte dist = touch.distance((color)i);
     
     if( dist != lastDistance[i] ) {
       // adjust the volume based on the distance
