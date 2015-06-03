@@ -15,16 +15,17 @@
 
 class Instruction {
   public:
-    Instruction(byte setID);
-    boolean update(towerInstruction &inst);
+    void begin(nodeID node);
+    void update(colorInstruction &colorInst, fireInstruction &fireInst, modeSwitchInstruction &modeInst);
+    byte getNodeID();
     
   protected:   
     // Need an instance of the Radio Module
     RFM69 radio;
     // store my NODEID
-    byte nodeID;
+    nodeID node;
     // gets the network setup
-    byte networkStart(byte nodeID);
+    nodeID networkStart(nodeID node);
 };
 
 

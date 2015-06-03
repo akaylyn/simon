@@ -11,6 +11,9 @@
 #include <SPI.h> // for radio board 
 #include <RFM69.h> // RFM69HW radio transmitter module
 #include <EEPROM.h> // saving and loading radio settings
+// boostrap the tower nodeID to this value (2,3,4,5), overwriting EEPROM.
+// set "BROADCAST" to read EEPROM value
+#define HARD_SET_NODE_ID_TO BROADCAST
 #include "Instruction.h"
 
 // perform lighting
@@ -34,12 +37,9 @@
 #define PIN_AIR 8 // relay for air solenoid
 
 // instantiate
-// boostrap the tower nodeID to this value (2,3,4,5), overwriting EEPROM.
-// set "0" to read EEPROM value
-#define HARD_SET_NODE_ID_TO 0
-Instruction instruction(HARD_SET_NODE_ID_TO);
-Light light(PIN_R, PIN_G, PIN_B, PIN_IR);
-Fire fire(PIN_FLAME, PIN_AIR);
+Instruction instruction;
+Light light;
+Fire fire;
 
 // remote control
 #define RESET_PIN A0
@@ -48,15 +48,8 @@ Fire fire(PIN_FLAME, PIN_AIR);
 Bounce systemReset = Bounce(RESET_PIN, DEBOUNCE_TIME);
 Bounce modeSwitch = Bounce(MODE_SWITCH_PIN, DEBOUNCE_TIME);
 
-// spend this much time on a cycle of light updates when idle
-#define TEST_PATTERN_PERIOD 10000UL // ms
-
-// color definitions
-RGB c_red={255,0,0}; 
-RGB c_grn={0,255,0}; 
-RGB c_blu={0,0,255}; 
-RGB c_yel={255,255,0}; 
-RGB c_wht={255,255,255}; 
+// without comms for this duration, run a lighting test pattern
+#define IDLE_PERIOD 10000UL // ms
 
 void setup() {
   // put your setup code here, to run once:
@@ -67,6 +60,11 @@ void setup() {
   Serial << F("Setup: pausing after boot 1 sec...") << endl;
   delay(1000UL);
 
+  // startup
+  instruction.begin(HARD_SET_NODE_ID_TO);
+  light.begin(PIN_R, PIN_G, PIN_B, PIN_IR);
+  fire.begin(PIN_FLAME, PIN_AIR);
+  
   // random seed.
   randomSeed(analogRead(A3)); // or some other unconected pin
 
@@ -87,44 +85,64 @@ void loop() {
   fire.update();
   // check to see if we need to mess with the lights.
   light.update();
-  
+
   // a place to store instructions
-  static towerInstruction inst;
-  boolean newInstructions = false;
- 
+  static colorInstruction lastColorInst, newColorInst;
+  static fireInstruction lastFireInst, newFireInst;
+  static modeSwitchInstruction lastModeInst, newModeInst;
+
   // check for reset condition, and set the tanks to blink during reset
   if ( systemReset.update() ) { // reset state change
     Serial << F("Reset state change.  State: ");
     if (systemReset.read() == LOW) {
       Serial << F("reset.") << endl;
-      
-      setInst(inst, c_red); 
-      newInstructions = true;
+
+      newColorInst = cRed;
       light.effect(BLINK);
-    } else{
+    } else {
       Serial << F("normal.") << endl;
       light.effect(SOLID);
     }
   }
-  
-  // check for radio traffic instructions
-  newInstructions |= instruction.update(inst);
-  
+
   // if we're idle and we haven't received anything, cycle the lights.
-  static Metro idleUpdate(TEST_PATTERN_PERIOD);
-  if( !newInstructions && idleUpdate.check()) {
-    newInstructions |= idleTestPattern(inst);
+  static Metro idleUpdate(IDLE_PERIOD);
+
+  // check for radio traffic instructions
+  instruction.update(newColorInst, newFireInst, newModeInst);
+
+  if ( idleUpdate.check()) {
+    idleTestPattern(newColorInst);
+    // and take a moment to check heap+stack remaining
     Serial << F("Tower: free RAM: ") << freeRam() << endl;
   }
 
-  // check for new instructions
-  if ( newInstructions ) {
+  // execute any new instructions
+  if ( memcmp((void*)(&newColorInst), (void*)(&lastColorInst), sizeof(colorInstruction)) != 0 ) {
     // change the lights
-    light.perform(inst);
-    // change the fire
-    fire.perform(inst);
+    light.perform(newColorInst);
+    // cache
+    lastColorInst = newColorInst;
+    // reset idle
+    idleUpdate.reset();
   }
-  
+  if ( memcmp((void*)(&newFireInst), (void*)(&lastFireInst), sizeof(fireInstruction)) != 0 ) {
+    // change the lights
+    fire.perform(newFireInst);
+    // cache
+    lastFireInst = newFireInst;
+    // reset idle
+    idleUpdate.reset();
+  }
+  if ( memcmp((void*)(&newModeInst), (void*)(&lastModeInst), sizeof(modeSwitchInstruction)) != 0 ) {
+    // change the mode
+    modeChange(newModeInst);
+    // cache
+    lastModeInst = newModeInst;
+    // reset idle
+    idleUpdate.reset();
+  }
+
 }
 
 int freeRam () {
@@ -133,24 +151,44 @@ int freeRam () {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
-void setInst(towerInstruction &inst, RGB color) {
-  inst.red = color.red;
-  inst.green = color.green;
-  inst.blue = color.blue;
-  inst.flame = 0; // just to be sure
+void modeChange(modeSwitchInstruction &inst) {
+
+  Serial << F("Mode state change.  Going to mode: ") << inst.currentMode << endl;
+
+  // If we've gone to one of the test modes, display a color for 1.5 seconds.
+  // This should be the same amount of time that the console is playing a
+  // sound, so the delay won't get us out of sync
+  colorInstruction color;
+  switch( inst.currentMode ) {
+    case 1: color=cRed; break;
+    case 2: color=cGreen; break;
+    case 3: color=cRed; break;
+    case 4: color=cYellow; break;
+  }
+  light.perform(color);
+  
+  // run a delay, paying attention to solenoid timers during.
+  static Metro delayTime(1500UL);
+  delayTime.reset();
+  while ( !delayTime.check() ) {
+    // check to see if we need to mess with the fire
+    fire.update();
+    // check to see if we need to mess with the lights.
+    light.update();
+  }
+
 }
 
-boolean idleTestPattern(towerInstruction &inst) {
-  // how many colors to cycle through
-  const RGB colors[N_COLORS] = {c_red, c_blu, c_yel, c_grn};
+void idleTestPattern(colorInstruction &inst) { 
+  const byte colorOrder[N_COLORS]={I_RED, I_BLU, I_YEL, I_GRN}; // go clockwise around the simon console
   
   // where are we?
-  static byte c = 0;
-  c = (c==N_COLORS) ? 0 : c+1;
+  static byte c = instruction.getNodeID(); // all the nodes will start one off from each other.
+  c += 1;
+  c = c % N_COLORS;
   
-  setInst(inst, colors[c]);
-  
-  return( true );
+  inst = cMap[colorOrder[c]];
+  Serial << F("Idle: color ") << c+1 << F(" of ") << N_COLORS << F(". R:") << inst.red << F(" G:") << inst.green << F(" B:") << inst.blue << endl;
 }
 
 

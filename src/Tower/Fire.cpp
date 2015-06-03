@@ -1,9 +1,14 @@
 #include "Fire.h"
 
-// since the callback is outside the class, then the timers need to be outside the class.
-Timer solenoids;
+// save a pointer to the instatiated Fire class
+Fire *thisHack;
+
+void Fire::begin(byte firePin, byte airPin) {
+  Serial << F("Fire::begin") << endl;
   
-Fire::Fire(byte firePin, byte airPin) {
+  // save a pointer to this
+  thisHack = this;
+  // pin assignments
   this->firePin = firePin;
   this->airPin = airPin;
   // order is important.  set then output.
@@ -18,7 +23,7 @@ void Fire::update() {
   solenoids.update();
 }
 
-void Fire::perform(towerInstruction &inst) {
+void Fire::perform(fireInstruction &inst) {
   // track if we're running something
   static Metro lockoutTimer;
   
@@ -44,49 +49,45 @@ void Fire::perform(towerInstruction &inst) {
   // fire it up.
   solenoids.pulseImmediate(firePin, flameTime, ON);
   
-  // unpack the air effect instruction
-  flameEffect_t effect = inst.effect;
-  
   // air effects are more complicated
-  switch ( effect ) {
-    case FE_veryRich: // just straight propane (DEFAULT) "very rich"
+  switch ( inst.effect ) {
+    case veryRich: // just straight propane (DEFAULT) "very rich"
       break; // well, that was easy.
 
-    case FE_kickStart:  // toss in some air at the beginning; can't start for 50ms
+    case kickStart:  // toss in some air at the beginning; can't start for 50ms
       for ( unsigned long i = delayAirTime; i < (flameTime / 3UL); i += airPulseTime * 2UL)
         solenoids.after(i, airBurst); // load timers
       break;
-    case FE_kickMiddle:  // toss in some air in the middle
+    case kickMiddle:  // toss in some air in the middle
       for ( unsigned long i = max(delayAirTime, flameTime / 3UL); i < (flameTime * 2UL / 3UL); i += airPulseTime * 2UL)
         solenoids.after(i, airBurst); // load timers
       break;
-    case FE_kickEnd:  // toss in some air at the end
+    case kickEnd:  // toss in some air at the end
       for ( unsigned long i = max(delayAirTime, flameTime * 2UL / 3UL); i < flameTime; i += airPulseTime * 2UL)
         solenoids.after(i, airBurst); // load timers
       break;
 
-    case FE_gatlingGun: // short bursts of air throughout
+    case gatlingGun: // short bursts of air throughout
       for ( unsigned long i = delayAirTime; i < flameTime; i += airPulseTime * 3UL)
         solenoids.after(i, airBurst); // load timers
       break;
-    case FE_randomly:  // toss in some air in a random pattern
+    case randomly:  // toss in some air in a random pattern
       for ( unsigned long i = delayAirTime; i < flameTime; i += random(airPulseTime * 3UL, airPulseTime * 10UL))
         solenoids.after(i, airBurst); // load timers
       break;
-    case FE_veryLean: // as much air as as we can before getting "too lean"
+    case veryLean: // as much air as as we can before getting "too lean"
       for ( unsigned long i = delayAirTime; i < flameTime; i += airPulseTime * 2UL)
         solenoids.after(i, airBurst); // load timers
       break;
   }
 
-  Serial << F("Fire: effect duration ") << flameTime << F(" ms. Effect ") << effect << F(". Lockout ") << lockoutInterval << endl;
+  Serial << F("Fire: effect duration ") << flameTime << F(" ms. Effect ") << inst.effect << F(". Lockout ") << lockoutInterval << endl;
 }
 
 // pulse the air on 
-void airBurst() {
+void Fire::airBurst() {
   //  Serial << "Air.   short air:" << millis() << endl;
-  extern Fire fire;
-  solenoids.pulseImmediate(fire.airPin, airPulseTime, ON);
+  thisHack->solenoids.pulseImmediate(thisHack->airPin, airPulseTime, ON);
 }
 
 void Fire::stop() {

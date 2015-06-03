@@ -54,7 +54,7 @@ void idleState() {
     // going to start a game
     Serial << F("Gameplay: Idle->Game") << endl;
     // bring up the lights
-    light.setAllOff();
+    light.clear();
 
     sound.stopAll();
     sound.setLeveling(1, 1); // 1x tone and 1x track
@@ -64,7 +64,7 @@ void idleState() {
     waitForButtonsReleased();
 
     // turn off the lights; immediate send
-    light.setAllOff(); 
+    light.clear(); 
 
     // let's play a game
     simon.transitionTo(game);
@@ -164,7 +164,7 @@ void playerState() {
 
     // done
     sound.stopTones();
-    light.setAllOff();
+    light.clear();
 
     if ( correct ) {
       correctLength++;
@@ -203,7 +203,7 @@ void exitingState() {
 
   // safer not to assume anything about the lights and sound coming into these states
   // shut down lights and sound
-  light.setAllOff();
+  light.clear();
   sound.stopAll(); // note that this is stopping ROCK
    
   Serial << "Inside exiting state.  correct: " << correctLength << endl;
@@ -220,7 +220,7 @@ void exitingState() {
   }
   
   // shut down lights and sound
-  light.setAllOff();
+  light.clear();
   sound.stopAll();
   
   // reset correct length
@@ -261,7 +261,14 @@ void setSoundLights(byte colorIndex, boolean correctTone) {
   }
 
   // Lights on Tower
-  light.setLight(colorIndex, LIGHT_ON, true);
+  colorInstruction inst;
+  switch( colorIndex ) {
+    case I_RED: inst = cRed; break;
+    case I_GRN: inst = cGreen; break;
+    case I_BLU: inst = cBlue; break;
+    case I_YEL: inst = cYellow; break;
+  }
+  light.setLight((color)colorIndex, inst);
 
 }
 
@@ -291,13 +298,14 @@ void animateFailure()
   sound.playLose();
   
   for (int i = 0; i < 6; i++) {
-    light.setAllLight(LIGHT_ON, true);
+    colorInstruction inst = cWhite;
+    light.setLight(BROADCAST, inst);
     delay(300);
-    light.setAllOff();
+    light.clear();
     delay(100);
   }
 
-  light.setAllOff();
+  light.clear();
   sound.stopAll();
 }
 
@@ -322,7 +330,7 @@ void playSequence() {
 
     // done
     sound.stopTones();
-    light.setAllOff();
+    light.clear();
     // pause between next
     waitForTimer(pauseDuration);
   }
@@ -350,33 +358,18 @@ unsigned long trandom(unsigned long xmin, unsigned long xmode, unsigned long xma
   }
 }
 
-//
-void flameOn() {
-}
-void flameOff() {
-}
-
-void towerPoof(int poofCount) {
-  Serial << F("! Poofs. N:") << poofCount << endl;
-  for (int i = 0; i < poofCount; i++) {
-    flameOn();
-    delay(trandom(POOF_MIN, POOF_MODE, POOF_MAX));
-    flameOff();
-    delay(random(WAIT_MIN, WAIT_MAX));
-  }
-}
-
 void waitForButtonsReleased() {
   // wait for all of the buttons to be released.
   while ( touch.anyPressed() ) {
-    light.update();
+    network.update();
   }
 }
 
 void waitForTimer(unsigned long t) {
   Metro delayNow(t);
+  delayNow.reset();
   while (! delayNow.check() ) {
-    light.update();
+    network.update();
   }
 }
 

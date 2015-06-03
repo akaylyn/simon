@@ -1,9 +1,12 @@
 #include "Light.h"
 
-Light::Light(byte redPin, byte greenPin, byte bluePin, byte floodPin) {
+void Light::begin(byte redPin, byte greenPin, byte bluePin, byte floodPin) {
+  Serial << F("Light::begin") << endl;
+  
   // constructors
   this->tank = new LED(redPin, greenPin, bluePin);
-  this->flood = new Flood(floodPin);
+  this->flood = new Flood();
+  this->flood->begin(floodPin);
   // tank effect
   this->effect(SOLID);
 }
@@ -13,15 +16,15 @@ void Light::effect(lightEffect_t effect, uint16_t onTime, uint16_t offTime) {
   tank->setBlink(onTime, offTime);
 }
 
-void Light::perform(towerInstruction &inst) {
+void Light::perform(colorInstruction &inst) {
   // copy out the colors
-  static RGB rgb;
+  static RGB rgb; // could take advantage of the aligned memory structure and memcpy, but...
   rgb.red = inst.red;
   rgb.green = inst.green;
   rgb.blue = inst.blue;
   
   // apply
-  flood->writeRGB(rgb); 
+  flood->setColor(inst); 
   tank->writeRGB(rgb);
 }
 
@@ -31,12 +34,14 @@ void Light::update() {
   tank->update();
 }
 
-Flood::Flood(byte floodPin, unsigned long sendInterval, byte sendCount) {
+void Flood::begin(byte floodPin, unsigned long sendInterval, byte sendCount) {
+  Serial << F("Flood::begin") << endl;
+
   if( floodPin != 3 ) {
     Serial << F("Light: ERROR.  floodPin must be 3.  Halting.") << endl;
     while(1);
   }
-  pinMode(3, OUTPUT);
+  pinMode(3, OUTPUT); // just making sure you understand you can't change this.
   
   // instantiate
   this->ir = new IRsend();
@@ -44,28 +49,26 @@ Flood::Flood(byte floodPin, unsigned long sendInterval, byte sendCount) {
   // save parameters
   this->sendInterval = sendInterval;
   this->sendCount = sendCount;
+  // assume we're at the dimmest setting at startup
+  this->currentBright = 0;
   
   // turn it on
   this->on(); 
   
-  // assume we're at the dimmest setting at startup
-  this->currentBright = 0;
-
   // set to white
-  RGB rgb;
-  rgb.red = 255;
-  rgb.green = 255;
-  rgb.blue = 255;
-  this->writeRGB(rgb);
+  colorInstruction color = cWhite;
+  this->setColor(color);
 }
 
 
 void Flood::on() {
   this->queCode(K24_ON);
+  this->queCode(K24_ON); // make sure
   this->isOn = true;
 }
 void Flood::off() {
   this->queCode(K24_OFF);
+  this->queCode(K24_OFF); // make sure
 //  send(K24_SMOOTH);
   this->isOn = false;
 }
@@ -105,7 +108,7 @@ void Flood::update() {
 }
 
 
-void Flood::writeRGB(RGB color) {  
+void Flood::setColor(colorInstruction &color) {  
   unsigned long code;
   byte bright;
   if( color.red > 0 && color.green > 0 && color.blue > 0 ) {

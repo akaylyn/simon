@@ -27,24 +27,23 @@ void TestModes::bongoModeLoop(bool performStartup) {
     for ( byte i = 0; i < N_COLORS; i++ ) {    
       if ( touch.pressed(i) ) {
         sound.playTone(i);
-        light.setLight(i, LIGHT_ON);
+        colorInstruction c = cMap[i];
+        light.setLight((color)i, c);
 
         // only allow full-on every 10s.
-        byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 0, 255);
-        light.setFire(i, fireLevel, FE_gatlingGun);
+        byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 5, 50);
+        fire.setFire((color)i, fireLevel, gatlingGun);
         lastFireTime = millis();
        } 
       else {
-        light.setLight(i, LIGHT_OFF);
-        light.setFire(i, LIGHT_OFF, FE_gatlingGun);
+        light.clear();
+        fire.clear();
       }
     }
-    // show
-    light.show();
   } 
   else {
     // maybe resend
-    light.update();
+    network.update();
   }
 }
 
@@ -94,34 +93,29 @@ void TestModes::proximityModeLoop(bool performStartup) {
       sound.setVolume(trTone[i], gain);  
       
       // set lights
-//      light.setLight(i, dist < distanceThreshold ? LIGHT_ON : LIGHT_OFF );
-      light.setLight(i, 255 - dist);
+      colorInstruction c = cMap[i];
+      c.red -= c.red > 0 ? dist : 0;
+      c.green -= c.green > 0 ? dist : 0;
+      c.blue -= c.blue > 0 ? dist : 0;
+      light.setLight((color)i, c);
+
       if( dist<10 ) {
         // only allow full-on every 10s.
-        byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 0, 255);
-        light.setFire(i, fireLevel, FE_gatlingGun);
+        byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 5, 50);
+        fire.setFire((color)i, fireLevel, gatlingGun);
         lastFireTime = millis();        
-      } else {
-        light.setFire(i, 0, FE_gatlingGun);
-      }
-      
-      showLightsNow = true;
+      } 
       
       // save it
       lastDistance[i] = dist;
-
     }
   }
   
-  if( showLightsNow ) light.show();
-  // update to towers
-  light.update();
-    
 }
 
 void TestModes::lightsTestModeLoop(bool performStartup) {
  static int lightColorIndex[N_COLORS];
- towerInstruction instruction;
+ colorInstruction instruction;
   
   if(performStartup) {
       Serial << "Starting up light mode" << endl;
@@ -129,14 +123,14 @@ void TestModes::lightsTestModeLoop(bool performStartup) {
     sound.stopAll();
     sound.setLeveling(1, 0);
   }
-  
+  /*
   for(int index = 0; index < N_TOWERS; index++)
   {    
     if(touch.changed(index) && touch.pressed(index)) {
       sound.playTrack(BOOP_TRACK);
       
       lightColorIndex[index]++;
-      lightColorIndex[index] %= 6;
+      lightColorIndex[index] %= N_COLORS;
       
       Serial << "Setting light " << index << " to color " << lightColorIndex[index] << endl;
       
@@ -189,10 +183,12 @@ void TestModes::lightsTestModeLoop(bool performStartup) {
       light.sendInstruction(instruction, towerNodeID[index]);
     }
   }
+  */
 }
 
 #define FIRE_TEST_ARMED_TIMEOUT_MILLIS 5 * 1000
 void TestModes::fireTestModeLoop(bool performStartup) {
+  /*
   static Metro armedTimer(FIRE_TEST_ARMED_TIMEOUT_MILLIS);
   static bool armed[N_TOWERS];
   
@@ -202,7 +198,6 @@ void TestModes::fireTestModeLoop(bool performStartup) {
       light.setAllLight(0, true); // Turn all the lights off
     }
   }
-  
   // If our armed timer has timed out and anything is armed, disarm things
   bool anyArmed = false;
   for(int index = 0; index < N_TOWERS; index++)
@@ -256,6 +251,7 @@ void TestModes::fireTestModeLoop(bool performStartup) {
       }
     }
   }
+  */
 }
 
 TestModes testModes;

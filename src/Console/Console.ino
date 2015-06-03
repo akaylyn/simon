@@ -14,10 +14,11 @@
 #include <RFM12B.h> // RFM12b radio transmitter module
 #include <EasyTransfer.h> // used for sending message to the sound module
 #include <wavTrigger.h> // sound board
+#include <QueueArray.h> // queing for radio transmissions
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
-#include <SoundMessage.h> // contains the share message for EasyTransfer
+#include "Network.h" // runs the network
 
 //------ Input units.
 #include "Touch.h" // Touch subunit. Responsible for UX input.
@@ -27,15 +28,14 @@
 //------ "This" units.
 #include "Gameplay.h" // Game Play subunit.  Responsible for Simon game.
 #include "TestModes.h"
-#include "Extern.h" // Extern subunit.  Responsible for interfacing with other projects via RFM12b.
 
 //------ Output units.
+#include "Fire.h" // Fire subunit.  Responsible for UX output on remote Towers (fire)
 #include "Light.h" // Light subunit.  Responsible for UX output local Console (light) and remote Towers (light/fire)
 #include "Sound.h" // Sound subunit.  Responsible for UX (music) output.
 
 // should Unit Tests be run if the startup routines return an error?
 #define RUN_UNIT_ON_ERROR false
-
 
 // ***** really should move Kiosk stuff to it's own .cpp/.h
 // define the minimum time between fanfares in kiosk mode  <- influenced by knob 1
@@ -66,18 +66,32 @@ void setup() {
   randomSeed(analogRead(A5));
 
   // start each unit
+  //------ Network
+  network.begin();
+  
   //------ Input units.
   touch.begin();
   sensor.begin();
   mic.begin();
   
   //------ Output units.
-  light.begin(); // moved this up to the front, as synchronization with Light is apparently important.
+  // this layout has towers arranged to only listen to one color channel
+  nodeID Each2Own[N_COLORS] = {
+                      TOWER1, // RED, upper right.  
+                      TOWER2, // GREEN, upper left. 
+                      TOWER3, // BLUE, lower right.  could also be BROADCAST.
+                      TOWER4  // YELLOW, lower left.  could also be BROADCAST.
+  };
+  // this layout has all towers listening to every color channel
+  nodeID AllIn[N_COLORS] = { BROADCAST, BROADCAST, BROADCAST, BROADCAST };
+  
+  fire.begin(Each2Own); //
+  Serial1.begin(19200);
+  light.begin(Each2Own, &Serial1); // 
   if ( !sound.begin() && RUN_UNIT_ON_ERROR || 0) sound.unitTest();
      
   //------ "This" units.
   gameplayStart(sound);
-  externStart();
 
   Serial << F("STARTUP: complete.") << endl;
 }
@@ -103,7 +117,9 @@ void startupNextModeAndLoop() {
   currentMode %= NUM_MODES; // wrap around
   
   // Tell the tower's we're in a new mode
-  light.sendModeSwitchInstruction(currentMode);
+  modeSwitchInstruction mode;
+  mode.currentMode = currentMode;
+  network.send(mode);
   
   // Play the sound to let the use know what mode we're in
   sound.stopAll();
@@ -128,12 +144,8 @@ void gamePlayModeLoop(boolean performStartup) {
     kioskTimer.reset(); // game's afoot, so reset timer for kiosk mode display
   } 
   else {
-    // we're not playing, so check for Extern traffic; returns true if we have traffic.
-    if ( externUpdate() ) {
-      // external traffic handling
-    }
-    // perform Tower network maintenance
-    light.updateNetwork();
+    // perform Tower resends
+    network.update();
   }
 
   if( kioskTimer.check() ) {

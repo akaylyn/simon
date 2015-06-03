@@ -18,12 +18,12 @@
 class Flood {
   public:
     // startup
-    Flood(byte floodPin, unsigned long sendInterval = 10UL, byte sendCount = 2);
+    void begin(byte floodPin, unsigned long sendInterval = 10UL, byte sendCount = 2);
 
     // update routine for resends
     void update();
     // set color
-    void writeRGB(RGB color);
+    void setColor(colorInstruction &color);
 
   protected:
     void on();
@@ -33,7 +33,7 @@ class Flood {
     void queCode(unsigned long data);
     void sendCode(unsigned long data);
 
-    RGB currentColor;
+    colorInstruction currentColor;
     int currentBright;
     boolean isOn;
 
@@ -62,9 +62,9 @@ enum lightEffect_t {
 class Light {
   public:
 
-  Light(byte redPin, byte greenPin, byte bluePin, byte floodPin);
+  void begin(byte redPin, byte greenPin, byte bluePin, byte floodPin);
   void update();
-  void perform(towerInstruction &inst);
+  void perform(colorInstruction &inst);
   void effect(lightEffect_t effect = SOLID, uint16_t onTime = 1000UL, uint16_t offTime = 100UL);
 
   private:

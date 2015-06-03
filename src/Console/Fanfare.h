@@ -32,7 +32,9 @@
 
 // makes heavy use of the modules.
 #include "Touch.h"
+#include "Network.h"
 #include "Light.h"
+#include "Fire.h"
 #include "Sound.h"
 #include "Mic.h"
 

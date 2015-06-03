@@ -14,19 +14,22 @@
 
 class Fire {
   public:
-    Fire(byte firePin, byte airPin);
+    void begin(byte firePin, byte airPin);
     void update();
-    void perform(towerInstruction &inst);
+    void perform(fireInstruction &inst);
 
     void stop();
 
+  private:
+    // callback for timers; static to drop the implied "this"
+    static void airBurst();
+
     // pin control
     byte firePin, airPin;
- 
+    
+    // timer control for solenoid impulses
+    Timer solenoids;
 };
-
-// due to callback requirements for Timer library, I have to use a non-member function
-void airBurst();
 
 // pin state definitions
 #define OFF HIGH

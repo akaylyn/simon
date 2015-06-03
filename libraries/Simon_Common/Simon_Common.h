@@ -1,45 +1,36 @@
 #ifndef Simon_Common_h
 #define Simon_Common_h
 
-// EEPROM location for radio settings.
-const byte radioConfigLocation = 42;
-// default RFM group
-#define D_GROUP_ID 188 
+//**** Preamble
+// we use serialized (bistream'd) structures to communicate, as these
+// can be handled by either EasyTransfer (Serial*) and RFM69HW/RFM12b (radio)
 
-// defined nodes in the network.  
-// Console
-const byte consoleNodeID = 1;
+//**** Radio
 
-// how many towers
-#define N_TOWERS 4
-// Towers
-const byte towerNodeID[N_TOWERS] = {2,3,4,5};
-
-// How many different gameplay/test modes we have
-#define NUM_MODES 5
-
-// nodeID=0 is understood to be "everyone" (broadcast).
-
-// RFM12b comms
 // Band  = 915 MHz
 // Group ID = 188
-// Simon 1-10
+#define D_GROUP_ID 188 
+// radio nodes/adddresses/ID's
+enum nodeID {
+	BROADCAST=0, // everyone on group 188
+	CONSOLE=1,
+	TOWER1=2,
+	TOWER2=3,
+	TOWER3=4,
+	TOWER4=5
+};
 // Giles 11-20
 // Clouds 21-210
+// EEPROM location for radio setting storage.
+const byte radioConfigLocation = 42;
 
-// how many colors
-#define N_COLORS 4
-// specific color indices to arrays
-#define I_RED 0
-#define I_GRN 1
-#define I_BLU 2
-#define I_YEL 3
+//**** Fire
 
 // solenoids take ~50ms to open fully.  Shorter requests are bumped up.
 const unsigned long minPropaneTime = 50UL; 
-// don't leave the solenoids open for longer than these intervals.  Longer requests are bumped down.
+// don't leave the solenoids open for longer than this interval.  Longer requests are bumped down.
 const unsigned long maxPropaneTime = 2000UL; 
-// after opening the flame solenoid for N ms, don't reopen for N * ?ClosedMultiplier ms.
+// after opening the flame solenoid for N ms, don't reopen for N * propaneClosedMultiplier ms.
 const unsigned int propaneClosedMultiplier = 1;
 
 // can add air to the propane for different effects
@@ -48,78 +39,87 @@ const unsigned long airPulseTime = 50UL;
 // by testing, we want to delay introduction of the air
 const unsigned long delayAirTime = 50UL;
 
-enum flameEffect_t {
+enum flameEffect {
 	// no air.  just straight propane.
-	FE_veryRich, // "very rich"
+	veryRich=0, // "very rich"
 	
 	// add some air to 1/3rd of the flame time; not notably different for small (<100ms) flames
-	FE_kickStart,  // toss in some air at the beginning
-	FE_kickMiddle,  // toss in some air in the middle
-	FE_kickEnd,  // toss in some air at the end
+	kickStart,  // toss in some air at the beginning
+	kickMiddle,  // toss in some air in the middle
+	kickEnd,  // toss in some air at the end
 	
 	// add air throughout flame time
-	FE_gatlingGun, // staccato bursts of air throughout
-	FE_randomly, // air tossed in throughout in a random pattern
-	FE_veryLean, // as much air as as we can before getting "too lean"
+	gatlingGun, // staccato bursts of air throughout
+	randomly, // air tossed in throughout in a random pattern
+	veryLean, // as much air as as we can before getting "too lean"
+	
+	N_flameEffects  // use this to size arrays appropriately
 };
 
-// during gameplay, this is the information passed from Console to Towers to control lights and fire:
 typedef struct {
-	byte red; // red level
-	byte green; // green level
-	byte blue; // blue level
-	byte flame; // flame duration in 10's of ms.
-	flameEffect_t effect; // see above
-} towerInstruction;
+	byte flame; // flame duration in 10's of ms. e.g. "42" maps to 420 ms.  See min and max constraints.
+	flameEffect effect; // see above
+} fireInstruction;
+
+// and some definitions, so we're all on the same page
+const fireInstruction littlePoof = {minPropaneTime/10, veryRich};
+const fireInstruction ragingInferno = {maxPropaneTime/10, randomly};
+
+//***** Colors
+
+// relative locations for the colors on the Simon Console
+enum color {
+	I_RED=0, // upper right
+	I_GRN,   // upper left
+	I_BLU,   // lower right
+	I_YEL,   // lower left
+	
+	N_COLORS // use this to size arrays appropriately
+};
+
+typedef struct {
+	byte red;
+	byte green;
+	byte blue;
+} colorInstruction;
+
+// and some definitions, so we're all on the same page
+const colorInstruction cRed = {255, 0, 0};
+const colorInstruction cGreen = {0, 255, 0};
+const colorInstruction cBlue = {0, 0, 255};
+const colorInstruction cYellow = {255, 255, 0};
+const colorInstruction cWhite = {255, 255, 255};
+// and this serves as an easy way to pull out the right RGB color from the 
+const colorInstruction cMap[N_COLORS] = {cRed, cGreen, cBlue, cYellow};
+
+//**** System Modes
+
+// How many different gameplay/test modes we have
+#define NUM_MODES 5
 
 // Send to the towers to tell them what mode they're in when we switch modes.
 typedef struct {
   byte currentMode;
 } modeSwitchInstruction;
 
+//**** Communcation Check
 
-// predefined Tower configuration settings
-enum towerLightFireConfig_t { EACH2OWN, ALLIN };
-// EACH2OWN: each tower listens to a single color (and related fire) channel
-// ALLIN: all towers listen to all color (and related fire) channels
-
-// during operation, the Console can be reconfigured on-the-fly
 typedef struct {
-	// how should Towers respond to light commands?
-	towerLightFireConfig_t towerLightResponse;
-	// how should Towers respond to fire commands?
-	towerLightFireConfig_t towerFireResponse;
+	int packetNumber;
+	int packetTotal;
+} commsCheckInstruction;
 
-	// how long (ms) between fanfare displays when the system has been idle?
-	unsigned long kioskFanfareInterval; 
+//**** Sanity Checks
 
-	// should gameplay let you win with any button press?
-	boolean cheatyPantsMode;
-	// how many correct moves does Player1 need for each fanfare level?
-	byte correctsForFanfare[4];
+// we rely on being able to differentiate different instructions by their size.
+// better make sure they're a different size
 
-	// sound levels.  Master [-70 to +4db]
-	int masterGain;
-	// Tone gain relative to Master
-	int toneGainRelativeToMaster;
-	// Track gain relative to Tone;
-	int trackGainRelativeToTone;
-} consoleConfiguration;
-// EEPROM location for consoleConfiguration settings.
-const byte consoleConfigLocation = 180;
-
-// during operation, the Console can be asked to perform tasks.
-// Console will also answer to towerInstructions with the implied setting lightListen={true, true, true, true}.
-typedef struct {
-	// play some music [1,999].  Set to zero to get a random WINS song; set to -1 to have no Music.
-	int playThisTrack;
-
-	// if you ask for Music, do you want the Console to compose light and fire to accompany?
-	// if you say "yes"/true, then the Console will send towerInstructions so you shouldn't.
-	boolean lightsAndFireWithMusic;
-
-	// do you want button tones to accompany towerInstructions that you send?
-	boolean tonesWithTowerInstructions;
-} consoleInstruction;
+#define N_DATAGRAMS 4
+const byte instructionSizes[N_DATAGRAMS] = {
+	sizeof(fireInstruction), 
+	sizeof(colorInstruction), 
+	sizeof(modeSwitchInstruction), 
+	sizeof(commsCheckInstruction)
+};
 
 #endif
