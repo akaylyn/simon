@@ -33,8 +33,6 @@ boolean Sensor::fireEnabled() {
     else Serial << "Fire disabled!" << endl;
 
     // for tones
-    extern Sound sound;
-
     sound.playTrack(fireMode ? ARMED_TRACK : DISARMED_TRACK);
   }
 
@@ -44,9 +42,7 @@ boolean Sensor::fireEnabled() {
 
 // remote control.  There's a relay that will pull MODE_ENABLE_PIN to LOW when pressed.
 // goes to HIGH when pressed again.  We use this flip-flop to change modes
-boolean Sensor::modeEnabledHasChanged() {
-  // track state
-  static boolean gamePlayMode = modeEnable.read() == MODE_ENABLED;
+boolean Sensor::modeChange() {
 
   // is there a change in state?
   if ( modeEnable.update() ) {

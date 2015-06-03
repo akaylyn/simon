@@ -1,8 +1,5 @@
 #include "Sound.h"
 
-// instantiate
-Sound sound;
-wavTrigger wav;
 
 bool Sound::begin() {
 
@@ -265,3 +262,8 @@ void Sound::unitTest() {
   this->stopAll();
   
 }
+
+// instantiate
+Sound sound;
+wavTrigger wav;
+

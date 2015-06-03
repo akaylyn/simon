@@ -6,7 +6,9 @@
 #include <Streaming.h>
 #include <Metro.h>
 #include <EasyTransfer.h>
-#include <LightMessage.h> // common message definition
+//------ sizes, indexing and inter-unit data structure definitions.
+#include <Simon_Common.h>
+
 #include "ConcurrentAnimator.h"
 
 // watchdog timer
@@ -23,7 +25,7 @@
 #define BLU_SEG_START RED_SEG_START+RIM_SEG_LENGTH
 
 // 4x touch lighting strips
-#define RED_PIN 4 // wireito button DI pin.  Include a 330 Ohm resistor in series.
+#define RED_PIN 4 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 #define GRN_PIN 5 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 #define BLU_PIN 6 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 #define YEL_PIN 7 // wire to button DI pin.  Include a 330 Ohm resistor in series.
@@ -43,7 +45,7 @@
 EasyTransfer ET;
 
 //give a name to the group of data
-LightET lightInst;
+colorInstruction lightInst;
 
 // communications with Console module via Serial port
 #define LightComms Serial1

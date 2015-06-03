@@ -43,7 +43,7 @@ void playerEnter(), playerUpdate(), playerExit();
 // Fanfare
 void fanfareEnter(), fanfareUpdate(), fanfareExit();
 // Test
-// ! defined in Tests.h/.cpp
+void testEnter(), testUpdate(), testExit();
 
 // Helper functions
 void waitAllReleased();

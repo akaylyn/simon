@@ -1,4 +1,5 @@
 #include "Fire.h"
+
 // startup.  layout the towers.
 void Fire::begin(nodeID layout[N_COLORS]) {
   Serial << "Fire: begin" << endl;

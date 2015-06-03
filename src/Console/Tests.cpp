@@ -1,13 +1,58 @@
 #include "Tests.h"
 
-//------ Input units.
-#include "Touch.h" // Touch subunit. Responsible for UX input.
-#include "Mic.h" // Microphone
-#include "Sensor.h" // Sensor subunit.  Responsible for game and fire enable
+#define MODE_TRACK_OFFSET 699
 
-//------ Output units.
-#include "Light.h" // Light subunit.  Responsible for UX output local Console (light) and remote Towers (light/fire)
-#include "Sound.h" // Sound subunit.  Responsible for UX (music) output.
+// called from the main loop.  return true if we want to head back to playing Simon. 
+boolean TestModes::update() {
+  static int currentMode = BONGO;
+  static boolean performStartup = true;
+  
+  if( sensor.modeChange() ) {
+    (++currentMode) %= NUM_MODES; // wrap
+    
+    // Tell the tower's we're in a new mode
+    modeSwitchInstruction mode;
+    mode.currentMode = currentMode;
+    network.send(mode);
+
+    // Play the sound to let the use know what mode we're in
+    sound.stopAll();
+    sound.setLeveling(1, 0); // Level for one track, no music
+    sound.playTrack(MODE_TRACK_OFFSET + currentMode);
+
+    Metro delayFor(1500UL);
+    delayFor.reset();
+    while( !delayFor.check() ) network.update(); // better.
+
+    performStartup = true;
+  } 
+  
+  // yes, we could accomplish this with an array of function pointers...
+  switch( currentMode ) {
+    case GO_BACK_TO_GAME:
+      performStartup = true; // when we return from gameplay, we'll need to start up again.
+      currentMode = BONGO; // and we want to start in bongo mode
+      return( true );
+      break;
+    case BONGO: 
+      bongoModeLoop(performStartup);
+      break;
+    case PROXIMITY:
+      proximityModeLoop(performStartup);
+      break;
+    case LIGHTS:
+      lightsTestModeLoop(performStartup);
+      break;
+    case FIRE:
+      fireTestModeLoop(performStartup);
+      break;
+  }
+
+  // for our next visit
+  performStartup = false;
+  
+  return(false);
+}
 
 // simply operate the Console in "bongoes" mode.  Will shoot fire
 void TestModes::bongoModeLoop(bool performStartup) {

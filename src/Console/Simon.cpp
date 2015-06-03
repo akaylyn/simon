@@ -43,7 +43,7 @@ fanfare_t fanfareLevel;
 int fanfareCorrectMapping[N_LEVELS] = { 4, 8, 12, 16 }; // easier
 
 // Tests
-//State config = State(configEnter, configUpdate, configeExit);
+State test = State(testEnter, testUpdate, testExit);
 
 // the state machine controls which of the states get attention and execution time
 FSM simon = FSM(idle); //initialize state machine, start in state: idle
@@ -56,7 +56,13 @@ void idleEnter() {
   gameCurrent = 0;
 
   light.clear();
+  
+  sound.setMasterGain();
+  sound.setLeveling();
+  sound.stopAll();      
+
   idleBeforeFanfare.reset();
+
 }
 void idleUpdate() {
   // check buttons for game play start
@@ -75,6 +81,9 @@ void idleUpdate() {
     // do some fanfare
     fanfareLevel = IDLE;
     simon.transitionTo(fanfare);
+  } else if ( sensor.modeChange() ) {
+    // run tests
+    simon.transitionTo(test);
   }
 }
 void idleExit() {
@@ -233,9 +242,10 @@ void fanfareExit() {
 //***** Test
 void testEnter() {
   Serial << F("Simon: ->test") << endl;
-
 }
 void testUpdate() {
+  // run the test modes until they're done
+  if( testModes.update() ) simon.transitionTo(idle);
 }
 void testExit() {
 }

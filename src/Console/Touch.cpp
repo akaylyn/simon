@@ -1,5 +1,3 @@
-// This file should match src/Console/Touch.cpp
-
 #include "Touch.h"
 
 // MPR121 object instantiated in the library.
