@@ -37,6 +37,7 @@ typedef struct {
   byte address;
   const void * buffer; // Look the fuck out, people.  I assume _you_ keep the instruction in memory long enough for the resend feature to work.
   int size;
+  byte sendCount;
 } sendBuffer;
 
 class Network {

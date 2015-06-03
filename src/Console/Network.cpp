@@ -21,6 +21,10 @@ void Network::update() {
       sendBuffer send = que.pop();
       // send.
       radio.Send(send.address, send.buffer, send.size);
+      // increment sendCount
+      send.sendCount++;
+      // we might need to reque
+      if( send.sendCount >= this->sendCount ) que.push(send);
     }
   }
 }
@@ -45,9 +49,9 @@ void Network::send(const void* buffer, byte bufferSize, nodeID node) {
   buff.address = (byte)node;
   buff.buffer = buffer;
   buff.size = bufferSize;
+  buff.sendCount = 0;
   // stack it
-  for( byte i=0; i<sendCount; i++ )
-    que.push(buff);
+  que.push(buff);
   // let it go
   update();
 }
