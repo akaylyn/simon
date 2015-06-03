@@ -10,6 +10,7 @@
 #include <RFM69.h> // RFM69HW radio transmitter module
 #include <RGBlink.h> // control LEDs
 #include <Timer.h> // control air injector
+#include <IRremote.h> // control IR Rx lighting
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
@@ -41,10 +42,10 @@ Metro flameCoolDownTime(1000UL);
 #define TEST_PATTERN_PERIOD 10000UL // ms
 
 // pin locations for outputs
-#define LED_R 3 // the PWM pin which drives the red LED
+#define LED_R 6 // the PWM pin which drives the red LED
 #define LED_G 5 // the PWM pin which drives the green LED
-#define LED_B 6 // the PWM pin which drives the blue LED
-#define LED_W 9 // the PWM pin which drives the white LED (not connected)
+#define LED_B 9 // the PWM pin which drives the blue LED
+#define LED_IR 3 // the PWM pin which drives the IR floodlight
 #define FLAME 7 // relay for flame effect solenoid
 #define AIR 8 // relay for air solenoid
 
@@ -87,13 +88,60 @@ const HSB white = {
 const HSB black = {
   0, 0, 0}; // off, essentially
 
+#define K24_OFF          0xF740BF
+#define K24_ON           0xF7C03F
+
+#define K24_RED          0xF720DF
+#define K24_GRN          0xF7A05F
+#define K24_BLU          0xF7609F
+#define K24_YEL          0xF728D7
+#define K24_WHT          0xF7E01F
+
+#define K24_DOWN         0xF7807F
+#define K24_UP           0xF700FF
+
+#define K24_FLASH        0xF7D02F
+#define K24_STROBE       0xF7F00F
+#define K24_FADE         0xF7C837      
+#define K24_SMOOTH       0xF7E817
+
+#define K24_REPEAT       0xFFFFFF
+
+#define N_BRIGHT_STEPS   5
+
 // force overwrite of EEPROM.  useful for bootstrapping new Moteinos.
 #define WRITE_EEPROM_NOW false
+
+class Flood {
+  public:
+    void begin();
+    
+    void setBright(byte level);
+    void setColor(byte color);
+  
+    void off();
+    void on();
+    
+    void send(unsigned long data);
+    void sendMultiple(unsigned long data, byte repeats);
+    
+    IRsend irsend;
+    
+  protected:
+    int currentColor;
+    int currentBright;    
+    boolean isOn;
+};
+
+Flood flood;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
 
+  Serial << F("Pausing after boot 1 sec...") << endl;
+  myDelay(1000UL);
+  
   // random seed.
   randomSeed(analogRead(A3)); // or some other unconected pin
 
@@ -127,6 +175,12 @@ void setup() {
 
   // start with a HSV test
   light.setMode(SOLID);
+  
+  // start the IR control of the floodlight
+  flood.begin();
+  
+  Serial << F("Free RAM: ") << freeRam() << endl;
+
 }
 
 void loop() {
@@ -232,7 +286,9 @@ void loop() {
 
   if ( networkTimeout.check() ) {
     Serial << F("Network timeout.") << endl;
+    Serial << F("Free RAM: ") << freeRam() << endl;
     networkTimedOut = true;
+    Serial << F("Free RAM: ") << freeRam() << endl;
   }
   if( systemResetFlag ) {
     resetTestPattern();
@@ -255,7 +311,9 @@ void loop() {
 boolean systemReseted() {
   // with EMI, be very sure.
   Metro readTime(DEBOUNCE_TIME);
+  readTime.interval(DEBOUNCE_TIME);
   readTime.reset();
+  
   while( !readTime.check() ) systemReset.update();
 
   // at system power up, relay is open, meaning pin will read HIGH.
@@ -282,7 +340,7 @@ void idleTestPattern() {
   if( inPeriod == 0 ) {
     period = random(TEST_PATTERN_PERIOD / 2, TEST_PATTERN_PERIOD * 2);
     direction *= -1;
-    delay(1); // only want to trip this test once per period
+    myDelay(1); // only want to trip this test once per period
     Serial << F("Test pattern period: ") << period << F(" direction: ") << direction << endl;    
   }
 
@@ -316,20 +374,44 @@ void performInstruction(boolean isJustToMe) {
   light.setMode(SOLID);
   HSB color = black;
 
+  byte floodColor = 11; // "off"
+  
   // check the settings
   if ( isJustToMe || config.lightListen[I_RED] ) {
     color = mix(color, red, inst.lightLevel[I_RED]);
+    // IR 
+    if( inst.lightLevel[I_RED] >= 128 ) {
+      floodColor = I_RED;
+    }
   }
   if ( isJustToMe || config.lightListen[I_GRN] ) {
     color = mix(color, green, inst.lightLevel[I_GRN]);
+    // IR 
+    if( inst.lightLevel[I_GRN] > 128 ) {
+      floodColor = I_GRN;
+    }
   }
   if ( isJustToMe || config.lightListen[I_BLU] ) {
     color = mix(color, blue, inst.lightLevel[I_BLU]);
+    // IR 
+    if( inst.lightLevel[I_BLU] >= 128 ) {
+      floodColor = I_BLU;
+    }
   }
   if ( isJustToMe || config.lightListen[I_YEL] ) {
     color = mix(color, yellow, inst.lightLevel[I_YEL]);
+    // IR 
+    if( inst.lightLevel[I_YEL] >= 128 ) {
+      floodColor = I_BLU;
+    }
   }
-  // set the color
+  // flip the IR floodlight?
+  if( floodColor != 11 ) {
+    flood.setColor(floodColor);
+  } else {
+    flood.off();
+  }
+  // set the color on the tanks
   light.setColor(color);
 
   // fire is a little different, if we're "listening" to multiple fire channels.
@@ -519,12 +601,98 @@ void instClear(towerInstruction & inst) {
 // alternative to delay(), non-blocking
 void myDelay(unsigned long delayTime) {
   Metro delayFor(delayTime);
+  delayFor.interval(delayTime);
+  delayFor.reset();
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> mike-dev
   while( ! delayFor.check() ) {
     // insert any mission-critical operations here
     if( flameOnTime.check() ) flameOff();
   }
 }
 
+<<<<<<< HEAD
+=======
 
+void Flood::begin() {
+  // shut it all the way down
+//  flood.sendMultiple(K24_OFF, 4);
+
+  // on
+  this->on();
+  
+  // gotta start somewhere
+  setColor(99);
+  currentBright = 0;
+  setBright(N_BRIGHT_STEPS);
+  
+  Serial << F("Flood: on.") << endl;
+}
+
+void Flood::on() {
+  sendMultiple(K24_ON,2);
+  this->isOn = true;
+}
+void Flood::off() {
+//  send(K24_OFF);
+  send(K24_SMOOTH);
+//  this->isOn = false;
+}
+
+void Flood::setColor(byte color) {
+  // might need to turn it on.
+  if( ! this->isOn ) {
+    this->on();
+  }
+  
+  // track
+  currentColor = color;
+  
+  switch( color ) {
+    case I_RED: send(K24_RED); break;
+    case I_GRN: send(K24_GRN); break;
+    case I_BLU: send(K24_BLU); break;
+    case I_YEL: send(K24_YEL); break;
+    default: send(K24_WHT); break;
+  }
+      
+}
+
+void Flood::setBright(byte level) {
+  if( level > N_BRIGHT_STEPS ) level = N_BRIGHT_STEPS;
+  
+  Serial << F("Flood: bright: ") << level << endl;
+  if( level > currentBright ) {
+    sendMultiple(K24_UP, level - currentBright);
+  } else if( level < currentBright) {
+    sendMultiple(K24_DOWN, currentBright - level);
+  }
+  // track
+  currentBright = level;
+}
+
+void Flood::send(unsigned long data) {
+  Serial << F("Flood: send: ") << _HEX(data) << endl;
+  // simple wrapper
+  irsend.sendNEC(data, 32);
+}
+
+void Flood::sendMultiple(unsigned long data, byte repeats) {
+  send(data); 
+  for( byte i=1; i < repeats; i++ ) {
+    myDelay(8); // need a 8ms interval before resend
+    send(data); 
+//    send(K24_REPEAT);
+  }
+}
+
+>>>>>>> mike-dev
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
 
