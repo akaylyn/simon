@@ -375,6 +375,9 @@ void waitForButtonsReleased() {
 
 void waitForTimer(unsigned long t) {
   Metro delayNow(t);
+  delayNow.interval(t);
+  delayNow.reset();
+  
   while (! delayNow.check() ) {
     light.update();
   }
