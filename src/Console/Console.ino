@@ -63,10 +63,12 @@ void setup() {
   // this layout has all towers listening to every color channel
   nodeID AllIn[N_COLORS] = { BROADCAST, BROADCAST, BROADCAST, BROADCAST };
   
+//  fire.begin(Each2Own); //
   fire.begin(Each2Own); //
   
   Serial1.begin(19200);
-  light.begin(Each2Own, &Serial1); // 
+//  light.begin(Each2Own, &Serial1); // 
+  light.begin(AllIn, &Serial1); // 
   
   sound.begin();
      

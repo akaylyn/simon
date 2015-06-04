@@ -107,8 +107,15 @@ void Flood::update() {
   }
 }
 
+void Flood::dropQue() {
+  while( !que.isEmpty() ) que.pop();
+}
 
 void Flood::setColor(colorInstruction &color) {  
+  
+  // kill the que.
+  dropQue();
+  
   unsigned long code;
   byte bright;
   if( color.red > 0 && color.green > 0 && color.blue > 0 ) {
@@ -133,8 +140,11 @@ void Flood::setColor(colorInstruction &color) {
     setBright(intensityToBright(color.blue));
   } else {
     // note-quite-off
-    queCode(K24_WHT);
-    setBright(intensityToBright(0));
+//    queCode(K24_WHT);
+//    setBright(intensityToBright(0));
+    // too much buffering
+    queCode(K24_SMOOTH);
+    setBright(intensityToBright(255));
   }
   
   // track

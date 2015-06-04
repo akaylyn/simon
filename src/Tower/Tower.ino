@@ -188,7 +188,7 @@ void idleTestPattern(colorInstruction &inst) {
   c = c % N_COLORS;
   
   inst = cMap[colorOrder[c]];
-  Serial << F("Idle: color ") << c+1 << F(" of ") << N_COLORS << F(". R:") << inst.red << F(" G:") << inst.green << F(" B:") << inst.blue << endl;
+  Serial << endl << F("Idle: color ") << c+1 << F(" of ") << N_COLORS << F(". R:") << inst.red << F(" G:") << inst.green << F(" B:") << inst.blue << endl;
 }
 
 

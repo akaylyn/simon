@@ -14,8 +14,9 @@ void Network::update() {
   static Metro readyToSend(this->sendInterval);
 
   // if there's something queued and the radio is available
-  if( !que.isEmpty() && radio.CanSend() ) {
+  if( !que.isEmpty() ) { // && radio.CanSend()
     // check to see if the resend interval has elapsed
+    Serial << F("Network: que has entries") << endl;
     if( readyToSend.check() ) {
       // pop a que entry
       sendBuffer send = que.pop();
@@ -23,14 +24,20 @@ void Network::update() {
       radio.Send(send.address, send.buffer, send.size);
       // increment sendCount
       send.sendCount++;
+      Serial << F("Network: popped.  sendCount=") << send.sendCount << endl;
       // we might need to reque
-      if( send.sendCount >= this->sendCount ) que.push(send);
+      if( send.sendCount <= this->sendCount ) { 
+        que.push(send);
+        Serial << F("Network: reque") << endl;
+      }
     }
   }
 }
 
 // makes the network do stuff with your stuff
 void Network::send(colorInstruction &inst, nodeID node) {
+  Serial << F("send: r:") << inst.red << F(" g:") << inst.green << F(" b:") << inst.blue << endl;
+
   send( (const void*)(&inst), sizeof(inst), node );
 }
 void Network::send(fireInstruction &inst, nodeID node) {
@@ -52,6 +59,7 @@ void Network::send(const void* buffer, byte bufferSize, nodeID node) {
   buff.sendCount = 0;
   // stack it
   que.push(buff);
+  Serial << F("Network: enqued") << endl;
   // let it go
   update();
 }
@@ -74,6 +82,7 @@ nodeID Network::networkStart(nodeID node) {
     for ( int j = i + 1; j < N_DATAGRAMS; j++ ) {
       if ( instructionSizes[i] == instructionSizes[j] ) {
         Serial << F("Network: radio instructions are indistinguishable by size!  Halting.") << endl;
+        Serial << F("Datagrams matched by size: ") << i << F(" and ") << j << endl;
         while (1); // halt
       }
     }

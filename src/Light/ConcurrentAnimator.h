@@ -1,7 +1,7 @@
 #ifndef ConcurrentAnimator_h
 #define ConcurrentAnimator_h
 
-#include <Adafruit_Neopixel.h>
+#include <Adafruit_NeoPixel.h>
 #include <Metro.h>
 #include <Streaming.h>
 #include <Arduino.h>

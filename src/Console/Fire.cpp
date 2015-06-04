@@ -9,19 +9,19 @@ void Fire::begin(nodeID layout[N_COLORS]) {
     this->layout[i] = layout[i];
   
   for( byte i=0; i<N_COLORS; i++ ) {
-    Serial << F(" Color ") << i << (" assigned to Tower ") << layout[N_COLORS] << endl;
+    Serial << F(" Color ") << i << (" assigned to Tower ") << layout[i] << endl;
   }
 }
 
 // set fire level, taking advantage of layout position
 void Fire::setFire(color position, byte flameDuration, flameEffect effect) {
   inst[position].flame = checkFireEnabled(flameDuration);
-  inst[position].effect = effect;
+  inst[position].effect = (byte)effect;
   
   network.send(inst[position], layout[position]);
 }
 void Fire::setFire(color position, fireInstruction &inst) {
-  setFire(position, inst.flame, inst.effect);
+  setFire(position, inst.flame, (flameEffect)inst.effect);
 }
 // set fire level, ignoring tower positions (good luck with that)
 void Fire::setFire(nodeID node, byte flameDuration, flameEffect effect) {
@@ -29,13 +29,13 @@ void Fire::setFire(nodeID node, byte flameDuration, flameEffect effect) {
   color position = (color)(node-TOWER1);
   
   inst[position].flame = checkFireEnabled(flameDuration);
-  inst[position].effect = effect;
+  inst[position].effect = (byte)effect;
   
   network.send(inst[position], node);
 
 }
 void Fire::setFire(nodeID node, fireInstruction &inst) {
-  setFire(node, inst.flame, inst.effect);
+  setFire(node, inst.flame, (flameEffect)inst.effect);
 }
 
 byte Fire::checkFireEnabled(byte flameDuration) {

@@ -114,20 +114,22 @@ void loop() {
   if (ET.receiveData()) {
     quietUpdateInterval.reset();
   
+    Serial << F("recv: r:") << lightInst.red << F(" g:") << lightInst.green << F(" b:") << lightInst.blue << endl;
+    
     boolean pressed = false;
     if ( lightInst.red > 0 && lightInst.green > 0) {
       buttonPressPattern(3);
       pressed = true;
     }
-    else if ( lightInst.red > 0 ) {
+    if ( lightInst.red > 0 && lightInst.green == 0) {
       buttonPressPattern(0);
       pressed = true;
     }
-    else if ( lightInst.green > 0 ) {
+    if ( lightInst.green > 0  && lightInst.red == 0) {
       buttonPressPattern(1);
       pressed = true;
     }
-    else if ( lightInst.blue > 0 ) {
+    if ( lightInst.blue > 0 ) {
       buttonPressPattern(2);
       pressed = true;
     }

@@ -31,6 +31,7 @@ class Flood {
 
     void setBright(byte level);
     void queCode(unsigned long data);
+    void dropQue();
     void sendCode(unsigned long data);
 
     colorInstruction currentColor;

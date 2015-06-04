@@ -6,7 +6,7 @@ void Light::begin(nodeID layout[N_COLORS], Stream *lightModuleSerial) {
   Serial << F("Light: startup.") << endl;
   
   //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc. 
-  ET.begin(details(ETinst), lightModuleSerial);
+  ET.begin(details(this->ETinst), lightModuleSerial);
   Serial << F("Light: serial comms with Light module.") << endl;
   
   this->led[I_RED] = new LED(LED_RED);
@@ -20,7 +20,7 @@ void Light::begin(nodeID layout[N_COLORS], Stream *lightModuleSerial) {
     this->layout[i] = layout[i];
  
   for( byte i=0; i<N_COLORS; i++ ) {
-    Serial << F(" Color ") << i << (" assigned to Tower ") << layout[N_COLORS] << endl;
+    Serial << F(" Color ") << i << (" assigned to Tower ") << layout[i] << endl;
   }
 
   Serial << F("Light: startup complete.") << endl;
@@ -32,6 +32,8 @@ void Light::setLight(color position, byte red, byte green, byte blue) {
   inst[position].red = red;
   inst[position].green = green;
   inst[position].blue = blue;
+  
+  Serial << F("setLight: r:") << inst[position].red << F(" g:") << inst[position].green << F(" b:") << inst[position].blue << endl;
   
   // show on the network
   network.send(inst[position], layout[position]);
@@ -63,12 +65,20 @@ void Light::setLight(nodeID node, colorInstruction &inst) {
 void Light::showLocal(colorInstruction &inst) {
   // show on console WS2812's via Light module
   ETinst = inst;
+//  colorInstruction c = cMap[I_YEL];
+//  ETinst = c;
   ET.sendData();
   
   // show on console hard lights
-  led[I_YEL]->setValue(((int)inst.red + (int)inst.green)/2);
-  led[I_RED]->setValue(inst.red);
-  led[I_GRN]->setValue(inst.green);
+  if( inst.red>0 && inst.green> 0 ) {
+    led[I_YEL]->setValue(((int)inst.red + (int)inst.green)/2);
+    led[I_RED]->setValue(0);  
+    led[I_GRN]->setValue(0);  
+  } else {
+    led[I_YEL]->setValue(0);  
+    led[I_RED]->setValue(inst.red);
+    led[I_GRN]->setValue(inst.green);
+  }
   led[I_BLU]->setValue(inst.blue);
 }
 

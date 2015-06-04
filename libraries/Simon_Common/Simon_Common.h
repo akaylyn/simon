@@ -12,7 +12,7 @@
 #define D_GROUP_ID 188 
 // radio nodes/adddresses/ID's
 enum nodeID {
-	BROADCAST=0, // everyone on group 188
+	BROADCAST=0, // _everyone_ on group 188
 	CONSOLE=1,
 	TOWER1=2,
 	TOWER2=3,
@@ -58,7 +58,7 @@ enum flameEffect {
 
 typedef struct {
 	byte flame; // flame duration in 10's of ms. e.g. "42" maps to 420 ms.  See min and max constraints.
-	flameEffect effect; // see above
+	byte effect; // see above
 } fireInstruction;
 
 // and some definitions, so we're all on the same page

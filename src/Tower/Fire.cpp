@@ -25,11 +25,16 @@ void Fire::update() {
 
 void Fire::perform(fireInstruction &inst) {
   // track if we're running something
+  static boolean isLockedOut = false;
   static Metro lockoutTimer;
+  if( lockoutTimer.check() ) isLockedOut = false;
   
   // special cases
   // we're already running a flame effect.  bug out.
-  if( !lockoutTimer.check() ) return;
+  if( isLockedOut ) { 
+    Serial << ("Fire: locked out") << endl;
+    return;
+  }
   // we're not being asked for a flame effect
   if( inst.flame == 0 ) return;
   

@@ -16,9 +16,9 @@ void Instruction::update(colorInstruction &colorInst, fireInstruction &fireInst,
         // save instruction for light
         colorInst = *(colorInstruction*)radio.DATA;
 
-        Serial << F("C") << endl;
+        Serial << endl << F("C") << endl;
       } else {
-        Serial << F("c") << endl;
+        Serial << F("c");
       }
     } else if ( radio.DATALEN == sizeof(fireInst) ) {
       // check to see if the instructions have changed?
@@ -26,9 +26,9 @@ void Instruction::update(colorInstruction &colorInst, fireInstruction &fireInst,
         // save instruction for fire
         fireInst = *(fireInstruction*)radio.DATA;
 
-        Serial << F("F") << endl;
+        Serial << endl << F("F") << endl;
       } else {
-        Serial << F("f") << endl;
+        Serial << F("f");
       }
     } else if ( radio.DATALEN == sizeof(commsCheckInstruction) ) {
       // ping received.
