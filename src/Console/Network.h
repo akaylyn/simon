@@ -37,36 +37,37 @@ typedef struct {
   byte address;
   const void * buffer; // Look the fuck out, people.  I assume _you_ keep the instruction in memory long enough for the resend feature to work.
   int size;
-  byte sendCount;
+  byte sendCount;  
 } sendBuffer;
 
 class Network {
   public:
-    void begin(nodeID node=BROADCAST, unsigned long sendInterval=1UL, byte sendCount=3);
+    void begin(nodeID node=BROADCAST, unsigned long sendInterval=1UL, byte sendCount=3); // sendInterval [=] ms
     void update(); // should be called frequently for resends.
-
+    
     // makes the network do stuff with your stuff
     // NOTE: WE ASSUME THE INSTRUCTIONS REMAIN IN MEMORY (FOR RESEND).
     //  if it's deallocated, we'll send a garbage packet
-    void send(colorInstruction &inst, nodeID node=BROADCAST);
-    void send(fireInstruction &inst, nodeID node=BROADCAST);
-    void send(modeSwitchInstruction &inst, nodeID nodeD=BROADCAST);
-    void send(commsCheckInstruction &inst, nodeID node=BROADCAST);
-    // and are really just overloaded helpers for this
-    void send(const void* buffer, byte bufferSize, nodeID node=BROADCAST);
+    // light. and fire. maintain buffers for this purpose, but if you're calling these directly, it's on you to do so.
+    void send(colorInstruction &inst, nodeID node=BROADCAST, boolean dropConflictingInstructions=true);
+    void send(fireInstruction &inst, nodeID node=BROADCAST, boolean dropConflictingInstructions=true);
+    void send(modeSwitchInstruction &inst, nodeID nodeD=BROADCAST, boolean dropConflictingInstructions=true);
+    void send(commsCheckInstruction &inst, nodeID node=BROADCAST, boolean dropConflictingInstructions=true);
+    // internal actuator of public send methods
+    void send(const void* buffer, byte bufferSize, nodeID node=BROADCAST, boolean dropConflictingInstructions=true);
     
     void ping(int count=10, nodeID node=BROADCAST);
   
   private:
     // gets the network setup
     nodeID networkStart(nodeID node);
-
     nodeID node; // who am I, really?
     
     // que control for sending
     QueueArray <sendBuffer> que;
-    unsigned long sendInterval;
+    unsigned long sendInterval; // [=] us
     byte sendCount;
+    void dropQueEntries(int size, nodeID node); // drops messages of size queued to node
     
     // Need an instance of the Radio Module.  
     RFM12B radio;
