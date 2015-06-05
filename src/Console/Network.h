@@ -42,7 +42,7 @@ typedef struct {
 
 class Network {
   public:
-    void begin(nodeID node=BROADCAST, unsigned long sendInterval=1UL, byte sendCount=3); // sendInterval [=] ms
+    void begin(nodeID node=BROADCAST, byte sendCount=3); // resend for robustness
     void update(); // should be called frequently for resends.
     
     // makes the network do stuff with your stuff
@@ -57,6 +57,8 @@ class Network {
     void send(const void* buffer, byte bufferSize, nodeID node=BROADCAST, boolean dropConflictingInstructions=true);
     
     void ping(int count=10, nodeID node=BROADCAST);
+    
+    void clear(); // clears all queued entries.
   
   private:
     // gets the network setup
@@ -65,7 +67,6 @@ class Network {
     
     // que control for sending
     QueueArray <sendBuffer> que;
-    unsigned long sendInterval; // [=] us
     byte sendCount;
     void dropQueEntries(int size, nodeID node); // drops messages of size queued to node
     

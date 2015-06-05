@@ -1,64 +1,49 @@
 #include "Network.h"
 
-void Network::begin(nodeID node, unsigned long sendInterval, byte sendCount) {
+void Network::begin(nodeID node, byte sendCount) {
   Serial << F("Network: begin") << endl;
 
   this->sendCount = sendCount;
   this->node = networkStart(node);
+
+  // check the send times
+  for ( int i = 0; i < N_DATAGRAMS; i++ ) {
+    Serial << F(" Datagram ") << i << F(" size (bytes)=") << instructionSizes[i];
   
-  // try to size sendInterval to cover the largest datagram send time.
-  byte largestDG = 0;
-  for ( int i = 0; i < N_DATAGRAMS; i++ ) largestDG = max(largestDG, instructionSizes[i]);
-  Serial << F("Network: largest datagrame size=") << largestDG << endl;
-  
-  // make a buffer
-  byte sendBuffer[largestDG];
-  unsigned long tic = micros();
-  // send.  no ACK, no wait.  match Network::update Send syntax exactly
-  radio.Send(255, sendBuffer, sizeof(sendBuffer), false, 0);
-  // now wait.
-  radio.SendWait();
-  unsigned long toc = micros();
+    // make a buffer
+    byte sendBuffer[i];
+    unsigned long tic = micros();
+    // send.   match Network::update Send syntax exactly
+    radio.Send(255, sendBuffer, sizeof(sendBuffer));
+    radio.SendWait();
+    unsigned long toc = micros();
         
-  Serial << F("Network: largest datagram requires ") << toc-tic << F("us to send.") << endl;
-  unsigned long minSendInterval = 1.05*float(toc-tic); // bumped up slightly
-  
-  this->sendInterval = max(minSendInterval, 1000UL*sendInterval);
-  Serial << F("Network: will send datagrams every ") << this->sendInterval << F("us.") << endl;
-  
+    Serial << F(" requires ") << toc-tic << F("us to send.") << endl;
+  }
 }
 
 // resends and stuff
 void Network::update() {
-  // send on an interval.  microsecond resolution, so rolling-our-own Metro
-  static unsigned long lastSendTime = micros();
-
   // is there something queued?
-  if( !que.isEmpty() ) { // && radio.CanSend()
+  if( !que.isEmpty() ) { 
     // and the resend interval has elapsed
-    Serial << F("Network: que has entries") << endl;
+//    Serial << F("Network: que has entries") << endl;
     
-    // has sendInterval time elapsed since last send?
-    unsigned long now = micros();
-    if( now - lastSendTime >= this->sendInterval ) {
-      // yep. pop a que entry.
-      sendBuffer send = que.pop();
-      
-      // send. no ACK, no wait.
-      radio.Send(send.address, send.buffer, send.size, false, 0);
+    // yep. pop a que entry.
+    sendBuffer send = que.pop();
+    
+    // send. no ACK, no wait.
+    radio.Send(send.address, send.buffer, send.size);
 
-      // increment sendCount
-      send.sendCount++;
-      Serial << F("Network: popped.  sendCount=") << send.sendCount << endl;
-      // we might need to reque
-      if( send.sendCount <= this->sendCount ) { 
-        que.push(send);
-        Serial << F("Network: reque") << endl;
-      }
-      
-      // record that we just sent
-      lastSendTime = now;
+    // increment sendCount
+    send.sendCount++;
+//    Serial << F("Network: popped.  sendCount=") << send.sendCount << endl;
+    // we might need to reque
+    if( send.sendCount <= this->sendCount ) { 
+      que.push(send);
+//      Serial << F("Network: reque") << endl;
     }
+      
   }
 }
 
@@ -71,14 +56,16 @@ void Network::dropQueEntries(int size, nodeID node) {
     sendBuffer entry = que.pop();
     if( entry.address != (byte)node || entry.size != size ) {
       que.push(entry);
+    } else {
+      // otherwise, drop it.
+//      Serial << F("dropped conflicting que entry") << endl;
     }
-    // otherwise, drop it.
   }
 }
 
 // makes the network do stuff with your stuff
 void Network::send(colorInstruction &inst, nodeID node, boolean dropConflictingInstructions) {
-  Serial << F("send: r:") << inst.red << F(" g:") << inst.green << F(" b:") << inst.blue << endl;
+//  Serial << F("send: r:") << inst.red << F(" g:") << inst.green << F(" b:") << inst.blue << endl;
   if( dropConflictingInstructions ) dropQueEntries(sizeof(inst), node);
   send( (const void*)(&inst), sizeof(inst), node, dropConflictingInstructions );
 }
@@ -110,7 +97,7 @@ void Network::send(const void* buffer, byte bufferSize, nodeID node, boolean dro
   // stack it
   que.push(buff);  
 
-  Serial << F("Network: enqued") << endl;
+//  Serial << F("Network: enqued") << endl;
   // let it go
   update();
 }
@@ -123,6 +110,10 @@ void Network::ping(int count, nodeID node) {
     packet.packetNumber = i;
     send(packet, node); // to everyone
   }
+}
+
+void Network::clear() {
+  while( !que.isEmpty() ) que.pop();
 }
 
 // starts the radio
@@ -155,9 +146,9 @@ nodeID Network::networkStart(nodeID node) {
     Serial << F(" Band: ") << band;
     Serial << endl;
 
-    radio.Initialize(node, band, groupID);
+    radio.Initialize(node, band, groupID, 0, 0x02); // 115200 bps
 
-    Serial << F("Network: RFM12b radio module startup complete. ");
+    Serial << F("Network: RFM12b radio module startup complete. ") << endl;
 
     return( (nodeID)node );
   } else {

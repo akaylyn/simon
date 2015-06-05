@@ -20,7 +20,6 @@ void playerFanfare(fanfare_t level) {
   }
 
   Serial << F("Gameplay: Player fanfare, fanfareLevel: ") << level << endl;
-/*
   //Metro fanfareDuration(FANFARE_DURATION_PER_CORRECT * currentLength);
 
   // make sweet fire/light/music.
@@ -48,9 +47,13 @@ void playerFanfare(fanfare_t level) {
   winTime.reset();
 
   Metro beatWait(333);
+  beatWait.reset();
 
   while (!winTime.check()) {
-    wait(1);
+    Metro myWait(1UL);
+    myWait.reset();
+    while(!myWait.check()) network.update(); // resends, etc.
+
     mic.update();
 
     for (byte i = 0; i < NUM_FREQUENCY_BANDS; i++) {
@@ -67,8 +70,8 @@ void playerFanfare(fanfare_t level) {
       //        Serial << "avgVol: " << avgVol << " fscale: " << fscale(0, 1024, 0, 255, avgVol, fireLevel) << endl;
       //Serial << "band1: " << mic.getAvg(bassBand) << " band2: " << mic.getAvg(bassBand) << endl;
 
-      byte fire = floor(fscale(0, 1024, 50, 255, avgVol, fireLevel));
-      flameEffect_t airEffect = veryRich;
+      byte fireLevel = floor(fscale(0, 1024, 50, 255, avgVol, fireLevel));
+      flameEffect airEffect = veryRich;
 
       if (random(0, 10) >= (10 - airChance)) {
         byte effect = random(0, 6);
@@ -94,10 +97,10 @@ void playerFanfare(fanfare_t level) {
         }
       }
       //Serial << "Fireballv3: " << (fire) << " air: " << (airEffect) << endl;
-      light.setFire(tower - 2, fire, airEffect, true, tower);
+      fire.setFire((nodeID)(tower - 2), fireLevel, airEffect);
       hearBeat = true;
       fireballs++;
-      firepower += fire;
+      firepower += fireLevel;
       beatWait.interval(333);
       beatWait.reset();
 
@@ -108,33 +111,38 @@ void playerFanfare(fanfare_t level) {
       hearBeat = false;
     }
     // clear packet
-    light.setAllLight(0);
-    light.setAllFire(0);
+    light.clear();
+    fire.clear();
 
     if (active > 0) {
       switch (active) {
         case 0:
-          light.setAllLight(0);
+          // light.setAllLight(0);
+          light.clear();
           break;
         case 1:
         case 2:
-          light.setLight(I_RED, 255);
+          //light.setLight(I_RED, 255);
+          light.setLight(BROADCAST, 255, 0 , 0);
           break;
         case 3:
         case 4:
-          light.setLight(I_GRN, 255);
+          //light.setLight(I_GRN, 255);
+          light.setLight(BROADCAST, 0, 255, 0);
           break;
         case 5:
         case 6:
-          light.setLight(I_BLU, 255);
+          //light.setLight(I_BLU, 255);
+          light.setLight(BROADCAST, 0, 0, 255);
           break;
         default:
-          light.setAllLight(255);
+          // light.setAllLight(255);
+          light.setLight(BROADCAST, 255, 255, 255);
           active = 0;
           break;
       }
 
-      light.show(tower2);
+      //light.show(tower2);
       if (random(10) > 2) {
         tower2++;
       }
@@ -142,14 +150,14 @@ void playerFanfare(fanfare_t level) {
     }
   }
 
-  light.setAllLight(LIGHT_OFF);
-  light.setAllFire(LIGHT_OFF);
+  light.clear();
+  fire.clear();
 
   // ramp down the volume to exit the music playing cleanly.
   sound.fadeTrack(winTrack);
 
   Serial << "Fireballs: " << fireballs << " power: " << firepower << endl;
   Serial << F("Gameplay: Player fanfare ended") << endl;
-*/
+
 }
 

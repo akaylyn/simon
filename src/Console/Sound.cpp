@@ -154,7 +154,7 @@ void Sound::stopTones() {
     wav.trackStop(trTones[ti]);
   }
 
-  Serial << F("Sound::stopTones") << endl;
+//  Serial << F("Sound::stopTones") << endl;
 }
 
 
@@ -167,7 +167,7 @@ void Sound::stopAll() {
   // stop
   wav.stopAllTracks();
 
-  Serial << F("Sound::stopAll") << endl;
+//  Serial << F("Sound::stopAll") << endl;
 }
 
 

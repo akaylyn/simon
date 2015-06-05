@@ -67,8 +67,8 @@ void setup() {
   fire.begin(Each2Own); //
   
   Serial1.begin(19200);
-//  light.begin(Each2Own, &Serial1); // 
-  light.begin(AllIn, &Serial1); // 
+  light.begin(Each2Own, &Serial1); // 
+//  light.begin(AllIn, &Serial1); // 
   
   sound.begin();
      

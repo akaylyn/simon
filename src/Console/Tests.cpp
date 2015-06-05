@@ -127,7 +127,7 @@ void TestModes::proximityModeLoop(bool performStartup) {
       // adjust the volume based on the distance
       int gain = fscale(0, 255, gainMax, gainMin, dist, -10.0); // log10
 
-        sound.setVolume(trTone[i], gain);  
+      sound.setVolume(trTone[i], gain);  
 
       // set lights
       colorInstruction c = cMap[i];

@@ -33,7 +33,7 @@ void Light::setLight(color position, byte red, byte green, byte blue) {
   inst[position].green = green;
   inst[position].blue = blue;
   
-  Serial << F("setLight: r:") << inst[position].red << F(" g:") << inst[position].green << F(" b:") << inst[position].blue << endl;
+//  Serial << F("setLight: r:") << inst[position].red << F(" g:") << inst[position].green << F(" b:") << inst[position].blue << endl;
   
   // show on the network
   network.send(inst[position], layout[position]);
@@ -84,11 +84,11 @@ void Light::showLocal(colorInstruction &inst) {
 
 void Light::clear() {
   // clear it
-  for( byte i=0; i<N_COLORS; i++)
+  for( byte i=0; i<N_COLORS; i++) {
     memset(&inst[i], 0, sizeof(inst[i]));
-    
-  // show it
-  setLight(BROADCAST, inst[0]);
+    // show it
+    setLight((color)i, inst[i]);
+  }
 }
 
 Light light;
