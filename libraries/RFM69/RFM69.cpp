@@ -33,8 +33,10 @@
 #include <RFM69registers.h>
 #include <SPI.h>
 
-#define  RF_BITRATEMSB_CUSTOM  0x2e
-#define  RF_BITRATELSB_CUSTOM  0x66
+//#define  RF_BITRATEMSB_CUSTOM  0x2e
+//#define  RF_BITRATELSB_CUSTOM  0x66
+#define  RF_BITRATEMSB_CUSTOM  RF_BITRATEMSB_115200 // 115200 bps
+#define  RF_BITRATELSB_CUSTOM  RF_BITRATELSB_115200
 
 volatile byte RFM69::DATA[RF69_MAX_DATA_LEN];
 volatile byte RFM69::_mode;       // current transceiver state

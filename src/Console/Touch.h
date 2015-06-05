@@ -43,28 +43,33 @@
 class Touch {
   public:
     // intialization; returns true if ok.
-    boolean begin();
+    boolean begin(byte sensorIndex[N_COLORS]);
 
     // state change checks
-    boolean changed(byte index); // returns true if state changed
+    boolean changed(color index); // returns true if state changed
     boolean anyChanged(); // convenience function; returns true if any index is changed
 
     // pressed state checks
-    boolean pressed(byte index); // returns true if pressed
+    boolean pressed(color index); // returns true if pressed
     boolean anyPressed(); // convenience function; returns true if any index is pressed
-
+    color whatPressed(); // returns the first pressed button found
+    
     // returns "distance" an object is to the sensor
-    byte distance(byte touchIndex = 12); // defaults to 13th "virtual" sensor.
-
-    // unit test
-    void unitTest();
+    byte distance(color index); // roughly speaking, the distance an object is away from the sensor
+    byte proximity(); // 13th "virtual" sensor, which is the sum of all active sensors
 
   private:
     // update function; returns true if there's a state change
     boolean update();
 
+    // maps color index to MPR121 sensor index
+    byte sensorIndex[N_COLORS];
+    
     // hardware buttons
     Bounce *button[N_COLORS];  // messy, but I can't figure out how to declare without instantiation, which the compiler requires.
+
+    // does the heavy lifting
+    byte distance(byte index); 
 
 };
 

@@ -18,7 +18,10 @@
 #include <Streaming.h>
 #include <Metro.h>
 #include <EasyTransfer.h>
-#include <LightMessage.h> // common message definition
+
+//------ sizes, indexing and inter-unit data structure definitions.
+#include <Simon_Common.h>
+
 #include "ConcurrentAnimator.h"
 
 void setup() {
@@ -28,21 +31,9 @@ void setup() {
 
   Serial << F("Light startup.") << endl;
 
-  Serial << F("Waiting for Console...") << endl;
-
   LightComms.begin(LIGHT_COMMS_RATE);
   //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc.
   ET.begin(details(lightInst), &LightComms);
-
-  // wait for an instruction.
-  while( ! ET.receiveData() ) {
-    Serial << F(".");
-    delay(50);
-  }
-  Serial << endl;
-  sendHandshake();
-
-  Serial << F("Console checked in.  Proceeding...") << endl;
 
   // use WDT to reboot if we hang.
   watchdogSetup();
@@ -96,13 +87,6 @@ void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
   strip.show();
 }
 
-void sendHandshake() {
-  // return handshake that we got the instruction.
-  byte handShake = 'h';
-  LightComms.write(handShake);
-  //  LightComms.flush(); // wait for xmit to complete.
-}
-
 void loop() {
   wdt_reset(); // must be called periodically to prevent spurious reboot.
 
@@ -129,23 +113,24 @@ void loop() {
   //check and see if a data packet has come in.
   if (ET.receiveData()) {
     quietUpdateInterval.reset();
-    sendHandshake(); // heartbeat.
-
+  
+    Serial << F("recv: r:") << lightInst.red << F(" g:") << lightInst.green << F(" b:") << lightInst.blue << endl;
+    
     boolean pressed = false;
-    if ( lightInst.red ) {
+    if ( lightInst.red > 0 && lightInst.green > 0) {
+      buttonPressPattern(3);
+      pressed = true;
+    }
+    if ( lightInst.red > 0 && lightInst.green == 0) {
       buttonPressPattern(0);
       pressed = true;
     }
-    if ( lightInst.grn ) {
+    if ( lightInst.green > 0  && lightInst.red == 0) {
       buttonPressPattern(1);
       pressed = true;
     }
-    if ( lightInst.blu ) {
+    if ( lightInst.blue > 0 ) {
       buttonPressPattern(2);
-      pressed = true;
-    }
-    if ( lightInst.yel ) {
-      buttonPressPattern(3);
       pressed = true;
     }
 

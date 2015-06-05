@@ -30,7 +30,9 @@ class Sensor {
     void begin();
     
     // returns true if the sensor indicates an enabled reading
-    boolean modeEnabledHasChanged();
+    boolean modeChange();
+    
+    // returns true if fire is enabled
     boolean fireEnabled();
 };
 
