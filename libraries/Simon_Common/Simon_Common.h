@@ -122,4 +122,30 @@ const byte instructionSizes[N_DATAGRAMS] = {
 	sizeof(commsCheckInstruction)
 };
 
+//**** Lights on the Console
+
+// handle lighting instructions sent to the Light modile
+// to be clear: this type of instruction is not sent over the radio.
+
+// enumerate all of the different animations that Light can perform
+enum animationInstruction {
+	SOLID=0,
+	
+	N_animations // ==1
+};
+
+enum lightUnit {
+	lRed=0, // strips 
+	lGrn,
+	lBlue,
+	lYellow, // the four big buttons
+
+	N_lightUnits // == 4
+};
+
+typedef struct {
+	colorInstruction color[N_lightUnits];
+	animationInstruction anim[N_lightUnits];
+} lightModuleInstruction;
+
 #endif

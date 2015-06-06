@@ -11,9 +11,6 @@
 
 #include "ConcurrentAnimator.h"
 
-// watchdog timer
-#include <avr/wdt.h>
-
 // RIM of LEDs
 #define RIM_PIN 3 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
 // geometry
@@ -32,10 +29,14 @@
 // geometry
 #define BUTTON_N 49 // wrapped around each button
 
-// 1x chotsky lighting
-#define MIDDLE_PIN 8 //
+// 2x chotsky lighting
+#define CIRCLE_PIN 8 //
 // geometry
-#define MIDDLE_N 18 // wrapped around middle chotsky
+#define CIRCLE_N 18 // wrapped around middle chotsky
+//
+#define PLACARD_PIN 8 //
+// geometry
+#define PLACARD_N 18 // wrapped around middle chotsky
 
 // LED indicator to ack button presses
 #define LED_PIN 13
@@ -45,7 +46,7 @@
 EasyTransfer ET;
 
 //give a name to the group of data
-colorInstruction lightInst;
+lightModuleInstruction inst;
 
 // communications with Console module via Serial port
 #define LightComms Serial1
@@ -78,47 +79,25 @@ Adafruit_NeoPixel grnL = Adafruit_NeoPixel(BUTTON_N, GRN_PIN, NEO_GRB + NEO_KHZ8
 Adafruit_NeoPixel bluL = Adafruit_NeoPixel(BUTTON_N, BLU_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel yelL = Adafruit_NeoPixel(BUTTON_N, YEL_PIN, NEO_GRB + NEO_KHZ800);
 
-// strip around the middle chotsky
-Adafruit_NeoPixel midL = Adafruit_NeoPixel(MIDDLE_N, MIDDLE_PIN, NEO_GRB + NEO_KHZ800);
-
-// LED brightness is not equivalent across colors.  Higher wavelengths are dimmed to balance.
-#define RED_MAX 255
-#define GRN_MAX 220
-#define BLU_MAX 210
-
-#define LED_OFF 0 // makes it a litle brighter in the Console.  0 is fine, too.
-// define some colors
-const uint32_t SweetLoveMakin = rimJob.Color(RED_MAX / 4, GRN_MAX / 6, BLU_MAX / 9);
-const uint32_t Red = rimJob.Color(RED_MAX, LED_OFF, LED_OFF);
-const uint32_t Yel = rimJob.Color(RED_MAX, GRN_MAX, LED_OFF);
-const uint32_t Grn = rimJob.Color(LED_OFF, GRN_MAX, LED_OFF);
-const uint32_t Blu = rimJob.Color(LED_OFF, LED_OFF, BLU_MAX);
-const uint32_t Dead = rimJob.Color(LED_OFF, LED_OFF, LED_OFF);
-const uint32_t BTN_COLOR_RED = redL.Color(RED_MAX, LED_OFF, LED_OFF);
-const uint32_t BTN_COLOR_YELLOW = redL.Color(RED_MAX, GRN_MAX, LED_OFF);
-const uint32_t BTN_COLOR_GREEN = redL.Color(LED_OFF, GRN_MAX, LED_OFF);
-const uint32_t BTN_COLOR_BLUE = redL.Color(LED_OFF, LED_OFF, BLU_MAX);
-// track when we need to send update.
-boolean rimUpdated = false;
-boolean redUpdated = false;
-boolean grnUpdated = false;
-boolean bluUpdated = false;
-boolean yelUpdated = false;
-boolean midUpdated = false;
-
-// reduce intensity at each update, so this is the amount of time we can expect a pixel to last
-#define PIXEL_TTL 3000UL
-
-// since the pixels have a TTL, we need to add some when there's nothing going on.
-#define STRIP_ADD_PIXEL PIXEL_TTL/3
-Metro quietUpdateInterval(STRIP_ADD_PIXEL);
-
-// update the automata on the rim at this interval
-#define STRIP_UPDATE 75
-Metro stripUpdateInterval(STRIP_UPDATE);
+// strip around the middle chotskies
+Adafruit_NeoPixel cirL = Adafruit_NeoPixel(CIRCLE_N, PLACARD_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel placL = Adafruit_NeoPixel(PLACARD_N, PLACARD_PIN, NEO_GRB + NEO_KHZ800);
 
 // count memory usage for LEDs, which is reported at startup.
-#define TOTAL_LED_MEM (RIM_N + BUTTON_N*4 + MIDDLE_N)*3
+#define TOTAL_LED_MEM (RIM_N + BUTTON_N*4 + CIRCLE_N + PLACARD_N)*3
+
+// using these maxima, we get a balanced white
+#define RED_MAX 255
+#define BLU_MAX 220
+#define GRN_MAX 210
+
+// pixels should live this long 
+#define PIXEL_TTL 3000UL
+#define STRIP_UPDATE 20UL
+
+// would keep LEDs from going completely off if >0
+#define LED_OFF 0
+
 
 #endif
 

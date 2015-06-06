@@ -38,7 +38,7 @@ void Light::setLight(color position, byte red, byte green, byte blue) {
   // show on the network
   network.send(inst[position], layout[position]);
   // show locally
-  showLocal(inst[position]);
+  showLocal(position, inst[position]);
 }
 void Light::setLight(color position, colorInstruction &inst) {
   setLight(position, inst.red, inst.green, inst.blue);
@@ -56,30 +56,25 @@ void Light::setLight(nodeID node,  byte red, byte green, byte blue) {
   network.send(inst[position], node);
 
   // show locally
-  showLocal(inst[position]);
+  showLocal(position, inst[position]);
 }
 void Light::setLight(nodeID node, colorInstruction &inst) {
   setLight(node, inst.red, inst.green, inst.blue);
 }
 
-void Light::showLocal(colorInstruction &inst) {
+void Light::showLocal(color position, colorInstruction &inst) {
   // show on console WS2812's via Light module
-  ETinst = inst;
-//  colorInstruction c = cMap[I_YEL];
-//  ETinst = c;
+  ETinst.color[position] = inst;
+  ETinst.anim[position] = SOLID;
   ET.sendData();
   
   // show on console hard lights
-  if( inst.red>0 && inst.green> 0 ) {
-    led[I_YEL]->setValue(((int)inst.red + (int)inst.green)/2);
-    led[I_RED]->setValue(0);  
-    led[I_GRN]->setValue(0);  
-  } else {
-    led[I_YEL]->setValue(0);  
-    led[I_RED]->setValue(inst.red);
-    led[I_GRN]->setValue(inst.green);
+  switch( position ) {
+    case I_RED: led[I_RED]->setValue(inst.red); break;
+    case I_GRN: led[I_GRN]->setValue(inst.green); break;
+    case I_BLU: led[I_BLU]->setValue(inst.blue); break;
+    case I_YEL: led[I_YEL]->setValue(((int)inst.red + (int)inst.green)/2); break;
   }
-  led[I_BLU]->setValue(inst.blue);
 }
 
 void Light::clear() {

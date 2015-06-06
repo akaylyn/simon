@@ -47,13 +47,13 @@ class Light {
     nodeID layout[N_COLORS];
     
     // local lighting
-    void showLocal(colorInstruction &inst);
+    void showLocal(color position, colorInstruction &inst);
     
     // hardware LED
     LED *led[N_COLORS];  
  
     // Light module comms   
-    colorInstruction ETinst;
+    lightModuleInstruction ETinst;
     EasyTransfer ET; 
 
 };
