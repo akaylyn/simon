@@ -8,7 +8,7 @@ void Light::begin(byte redPin, byte greenPin, byte bluePin, byte floodPin) {
   this->flood = new Flood();
   this->flood->begin(floodPin);
   // tank effect
-  this->effect(SOLID);
+  this->effect(Solid);
 }
 
 void Light::effect(lightEffect_t effect, uint16_t onTime, uint16_t offTime) {
@@ -76,7 +76,7 @@ void Flood::off() {
 void Flood::setBright(byte level) {
   if( level > N_BRIGHT_STEPS ) level = N_BRIGHT_STEPS;
   
-  Serial << F("Flood: bright: ") << level << endl;
+//  Serial << F("Flood: bright: ") << level << endl;
   if( level > currentBright ) {
     for( byte sends=level-currentBright; sends > 0; sends--) this->queCode(K24_UP);
   } else if( level < currentBright) {
@@ -87,7 +87,7 @@ void Flood::setBright(byte level) {
 }
 
 void Flood::sendCode(unsigned long data) {
-  Serial << F("Flood: send: ") << _HEX(data) << endl;
+//  Serial << F("Flood: send: ") << _HEX(data) << endl;
   ir->sendNEC(data, 32);
 }
 

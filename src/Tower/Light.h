@@ -18,7 +18,7 @@
 class Flood {
   public:
     // startup
-    void begin(byte floodPin, unsigned long sendInterval = 10UL, byte sendCount = 2);
+    void begin(byte floodPin, unsigned long sendInterval = 2UL, byte sendCount = 3);
 
     // update routine for resends
     void update();
@@ -55,9 +55,9 @@ class Flood {
 
 // different lighting modes available.
 enum lightEffect_t {
-  SOLID = 0, // always on
-  BLINK = 1, // blinking with intervals
-  FADE = 2 // soft fading
+  Solid = 0, // always on
+  Blink = 1, // blinking with intervals
+  Fade = 2 // soft fading
 };
 
 class Light {
@@ -66,7 +66,7 @@ class Light {
   void begin(byte redPin, byte greenPin, byte bluePin, byte floodPin);
   void update();
   void perform(colorInstruction &inst);
-  void effect(lightEffect_t effect = SOLID, uint16_t onTime = 1000UL, uint16_t offTime = 100UL);
+  void effect(lightEffect_t effect = Solid, uint16_t onTime = 1000UL, uint16_t offTime = 100UL);
 
   private:
   

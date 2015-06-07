@@ -98,10 +98,10 @@ void loop() {
       Serial << F("reset.") << endl;
 
       newColorInst = cRed;
-      light.effect(BLINK);
+      light.effect(Blink);
     } else {
       Serial << F("normal.") << endl;
-      light.effect(SOLID);
+      light.effect(Solid);
     }
   }
 
@@ -119,6 +119,7 @@ void loop() {
 
   // execute any new instructions
   if ( memcmp((void*)(&newColorInst), (void*)(&lastColorInst), sizeof(colorInstruction)) != 0 ) {
+    Serial << F("New color instruction. R:") << newColorInst.red << F(" G:") << newColorInst.green << F(" B:") << newColorInst.blue << endl;
     // change the lights
     light.perform(newColorInst);
     // cache
@@ -127,6 +128,7 @@ void loop() {
     idleUpdate.reset();
   }
   if ( memcmp((void*)(&newFireInst), (void*)(&lastFireInst), sizeof(fireInstruction)) != 0 ) {
+    Serial << F("New fire instruction. D:") << newFireInst.flame << F(" E:") << newFireInst.effect  << endl;
     // change the lights
     fire.perform(newFireInst);
     // cache

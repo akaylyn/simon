@@ -12,24 +12,26 @@ void Instruction::update(colorInstruction &colorInst, fireInstruction &fireInst,
     // process it.
     if ( radio.DATALEN == sizeof(colorInst) ) {
       // check to see if the instructions have changed?
-      if ( memcmp((void*)(&colorInst), (void*)radio.DATA, sizeof(colorInstruction)) != 0 ) {
+      //if ( memcmp((void*)(&colorInst), (void*)radio.DATA, sizeof(colorInstruction)) != 0 ) {
         // save instruction for light
         colorInst = *(colorInstruction*)radio.DATA;
 
-        Serial << endl << F("C") << endl;
-      } else {
-        Serial << F("c");
-      }
+    Serial << F("Rx instruction. R:") << colorInst.red << F(" G:") << colorInst.green << F(" B:") << colorInst.blue << endl;
+ //       Serial << endl << F("C") << endl;
+   //   } else {
+   //     Serial << F("c");
+   //   }
     } else if ( radio.DATALEN == sizeof(fireInst) ) {
       // check to see if the instructions have changed?
-      if ( memcmp((void*)(&fireInst), (void*)radio.DATA, sizeof(fireInstruction)) != 0 ) {
+   //   if ( memcmp((void*)(&fireInst), (void*)radio.DATA, sizeof(fireInstruction)) != 0 ) {
         // save instruction for fire
         fireInst = *(fireInstruction*)radio.DATA;
 
-        Serial << endl << F("F") << endl;
-      } else {
-        Serial << F("f");
-      }
+  //      Serial << endl << F("F") << endl;
+        Serial << F("Rx: fire instruction. D:") << fireInst.flame << F(" E:") << fireInst.effect  << endl;
+   //   } else {
+   //     Serial << F("f");
+   //   }
     } else if ( radio.DATALEN == sizeof(commsCheckInstruction) ) {
       // ping received.
       commsCheckInstruction ping;
