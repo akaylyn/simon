@@ -87,6 +87,10 @@ void Fire::perform(fireInstruction &inst) {
   }
 
   Serial << F("Fire: effect duration ") << flameTime << F(" ms. Effect ") << inst.effect << F(". Lockout ") << lockoutInterval << endl;
+  
+  // set fireInstruction back to idle
+  inst.flame = 0;
+  inst.effect = veryRich;
 }
 
 // pulse the air on 
