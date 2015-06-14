@@ -69,6 +69,7 @@ class Network {
     QueueArray <sendBuffer> que;
     byte sendCount;
     void dropQueEntries(int size, nodeID node); // drops messages of size queued to node
+    unsigned long packetSendTime[N_DATAGRAMS];
     
     // Need an instance of the Radio Module.  
     RFM12B radio;

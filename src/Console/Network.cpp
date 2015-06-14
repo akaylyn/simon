@@ -6,6 +6,9 @@ void Network::begin(nodeID node, byte sendCount) {
   this->sendCount = sendCount;
   this->node = networkStart(node);
 
+  // arise, Cthulu
+  radio.Wakeup();
+  
   // check the send times
   for ( int i = 0; i < N_DATAGRAMS; i++ ) {
     Serial << F(" Datagram ") << i << F(" size (bytes)=") << instructionSizes[i];
@@ -19,25 +22,61 @@ void Network::begin(nodeID node, byte sendCount) {
     unsigned long toc = micros();
         
     Serial << F(" requires ") << toc-tic << F("us to send.") << endl;
+    
+    // save this, bumped slighly
+    this->packetSendTime[i] = float(toc-tic)*1.1;
   }
+  
+  // and take a moment to check heap+stack remaining
+  extern int freeRam();
+  Serial << F("Network: free RAM: ") << freeRam() << endl;
+  
+  Serial << F("20 packet ping to BROADCAST") << endl;
+  this->ping(20);
+/*
+  Serial << F("20 packet ping to Tower1") << endl;
+  this->ping(20, TOWER1);
+  Serial << F("20 packet ping to Tower2") << endl;
+  this->ping(20, TOWER2);
+  Serial << F("20 packet ping to Tower3") << endl;
+  this->ping(20, TOWER3);
+  Serial << F("20 packet ping to Tower4") << endl;
+  this->ping(20, TOWER4);
+  */
+  
+  Serial << F("Network: free RAM: ") << freeRam() << endl;
+  
+  Serial << F("Network: setup complete.") << endl;
+  delay(1000);
+
 }
 
 // resends and stuff
 void Network::update() {
+  // track send times
+  static Metro radioReady(3UL);
+  
   // is there something queued?
-  if( !que.isEmpty() ) { 
+  if( !que.isEmpty()  ) {    
     // and the resend interval has elapsed
-//    Serial << F("Network: que has entries") << endl;
+    if( !radioReady.check() ) return;
+    radioReady.reset();
+    
+//    Serial << F("Network: poped que entry") << endl;
+//    // and take a moment to check heap+stack remaining
+//    extern int freeRam();
+//    Serial << F("Network: free RAM: ") << freeRam() << endl;
     
     // yep. pop a que entry.
     sendBuffer send = que.pop();
     
-    // send. no ACK, no wait.
-    radio.Send(send.address, send.buffer, send.size);
-
+    // send. no ACK, no sleep.
+    radio.Send(send.address, send.buffer, send.size, false, 0);
+    
     // increment sendCount
     send.sendCount++;
 //    Serial << F("Network: popped.  sendCount=") << send.sendCount << endl;
+
     // we might need to reque
     if( send.sendCount <= this->sendCount ) { 
       que.push(send);
@@ -66,19 +105,15 @@ void Network::dropQueEntries(int size, nodeID node) {
 // makes the network do stuff with your stuff
 void Network::send(colorInstruction &inst, nodeID node, boolean dropConflictingInstructions) {
 //  Serial << F("send: r:") << inst.red << F(" g:") << inst.green << F(" b:") << inst.blue << endl;
-  if( dropConflictingInstructions ) dropQueEntries(sizeof(inst), node);
   send( (const void*)(&inst), sizeof(inst), node, dropConflictingInstructions );
 }
-void Network::send(fireInstruction &inst, nodeID node, boolean dropConflictingInstructions) {
-  
+void Network::send(fireInstruction &inst, nodeID node, boolean dropConflictingInstructions) { 
   send( (const void*)(&inst), sizeof(inst), node, dropConflictingInstructions );
 }
 void Network::send(modeSwitchInstruction &inst, nodeID node, boolean dropConflictingInstructions) {
-  if( dropConflictingInstructions ) dropQueEntries(sizeof(inst), node);
   send( (const void*)(&inst), sizeof(inst), node, dropConflictingInstructions );
 }
 void Network::send(commsCheckInstruction &inst, nodeID node, boolean dropConflictingInstructions) {
-  if( dropConflictingInstructions ) dropQueEntries(sizeof(inst), node);
   send( (const void*)(&inst), sizeof(inst), node, dropConflictingInstructions );
 }
 // and are really just overloaded helpers for this
@@ -99,17 +134,33 @@ void Network::send(const void* buffer, byte bufferSize, nodeID node, boolean dro
 
 //  Serial << F("Network: enqued") << endl;
   // let it go
-  update();
+  this->update();
 }
 
 void Network::ping(int count, nodeID node) {
-  commsCheckInstruction packet;
-  packet.packetTotal = count;
+  commsCheckInstruction packet[count];
+  
+  // don't resend
+  byte saveSendCount = this->sendCount;
+  this->sendCount = 0;
   
   for( int i=0; i<count; i++ ) {
-    packet.packetNumber = i;
-    send(packet, node); // to everyone
+    packet[i].packetTotal = count;
+    packet[i].packetNumber = i;
+    
+//    radio.Send((byte)node, (const void*)(&packet), sizeof(packet)); // don't drop
+//    delay(2); // need 2ms between packets
+
+    // use the same sends, just with que and no replacement
+    this->send(packet[i], node, false);
   }
+  
+  // wait until sent
+  while( !que.isEmpty() ) this->update();
+  
+  // reset sendCount  
+  this->sendCount = saveSendCount;
+
 }
 
 void Network::clear() {
