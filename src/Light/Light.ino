@@ -31,9 +31,9 @@ void setup() {
 
   Serial << F("Light startup.") << endl;
 
-  LightComms.begin(LIGHT_COMMS_RATE);
+  Serial1.begin(115200);
   //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc.
-  ET.begin(details(inst), &LightComms);
+  ET.begin(details(inst), &Serial1);
 
   Serial << F("Total strip memory usage: ") << TOTAL_LED_MEM << F(" bytes.") << endl;
   Serial << F("Free RAM: ") << freeRam() << endl;
@@ -94,19 +94,11 @@ void loop() {
   
     Serial << F("Instruction received.") << endl;
     
-    // pointers to the objects
-    static Adafruit_NeoPixel * strip[N_lightUnits] = { &redL, &grnL, &bluL, &yelL };
-    
     // dispatch the requests
-    for( byte u=0; u<N_lightUnits; u++ ) {
-      // figure out which animations we want to run
-      switch( inst.anim[u] ) {
-        case SOLID:
-        default: // is SOLID
-          setStripColor( *strip[u], inst.color[u] );
-          break;
-      }
-    }
+    setStripColor(redL, inst.light[I_RED]);
+    setStripColor(grnL, inst.light[I_GRN]);
+    setStripColor(bluL, inst.light[I_BLU]);
+    setStripColor(yelL, inst.light[I_YEL]);
 
     // toggle LED to ACK new button press
     static boolean ledStatus=false;

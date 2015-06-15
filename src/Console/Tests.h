@@ -15,16 +15,6 @@
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
 
-enum test_t {
-  GO_BACK_TO_GAME=0,
-  BONGO,
-  PROXIMITY,
-  LIGHTS,
-  FIRE,
-  
-  N_MODES // == 5
-};
-
 class TestModes {
   public:
     // returns true if we want to return to playing Simon

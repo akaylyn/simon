@@ -1,54 +1,43 @@
 #include "Fire.h"
 
 // startup.  layout the towers.
-void Fire::begin(nodeID layout[N_COLORS]) {
+void Fire::begin() {
   Serial << "Fire: begin" << endl;
   
-  // store it
-  for( byte i=0; i<N_COLORS; i++ )
-    this->layout[i] = layout[i];
-  
-  for( byte i=0; i<N_COLORS; i++ ) {
-    Serial << F(" Color ") << i << (" assigned to Tower ") << layout[i] << endl;
-  }
+  this->clear();
 }
 
 // set fire level, taking advantage of layout position
 void Fire::setFire(color position, byte flameDuration, flameEffect effect) {
-  inst[position].flame = checkFireEnabled(flameDuration);
-  inst[position].effect = (byte)effect;
+  fireInstruction inst;
+  inst.duration = checkFireEnabled(flameDuration);
+  inst.effect = (byte)effect;
   
-  network.send(inst[position], layout[position]);
+  this->setFire(position, inst);
 }
-void Fire::setFire(color position, fireInstruction &inst) {
-  setFire(position, inst.flame, (flameEffect)inst.effect);
-}
-// set fire level, ignoring tower positions (good luck with that)
-void Fire::setFire(nodeID node, byte flameDuration, flameEffect effect) {
-  // we'll stash the instruction by tower, not color
-  color position = (color)(node-TOWER1);
-  
-  inst[position].flame = checkFireEnabled(flameDuration);
-  inst[position].effect = (byte)effect;
-  
-  network.send(inst[position], node);
+
+void Fire::clear() {
+  fireInstruction inst;
+  inst.duration = 0;
+  inst.effect = (byte)veryRich;
+    
+  // clear it
+  for( byte i=0; i<N_COLORS; i++) {
+    // show it
+    this->setFire((color)i, inst);
+  }
 
 }
-void Fire::setFire(nodeID node, fireInstruction &inst) {
-  setFire(node, inst.flame, (flameEffect)inst.effect);
+
+void Fire::setFire(color position, fireInstruction &inst) {
+  // show on Towers and Light Module
+  network.send(position, inst);
 }
 
 byte Fire::checkFireEnabled(byte flameDuration) {
   // check the sensors for fire enable
   boolean fireAllowed = sensor.fireEnabled();
   return( fireAllowed ? flameDuration : 0 );
-}
-
-void Fire::clear() {
-  for( byte i=0; i<N_COLORS; i++)
-    memset(&inst[i], 0, sizeof(inst[i]));
-    
-  // nothing to show.  the towers wind fire down automagically.  
 }
 
 Fire fire;

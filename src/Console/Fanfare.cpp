@@ -3,13 +3,12 @@
 
 #define FANFARE_ENABLED true
 
-int tower = 2;
 int bassBand = 0;
 int bassBand2 = 1;
 int band2 = 6;
 boolean hearBeat = false;
 byte active = 0;
-int tower2 = 0;
+byte tower, tower2 = I_RED;
 
 void playerFanfare(fanfare_t level) {
   Serial << "***Inside alan playerFanFare: fanfareLevel: " << level << "\n";
@@ -65,7 +64,7 @@ void playerFanfare(fanfare_t level) {
     //      if ((mic.getBeat(bassBand) || mic.getBeat(bassBand2)) && hearBeat == false) {
     if (beatWait.check() && (mic.getVol(bassBand) > fireBeat || mic.getVol(bassBand2) > fireBeat) && hearBeat == false) {
       tower++;
-      if (tower > 5) tower = 2;
+      if (tower >= N_COLORS) tower = I_RED;
       byte avgVol = max(mic.getAvg(bassBand), mic.getAvg(bassBand2));
       //        Serial << "avgVol: " << avgVol << " fscale: " << fscale(0, 1024, 0, 255, avgVol, fireLevel) << endl;
       //Serial << "band1: " << mic.getAvg(bassBand) << " band2: " << mic.getAvg(bassBand) << endl;
@@ -98,7 +97,7 @@ void playerFanfare(fanfare_t level) {
       }
       //Serial << "Fireballv3: " << (fire) << " air: " << (airEffect) << endl;
       // I really thinkg you mean "setFire(I_RED)" or some directive to a tower.
-      fire.setFire((nodeID)(tower - 2), fireLevel, airEffect);
+      fire.setFire((color)tower, fireLevel, airEffect);
       hearBeat = true;
       fireballs++;
       firepower += fireLevel;
@@ -123,21 +122,21 @@ void playerFanfare(fanfare_t level) {
         case 1:
         case 2:
           //light.setLight(I_RED, 255);
-          light.setLight(BROADCAST, 255, 0 , 0);
+          light.setLight((color)tower2, 255, 0 , 0);
           break;
         case 3:
         case 4:
           //light.setLight(I_GRN, 255);
-          light.setLight(BROADCAST, 0, 255, 0);
+          light.setLight((color)tower2, 0, 255, 0);
           break;
         case 5:
         case 6:
           //light.setLight(I_BLU, 255);
-          light.setLight(BROADCAST, 0, 0, 255);
+          light.setLight((color)tower2, 0, 0, 255);
           break;
         default:
           // light.setAllLight(255);
-          light.setLight(BROADCAST, 255, 255, 255);
+          light.setLight((color)tower2, 255, 255, 255);
           active = 0;
           break;
       }
@@ -146,7 +145,7 @@ void playerFanfare(fanfare_t level) {
       if (random(10) > 2) {
         tower2++;
       }
-      if (tower2 > 6) tower2 = 0;
+      if (tower2 >= N_COLORS) tower2 = I_RED;
     }
   }
 

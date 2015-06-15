@@ -4,46 +4,33 @@ void Instruction::begin(nodeID node) {
   Serial << F("Instruction::begin") << endl;
 
   this->node = networkStart(node);
+  
+  this->stateIndex = this->node - TOWER1;
+  this->lastPacketNumber = (byte)-1; // 255. wraps.
+  
+  Serial << F("Instruction: listening to systemState index=") << this->stateIndex << endl;
 }
 
-void Instruction::update(colorInstruction &colorInst, fireInstruction &fireInst, modeSwitchInstruction &modeInst) {
+void Instruction::update(colorInstruction &colorInst, fireInstruction &fireInst, systemMode &mode) {
   // check for comms traffic
   if ( radio.receiveDone() ) {
     // process it.
-    if ( radio.DATALEN == sizeof(colorInst) ) {
-      // check to see if the instructions have changed?
-      //if ( memcmp((void*)(&colorInst), (void*)radio.DATA, sizeof(colorInstruction)) != 0 ) {
-        // save instruction for light
-        colorInst = *(colorInstruction*)radio.DATA;
-
-    Serial << F("Rx instruction. R:") << colorInst.red << F(" G:") << colorInst.green << F(" B:") << colorInst.blue << endl;
- //       Serial << endl << F("C") << endl;
-   //   } else {
-   //     Serial << F("c");
-   //   }
-    } else if ( radio.DATALEN == sizeof(fireInst) ) {
-      // check to see if the instructions have changed?
-   //   if ( memcmp((void*)(&fireInst), (void*)radio.DATA, sizeof(fireInstruction)) != 0 ) {
-        // save instruction for fire
-        fireInst = *(fireInstruction*)radio.DATA;
-
-  //      Serial << endl << F("F") << endl;
-        Serial << F("Rx: fire instruction. D:") << fireInst.flame << F(" E:") << fireInst.effect  << endl;
-   //   } else {
-   //     Serial << F("f");
-   //   }
-    } else if ( radio.DATALEN == sizeof(commsCheckInstruction) ) {
-      // ping received.
-      commsCheckInstruction ping;
-      // save instruction 
-      ping = *(commsCheckInstruction*)radio.DATA;
+    if ( radio.DATALEN == sizeof(systemState) ) {
+      // save instruction
+      systemState state;
+      state = *(systemState*)radio.DATA;
+        
+      // copy it out
+      colorInst = state.light[this->stateIndex];
+      fireInst = state.fire[this->stateIndex];
+      mode = (systemMode)state.mode;
       
-      Serial << F("Ping: ") << ping.packetNumber << F(" of ") << ping.packetTotal << endl;
-    } else if ( radio.DATALEN == sizeof(modeSwitchInstruction) ) {
-      modeInst = *(modeSwitchInstruction*)radio.DATA;
+      if( state.packetNumber != (this->lastPacketNumber+1) ) {
+        Serial << F("Radio: missed a packet.") << endl;
+      }
+      this->lastPacketNumber = state.packetNumber;
     }
   }
-  
 }
 
 // starts the radio

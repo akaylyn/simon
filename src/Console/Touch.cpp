@@ -4,9 +4,7 @@
 
 boolean Touch::begin(byte sensorIndex[N_COLORS]) {
 
-  delay(1000);
   Serial << F("Touch: startup.") << endl;
-  delay(1000);
 
   // following Examples->BareConductive_MPR->SimpleTouch
 
@@ -18,7 +16,6 @@ boolean Touch::begin(byte sensorIndex[N_COLORS]) {
   Wire.begin();
   
   Serial << F("Touch: Wire begin.") << endl;
-  delay(1000);
 
   boolean mprError = true;
   while( mprError ) {
@@ -44,7 +41,6 @@ boolean Touch::begin(byte sensorIndex[N_COLORS]) {
           Serial << F("MPR121: unknown error") << endl;
           break;
       }
-      delay(1000);
     } 
     else {
       Serial << F("Touch: MPR121: initialized.") << endl;

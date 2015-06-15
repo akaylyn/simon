@@ -11,6 +11,7 @@
 // Group ID = 188
 #define D_GROUP_ID 188 
 // radio nodes/adddresses/ID's
+// Simon 1-10
 enum nodeID {
 	BROADCAST=0, // _everyone_ on group 188
 	CONSOLE=1,
@@ -19,10 +20,9 @@ enum nodeID {
 	TOWER3=4,
 	TOWER4=5
 };
+
 // Giles 11-20
 // Clouds 21-210
-// EEPROM location for radio setting storage.
-const byte radioConfigLocation = 42;
 
 //**** Fire
 
@@ -57,7 +57,7 @@ enum flameEffect {
 };
 
 typedef struct {
-	byte flame; // flame duration in 10's of ms. e.g. "42" maps to 420 ms.  See min and max constraints.
+	byte duration; // flame duration in 10's of ms. e.g. "42" maps to 420 ms.  See min and max constraints.
 	byte effect; // see above
 } fireInstruction;
 
@@ -94,58 +94,29 @@ const colorInstruction cMap[N_COLORS] = {cRed, cGreen, cBlue, cYellow};
 
 //**** System Modes
 
-// How many different gameplay/test modes we have
-#define NUM_MODES 5
-
-// Send to the towers to tell them what mode they're in when we switch modes.
-typedef struct {
-  byte currentMode;
-} modeSwitchInstruction;
-
-//**** Communcation Check
-
-typedef struct {
-	int packetNumber;
-	int packetTotal;
-} commsCheckInstruction;
-
-//**** Sanity Checks
-
-// we rely on being able to differentiate different instructions by their size.
-// better make sure they're a different size
-
-#define N_DATAGRAMS 4
-const byte instructionSizes[N_DATAGRAMS] = {
-	sizeof(fireInstruction), 
-	sizeof(colorInstruction), 
-	sizeof(modeSwitchInstruction), 
-	sizeof(commsCheckInstruction)
-};
-
-//**** Lights on the Console
-
-// handle lighting instructions sent to the Light modile
-// to be clear: this type of instruction is not sent over the radio.
-
-// enumerate all of the different animations that Light can perform
-enum animationInstruction {
-	SOLID=0,
+enum systemMode {
+	GAMEPLAY=0, 
+	BONGO,
+	PROXIMITY,
+	LIGHTS,
+	FIRE,
 	
-	N_animations // ==1
+	EXTERN, // for other projects driving Simon
+	
+	N_systemMode // ==4
+
 };
 
-enum lightUnit {
-	lRed=0, // strips 
-	lGrn,
-	lBlue,
-	lYellow, // the four big buttons
-
-	N_lightUnits // == 4
-};
+//**** Tie everything together for total system state send
 
 typedef struct {
-	colorInstruction color[N_lightUnits];
-	animationInstruction anim[N_lightUnits];
-} lightModuleInstruction;
+	byte packetNumber; // track packet number; useful for checking for dropped packets
+	
+	byte mode; // what mode are we operating in?
+	
+	colorInstruction light[N_COLORS]; 
+	fireInstruction fire[N_COLORS];
+	
+} systemState;
 
 #endif

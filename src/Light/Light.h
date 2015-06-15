@@ -46,11 +46,7 @@
 EasyTransfer ET;
 
 //give a name to the group of data
-lightModuleInstruction inst;
-
-// communications with Console module via Serial port
-#define LightComms Serial1
-#define LIGHT_COMMS_RATE 19200
+systemState inst;
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
