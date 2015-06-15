@@ -43,8 +43,6 @@ void setup() {
   randomSeed(analogRead(A5));
 
   // start each unit
-  //------ Network
-  network.begin();
   
   //------ Input units.
   byte touchMapToColor[N_COLORS] = {I_RED, I_GRN, I_BLU, I_YEL};
@@ -52,6 +50,9 @@ void setup() {
   sensor.begin();
   mic.begin();
   
+  //------ Network
+  network.begin();
+
   //------ Output units.
   // this layout has towers arranged to only listen to one color channel
   nodeID Each2Own[N_COLORS] = {
@@ -72,6 +73,9 @@ void setup() {
   
   sound.begin();
      
+     
+  Serial << F("Network: free RAM: ") << freeRam() << endl;
+
   Serial << F("STARTUP: complete.") << endl;
 }
 
@@ -82,6 +86,9 @@ void loop() {
   
   // perform Tower resends; you should do this always if you want meaningful synchronization with Towers
   network.update();
+  
+  Serial << F(".") << endl;
+  delay(1000);
 }
 
 int freeRam () {
