@@ -29,6 +29,12 @@ void Network::begin(nodeID node, byte sendCount) {
   
   Serial << F("20 packet ping to BROADCAST") << endl;
   this->ping(20);
+
+  // and take a moment to check heap+stack remaining
+  extern int freeRam();
+  Serial << F("Network: free RAM: ") << freeRam() << endl;
+
+  /*
   Serial << F("20 packet ping to Tower1") << endl;
   this->ping(20, TOWER1);
   Serial << F("20 packet ping to Tower2") << endl;
@@ -37,6 +43,14 @@ void Network::begin(nodeID node, byte sendCount) {
   this->ping(20, TOWER3);
   Serial << F("20 packet ping to Tower4") << endl;
   this->ping(20, TOWER4);
+  */
+  
+  Serial << F("Network: free RAM: ") << freeRam() << endl;
+  
+  Serial << F("Network: setup complete.") << endl;
+  delay(1000);
+
+>>>>>>> origin/master
 }
 
 // resends and stuff
@@ -50,7 +64,10 @@ void Network::update() {
     if( !radioReady.check() ) return;
     radioReady.reset();
     
- //   Serial << F("Network: poped que entry") << endl;
+//    Serial << F("Network: poped que entry") << endl;
+//    // and take a moment to check heap+stack remaining
+//    extern int freeRam();
+//    Serial << F("Network: free RAM: ") << freeRam() << endl;
     
     // yep. pop a que entry.
     sendBuffer send = que.pop();
@@ -61,6 +78,7 @@ void Network::update() {
     // increment sendCount
     send.sendCount++;
 //    Serial << F("Network: popped.  sendCount=") << send.sendCount << endl;
+
     // we might need to reque
     if( send.sendCount <= this->sendCount ) { 
       que.push(send);
@@ -118,7 +136,7 @@ void Network::send(const void* buffer, byte bufferSize, nodeID node, boolean dro
 
 //  Serial << F("Network: enqued") << endl;
   // let it go
-  update();
+  this->update();
 }
 
 void Network::ping(int count, nodeID node) {
@@ -140,8 +158,8 @@ void Network::ping(int count, nodeID node) {
   }
   
   // wait until sent
-  while( !que.isEmpty() ) update();
-
+  while( !que.isEmpty() ) this->update();
+  
   // reset sendCount  
   this->sendCount = saveSendCount;
 

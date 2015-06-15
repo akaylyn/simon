@@ -4,7 +4,9 @@
 
 boolean Touch::begin(byte sensorIndex[N_COLORS]) {
 
+  delay(1000);
   Serial << F("Touch: startup.") << endl;
+  delay(1000);
 
   // following Examples->BareConductive_MPR->SimpleTouch
 
@@ -14,6 +16,9 @@ boolean Touch::begin(byte sensorIndex[N_COLORS]) {
 
   // 0x5A is the MPR121 I2C address on the Bare Touch Board
   Wire.begin();
+  
+  Serial << F("Touch: Wire begin.") << endl;
+  delay(1000);
 
   boolean mprError = true;
   while( mprError ) {
