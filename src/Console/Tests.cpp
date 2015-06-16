@@ -68,9 +68,10 @@ void TestModes::bongoModeLoop(bool performStartup) {
     if ( touch.anyPressed()) {
       // if anything's pressed, pack the instructions
       color pressed = touch.whatPressed();
+
       sound.playTone(pressed);
+
       colorInstruction c = cMap[pressed];
- 
       light.setLight(pressed, c);
 
       // only allow full-on every 10s.
@@ -78,7 +79,8 @@ void TestModes::bongoModeLoop(bool performStartup) {
       fire.setFire(pressed, fireLevel, gatlingGun);
       lastFireTime = millis();
     } else {
-      light.clear(); // stop lights.
+      light.clear(); // clear lights
+      fire.clear(); // clear fire
       sound.stopTones(); // stop tones
     }
   }
@@ -139,7 +141,9 @@ void TestModes::proximityModeLoop(bool performStartup) {
         byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 5, 50);
         fire.setFire((color)i, fireLevel, gatlingGun);
         lastFireTime = millis();        
-      } 
+      } else {
+        fire.setFire((color)i, 0, gatlingGun);        
+      }
 
       // save it
       lastDistance[i] = dist;

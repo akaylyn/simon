@@ -33,8 +33,8 @@ const int trBaff[2] = {700, 701}; // store BAFF in 700-999
 
 // some defaults
 // gains.  remember that polyphonic sounds get stacked, so clipping can easily occur.  gonna have to tune this.
-#define MASTER_GAIN -3 // -70 to +4 dB.  0 is nominal.
-#define TONE_GAIN_RELATIVE_TO_MASTER 0 // we want the tones to be as loud as possible
+#define MASTER_GAIN 0 // -70 to +4 dB.  0 is nominal.
+#define TONE_GAIN_RELATIVE_TO_MASTER -3 // we want the tones to be as loud as possible
 #define TRACK_GAIN_RELATIVE_TO_TONE -12 // other tracks (music) should be slighly quieter
 
 #define TONE_GAIN MASTER_GAIN + TONE_GAIN_RELATIVE_TO_MASTER // proportionality is additive in log-space

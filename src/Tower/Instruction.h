@@ -16,7 +16,7 @@
 class Instruction {
   public:
     void begin(nodeID node);
-    void update(colorInstruction &colorInst, fireInstruction &fireInst, systemMode &mode);
+    boolean update(colorInstruction &colorInst, fireInstruction &fireInst, systemMode &mode);
     byte getNodeID();
     
   protected:   

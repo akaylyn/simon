@@ -58,6 +58,7 @@ class Network {
     
     // send on an interval
     unsigned long packetSendInterval; // us
+    byte resendCount, sentCount;
     
     // stores which towers should be sent color commands
     color lightLayout[N_COLORS];

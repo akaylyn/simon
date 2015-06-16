@@ -15,16 +15,21 @@ void Network::begin(color lightLayout[N_COLORS], color fireLayout[N_COLORS], nod
   radio.Wakeup();
   
   // check the send time
-  Serial << F("Network: system datagram size (bytes)=") << sizeof(this->state);
+  Serial << F("Network: system datagram size (bytes)=") << sizeof(this->state) << endl;
   unsigned long tic = micros();
   // send.   match Network::update Send syntax exactly
   radio.Send(255, (const void*)(&this->state), sizeof(this->state), false, 0);
   radio.SendWait();
   unsigned long toc = micros();
+  Serial << F("Network: system datagram requires ") << toc-tic << F("us to send.") << endl;
     
-  // save this, bumped slighly
-  this->packetSendInterval = float(toc-tic)*1.1;
-  Serial << F("Network: system datagram requires ") << this->packetSendInterval << F("us to send.") << endl;
+  // save this, bumped slighly and at least 5ms
+  this->packetSendInterval = max(5000UL, float(toc-tic)*1.1);
+  Serial << F("Network: sending system datagram every ") << this->packetSendInterval << F("us.") << endl;
+
+  this->resendCount = 10;
+  this->sentCount = this->resendCount;
+  Serial << F("Network: will resend new packets x") << this->resendCount << endl;
   
   // set layout
   this->layout(lightLayout, fireLayout);
@@ -53,8 +58,12 @@ void Network::update() {
   // if the resend interval has not elapsed, exit
   if( now-lastSend < this->packetSendInterval ) return;
     
+  // if the sent count exceeds resend count, exit
+  if( this->sentCount >= this->resendCount ) return;
+    
   // Radio: send. no ACK, no sleep.
   this->send();
+  this->sentCount++;
 
   // record last send time
   lastSend = now;
@@ -63,12 +72,15 @@ void Network::update() {
 // makes the network do stuff with your stuff
 void Network::send(color position, colorInstruction &inst) {
   this->state.light[position] = inst;
+  this->sentCount = 0;
 }
 void Network::send(color position, fireInstruction &inst) { 
   this->state.fire[position] = inst;
+  this->sentCount = 0;
 }
 void Network::send(systemMode mode) {
   this->state.mode = (byte)mode;
+  this->sentCount = 0;
 }
 
 // internal dispatcher
@@ -79,6 +91,8 @@ void Network::send() {
   
   // Light: send.
   ET.sendData();
+
+//  radio.Send((byte)BROADCAST, (const void*)(&this->state), sizeof(this->state), false, 0);
 
   // apply physical Tower layout 
   systemState towerState;
@@ -103,7 +117,6 @@ void Network::send() {
 
   // Radio: send.  
   radio.Send((byte)BROADCAST, (const void*)(&towerState), sizeof(towerState), false, 0);
-  
 }
 
 // we sum up the lighting instructions
@@ -151,6 +164,7 @@ nodeID Network::networkStart(nodeID node) {
     Serial << F(" Band: ") << band;
     Serial << endl;
 
+//    radio.Initialize(node, band, groupID, 0, 0x7F); // 38300 bps
     radio.Initialize(node, band, groupID, 0, 0x02); // 115200 bps
 
     Serial << F("Network: RFM12b radio module startup complete. ") << endl;

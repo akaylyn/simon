@@ -11,7 +11,7 @@ void Instruction::begin(nodeID node) {
   Serial << F("Instruction: listening to systemState index=") << this->stateIndex << endl;
 }
 
-void Instruction::update(colorInstruction &colorInst, fireInstruction &fireInst, systemMode &mode) {
+boolean Instruction::update(colorInstruction &colorInst, fireInstruction &fireInst, systemMode &mode) { 
   // check for comms traffic
   if ( radio.receiveDone() ) {
     // process it.
@@ -25,12 +25,20 @@ void Instruction::update(colorInstruction &colorInst, fireInstruction &fireInst,
       fireInst = state.fire[this->stateIndex];
       mode = (systemMode)state.mode;
       
-      if( state.packetNumber != (this->lastPacketNumber+1) ) {
-        Serial << F("Radio: missed a packet.") << endl;
+      // track
+      byte packetDelta = state.packetNumber - this->lastPacketNumber; // Wrap!
+      if( packetDelta > 1 ) {
+        Serial << F("Radio: missed packet.  Last=") << this->lastPacketNumber << F(" Current=") << state.packetNumber << endl;
+      } else {
+        Serial << F(".");
       }
       this->lastPacketNumber = state.packetNumber;
+      
+      return( true );
     }
   }
+  
+  return( false ); // no update
 }
 
 // starts the radio

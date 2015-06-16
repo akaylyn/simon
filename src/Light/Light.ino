@@ -49,6 +49,15 @@ void setup() {
   Serial << F("RimJob: RED starts at: ") << RED_SEG_START << endl;
   Serial << F("RimJob: GRN starts at: ") << GRN_SEG_START << endl;
 
+  // start
+  rimJob.begin();
+  redL.begin();
+  grnL.begin();
+  bluL.begin();
+  yelL.begin();
+  cirL.begin();
+  placL.begin();
+
   Serial << F("Free RAM: ") << freeRam() << endl;
 
   Serial << F("Light: startup complete.") << endl;
@@ -92,7 +101,11 @@ void loop() {
   //check and see if a data packet has come in.
   if (ET.receiveData()) {
   
-    Serial << F("Instruction received.") << endl;
+    Serial << F("I");
+    
+//    for( byte i=0; i<N_COLORS; i++ ) {
+//      Serial << F(" Color ") << i << F("; R:") << inst.light[i].red << F(" G:") << inst.light[i].green << F(" B:") << inst.light[i].blue << endl;
+//    }
     
     // dispatch the requests
     setStripColor(redL, inst.light[I_RED]);
@@ -408,8 +421,7 @@ void setStripColor(Adafruit_NeoPixel &strip, uint32_t c) {
   strip.show();
 }
 void setStripColor(Adafruit_NeoPixel &strip, colorInstruction &inst) {
-  uint32_t c = packColor(strip, (uint8_t *)&inst);
-  setStripColor(strip, c);
+  setStripColor(strip, strip.Color(inst.red, inst.green, inst.blue) );
 }
 
 void setStripColor(Adafruit_NeoMatrix &matrix, uint32_t c) {

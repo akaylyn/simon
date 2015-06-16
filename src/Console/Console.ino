@@ -13,7 +13,6 @@
 #include <RFM12B.h> // RFM12b radio transmitter module
 #include <EasyTransfer.h> // used for sending message to the sound module
 #include <wavTrigger.h> // sound board
-#include <QueueArray.h> // queing for radio transmissions
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
@@ -58,6 +57,7 @@ void setup() {
                       I_BLU, // Tower 3, BLUE, lower right.  
                       I_YEL  // Tower 4, YELLOW, lower left.  
   };
+
   // this layout has all towers listening to every color channel
   color AllIn[N_COLORS] = { N_COLORS, N_COLORS, N_COLORS, N_COLORS };
 

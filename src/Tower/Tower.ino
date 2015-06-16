@@ -109,7 +109,9 @@ void loop() {
   static Metro idleUpdate(IDLE_PERIOD);
 
   // check for radio traffic instructions
-  instruction.update(newColorInst, newFireInst, newMode);
+  if( instruction.update(newColorInst, newFireInst, newMode) )
+    // reset idle
+    idleUpdate.reset();
 
   if ( idleUpdate.check()) {
     idleTestPattern(newColorInst);
@@ -123,9 +125,7 @@ void loop() {
     // change the lights
     light.perform(newColorInst);
     // cache
-    lastColorInst = newColorInst;
-    // reset idle
-    idleUpdate.reset();
+    lastColorInst = newColorInst;   
   }
   if ( memcmp((void*)(&newFireInst), (void*)(&lastFireInst), sizeof(fireInstruction)) != 0 ) {
     Serial << F("New fire instruction. D:") << newFireInst.duration << F(" E:") << newFireInst.effect  << endl;
@@ -133,16 +133,12 @@ void loop() {
     fire.perform(newFireInst);
     // cache
     lastFireInst = newFireInst;
-    // reset idle
-    idleUpdate.reset();
   }
   if ( newMode != lastMode ) {
     // change the mode
     modeChange(newMode);
     // cache
     lastMode = newMode;
-    // reset idle
-    idleUpdate.reset();
   }
 
 }

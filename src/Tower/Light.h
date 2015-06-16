@@ -18,7 +18,7 @@
 class Flood {
   public:
     // startup
-    void begin(byte floodPin, unsigned long sendInterval = 2UL, byte sendCount = 3);
+    void begin(byte floodPin, unsigned long sendInterval = 5UL, byte sendCount = 3);
 
     // update routine for resends
     void update();
