@@ -7,7 +7,7 @@ void Network::begin(nodeID node, byte sendCount) {
   this->node = networkStart(node);
 
   // arise, Cthulu
-  radio.Wakeup();
+  //radio.Wakeup();  // this was crashing startup
   
   // check the send times
   for ( int i = 0; i < N_DATAGRAMS; i++ ) {
@@ -88,6 +88,7 @@ void Network::update() {
 
 // de-queue conflicting network sends
 void Network::dropQueEntries(int size, nodeID node) {
+  
   // how many entries are there?
   int entries = que.count();
   // cycle through the que, removing any that match size and node

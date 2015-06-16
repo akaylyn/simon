@@ -87,8 +87,8 @@ void loop() {
   // perform Tower resends; you should do this always if you want meaningful synchronization with Towers
   network.update();
   
-  Serial << F(".") << endl;
-  delay(1000);
+  //Serial << F(".") << endl;
+  //delay(1000);
 }
 
 int freeRam () {

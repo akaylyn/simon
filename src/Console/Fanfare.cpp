@@ -11,7 +11,7 @@ boolean hearBeat = false;
 byte active = 0;
 int tower2 = 0;
 
-void playerFanfare(fanfare_t level) {
+void oldplayerFanfare(fanfare_t level) {
   Serial << "***Inside alan playerFanFare: fanfareLevel: " << level << "\n";
 
   if (!FANFARE_ENABLED) {
@@ -161,3 +161,52 @@ void playerFanfare(fanfare_t level) {
 
 }
 
+void playerFanfare(fanfare_t level) {
+  Serial << "***debug fanfare: fanfareLevel: " << level << "\n";
+
+  if (!FANFARE_ENABLED) {
+    Serial.println("Fanfare disabled");
+    return;
+  }
+
+  //Metro fanfareDuration(FANFARE_DURATION_PER_CORRECT * currentLength);
+
+  // make sweet fire/light/music.
+  sound.setLeveling(0, 1);
+  int winTrack = sound.playWins();
+
+  light.clear();
+
+   Metro winTime(5000);  // TODO: How do we know the length in ms of the track?
+   winTime.reset();
+
+  int fireballs = 0;
+  color tower = I_RED;
+   while(!winTime.check()) {
+     Serial << "Fire" << endl;
+     fireballs++;
+     //waitDuration(2UL);
+     //light.setLight(tower,255,0,0);
+     fire.setFire(tower,5,gatlingGun);
+     colorInstruction c = cMap[tower];
+     c.red = 255;
+     c.green = 0;
+     c.blue = 0;
+     //light.setLight(tower, c);
+     waitDuration(500UL);
+     light.clear();
+     fire.clear();
+     //waitDuration(2UL);
+     //fire.setFire(tower,0,gatlingGun);
+     //light.setLight(tower,0,0,0);
+     waitDuration(500UL);
+   }
+
+  Serial << "Fireballs: " << fireballs << endl;
+
+  light.clear();
+  fire.clear();
+
+  // ramp down the volume to exit the music playing cleanly.
+  sound.fadeTrack(winTrack);
+}
