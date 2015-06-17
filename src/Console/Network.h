@@ -10,6 +10,7 @@
 // radio
 #include <SPI.h> // radio transmitter is a SPI device
 #include <EEPROM.h> // saving and loading radio settings
+#include <avr/eeprom.h>
 #include <RFM12B.h> // RFM12b radio transmitter module
 // Light module
 #include <EasyTransfer.h> 
@@ -30,7 +31,7 @@
 
 class Network {
   public:
-    void begin(color lightLayout[N_COLORS], color fireLayout[N_COLORS], nodeID node=BROADCAST); // defaults to getting nodeID from EEPROM
+    void begin(nodeID node=BROADCAST); // defaults to getting nodeID from EEPROM
     void layout(color lightLayout[N_COLORS], color fireLayout[N_COLORS]); // update layout
     void update(); // should be called frequently for sync.
     

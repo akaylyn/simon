@@ -13,7 +13,7 @@
 #include <Simon_Common.h>
 
 // debounce time
-#define SENSOR_DEBOUCE_TIME 100UL
+#define SENSOR_DEBOUCE_TIME 10UL
 
 // remote control
 #define MODE_ENABLE_PIN A8

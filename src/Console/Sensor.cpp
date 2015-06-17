@@ -12,6 +12,13 @@ void Sensor::begin() { // remote control
 
   pinMode(MODE_ENABLE_PIN, INPUT_PULLUP);
   pinMode(FIRE_ENABLE_PIN, INPUT_PULLUP);
+  
+  Metro startupReads(SENSOR_DEBOUCE_TIME*2UL);
+  startupReads.reset();
+  while( ! startupReads.check() ) {
+    modeEnable.update();
+    fireEnable.update();
+  }
 }
 
 // remote control.  There's a relay that will pull FIRE_ENABLE_PIN to LOW when pressed (enable fire).

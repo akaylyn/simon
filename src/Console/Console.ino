@@ -9,7 +9,8 @@
 #include <FiniteStateMachine.h> // using a FSM to run the game
 #include <LED.h> // led control abstraction
 #include <SPI.h> // radio transmitter is a SPI device
-#include <EEPROM.h> // saving and loading radio settings
+#include <EEPROM.h> // saving and loading radio and layout settings
+#include <avr/eeprom.h>
 #include <RFM12B.h> // RFM12b radio transmitter module
 #include <EasyTransfer.h> // used for sending message to the sound module
 #include <wavTrigger.h> // sound board
@@ -50,18 +51,7 @@ void setup() {
   mic.begin();
   
   //------ Network
-  // this layout has towers arranged to only listen to one color channel
-  color Each2Own[N_COLORS] = {
-                      I_RED, // Tower 1, RED, upper right.  
-                      I_GRN, // Tower 2, GREEN, upper left. 
-                      I_BLU, // Tower 3, BLUE, lower right.  
-                      I_YEL  // Tower 4, YELLOW, lower left.  
-  };
-
-  // this layout has all towers listening to every color channel
-  color AllIn[N_COLORS] = { N_COLORS, N_COLORS, N_COLORS, N_COLORS };
-
-  network.begin(Each2Own, Each2Own);
+  network.begin();
 
   //------ Output units.
   fire.begin(); //

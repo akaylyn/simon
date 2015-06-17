@@ -21,10 +21,11 @@ class TestModes {
     boolean update(); 
     
   private:
-    void bongoModeLoop(bool performStartup);
-    void proximityModeLoop(bool performStartup);
-    void lightsTestModeLoop(bool performStartup);
-    void fireTestModeLoop(bool performStartup);
+    void bongoModeLoop(boolean performStartup);
+    void proximityModeLoop(boolean performStartup);
+    void lightsTestModeLoop(boolean performStartup);
+    void fireTestModeLoop(boolean performStartup);
+    void layoutModeLoop(boolean performStartup);
 };
 
 extern TestModes testModes;

@@ -47,7 +47,7 @@ int fanfareCorrectMapping[N_LEVELS] = { 4, 7, 12, 18 }; // easier
 State test = State(testEnter, testUpdate, testExit);
 
 // the state machine controls which of the states get attention and execution time
-FSM simon = FSM(idle); //initialize state machine, start in state: idle
+FSM simon = FSM(test); //initialize state machine, start in state: test
 
 //***** Idle
 void idleEnter() {

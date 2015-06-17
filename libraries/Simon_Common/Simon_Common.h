@@ -98,13 +98,13 @@ enum systemMode {
 	GAMEPLAY=0, 
 	BONGO,
 	PROXIMITY,
-	LIGHTS,
 	FIRE,
+	LIGHTS,
+	LAYOUT,
 	
 	EXTERN, // for other projects driving Simon
 	
-	N_systemMode // ==4
-
+	N_systemMode // 
 };
 
 //**** Tie everything together for total system state send

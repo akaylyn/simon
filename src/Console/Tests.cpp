@@ -4,12 +4,13 @@
 
 // called from the main loop.  return true if we want to head back to playing Simon. 
 boolean TestModes::update() {
-  static int currentMode = GAMEPLAY;
+  static int currentMode = N_systemMode-1;
   static boolean performStartup, modeChange = true;
 
   if( sensor.modeChange() || modeChange ) {
     (++currentMode) %= N_systemMode; // wrap
 
+//    Serial << "CURRENT MODE: " << currentMode << endl;
     // Tell the tower's we're in a new mode
     network.send((systemMode)currentMode);
     
@@ -38,11 +39,16 @@ boolean TestModes::update() {
   case PROXIMITY:
     proximityModeLoop(performStartup);
     break;
+  case FIRE:
+    fireTestModeLoop(performStartup);
+    break;
   case LIGHTS:
     lightsTestModeLoop(performStartup);
     break;
-  case FIRE:
-    fireTestModeLoop(performStartup);
+  case LAYOUT:
+    layoutModeLoop(performStartup);
+    break;
+  case EXTERN:
     break;
   }
 
@@ -52,8 +58,74 @@ boolean TestModes::update() {
   return(false);
 }
 
+// assign towers to locations around the Simon bezel
+void TestModes::layoutModeLoop(boolean performStartup) {
+
+  static boolean showNow = true;
+  static color layout[N_COLORS] = {
+                      I_RED, // Tower 1, RED, upper right.  
+                      I_GRN, // Tower 2, GREEN, upper left. 
+                      I_BLU, // Tower 3, BLUE, lower right.  
+                      I_YEL  // Tower 4, YELLOW, lower left.  
+  };
+  // track idle for saving
+  static Metro writeSettingsNow(5000UL);
+  
+  if( performStartup ) {
+    Serial << "Starting up layoutMode" << endl;
+    sound.stopAll();
+    sound.setLeveling(4, 0); // prep for 4x tones and no music.
+    
+    fire.clear();
+    light.clear();
+    Metro delayFor(100UL);
+    delayFor.reset();
+    while( ! delayFor.check() ) network.update();
+    
+    showNow = true;
+    writeSettingsNow.reset();
+  }
+
+  if ( touch.anyChanged() ) { 
+    if ( touch.anyPressed() ) {
+      // increment this tower's color assignment
+      byte tower = (byte)touch.whatPressed();
+      
+      byte newLayout = (byte)layout[tower] +1;
+      layout[tower] = (color)newLayout;
+      if( layout[tower] > N_COLORS ) layout[tower]=I_RED; // N_COLORS is valid; means "All color channels"
+  
+      showNow = true;      
+      writeSettingsNow.reset();
+    } 
+  }
+
+  if( showNow ) {
+    for( byte i=I_RED; i<N_COLORS; i++ ){
+      colorInstruction c;
+      if( layout[i] == N_COLORS ) c = cWhite;
+      else c = cMap[layout[i]];
+
+      light.setLight((color)i, c);
+    }
+    showNow = false;
+  }  
+  
+  if( writeSettingsNow.check() ) {
+    light.clear();
+    Metro delayFor(500UL);
+    delayFor.reset();
+    while( ! delayFor.check() ) network.update();
+    showNow = true;
+    writeSettingsNow.reset();
+    
+    // do the deed.
+    network.layout(layout, layout);
+  }
+}
+
 // simply operate the Console in "bongoes" mode.  Will shoot fire
-void TestModes::bongoModeLoop(bool performStartup) {
+void TestModes::bongoModeLoop(boolean performStartup) {
 
   if( performStartup ) {
     Serial << "Starting up bongoMode" << endl;
@@ -90,7 +162,7 @@ void TestModes::bongoModeLoop(bool performStartup) {
 
 // uses the MPR121 device to adjust lights and sound based on Player 1's proximity to sensors
 extern float fscale( float originalMin, float originalMax, float newBegin, float newEnd, float inputValue, float curve); // from Touch.cpp
-void TestModes::proximityModeLoop(bool performStartup) {
+void TestModes::proximityModeLoop(boolean performStartup) {
 
   static Metro restartTimer(25000UL); // tones are only 30 seconds long, so we need to restart
   static int gainMax=TONE_GAIN - 6;
@@ -152,16 +224,48 @@ void TestModes::proximityModeLoop(bool performStartup) {
 
 }
 
-void TestModes::lightsTestModeLoop(bool performStartup) {
-  static int lightColorIndex[N_COLORS];
-  colorInstruction instruction;
-
+void TestModes::lightsTestModeLoop(boolean performStartup) {
+  static Metro switchInterval(100UL);
+  static byte intensity=255;
+  static byte currentColor=0;
+  static colorInstruction c; 
+  
   if(performStartup) {
     Serial << "Starting up light mode" << endl;
 
     sound.stopAll();
     sound.setLeveling(1, 0);
+
+    light.clear();
+    fire.clear();
   }
+  
+  if( switchInterval.check() ) {
+  
+    intensity+=10;
+
+    if( intensity<=10 ) {
+      currentColor++;
+      if( currentColor==N_COLORS ) {
+        // white
+        c = cWhite;
+        currentColor = 255; // will wrap
+      } else {
+        c = cMap[currentColor];
+      }
+      intensity = 1;
+    }
+    c.red = c.red>0 ? intensity : 0;
+    c.green = c.green>0 ? intensity : 0;    
+    c.blue = c.blue>0 ? intensity : 0;
+    
+    light.setLight(I_RED, c);
+    light.setLight(I_GRN, c);
+    light.setLight(I_BLU, c);
+    light.setLight(I_YEL, c);
+
+  }
+  
   /*
   for(int index = 0; index < N_TOWERS; index++)
    {    
@@ -226,7 +330,7 @@ void TestModes::lightsTestModeLoop(bool performStartup) {
 }
 
 #define FIRE_TEST_ARMED_TIMEOUT_MILLIS 5 * 1000
-void TestModes::fireTestModeLoop(bool performStartup) {
+void TestModes::fireTestModeLoop(boolean performStartup) {
   /*
   static Metro armedTimer(FIRE_TEST_ARMED_TIMEOUT_MILLIS);
    static bool armed[N_TOWERS];

@@ -1,6 +1,6 @@
 #include "Network.h"
 
-void Network::begin(color lightLayout[N_COLORS], color fireLayout[N_COLORS], nodeID node) {
+void Network::begin(nodeID node) {
   Serial << F("Network: begin") << endl;
 
   this->node = networkStart(node);
@@ -31,8 +31,11 @@ void Network::begin(color lightLayout[N_COLORS], color fireLayout[N_COLORS], nod
   this->sentCount = this->resendCount;
   Serial << F("Network: will resend new packets x") << this->resendCount << endl;
   
-  // set layout
-  this->layout(lightLayout, fireLayout);
+  // write to EEPROM if there's a change.
+  int addr = 69;
+  eeprom_read_block( (void*)&this->lightLayout, (void *)addr, sizeof(this->lightLayout) );
+  eeprom_read_block( (void*)&this->fireLayout, (void *)(addr+sizeof(this->lightLayout)), sizeof(this->fireLayout) );
+  this->layout( this->lightLayout, this->fireLayout ); // redundant, but I want the print
   
   Serial << F("Network: setup complete.") << endl;
 }
@@ -44,9 +47,16 @@ void Network::layout(color lightLayout[N_COLORS], color fireLayout[N_COLORS]) {
   for( byte i=0; i<N_COLORS; i++ ) {
     this->lightLayout[i] = lightLayout[i];
     Serial << F(" Color ") << i << (" assigned to Tower ") << lightLayout[i] << endl;
+    
     this->fireLayout[i] = fireLayout[i];
     Serial << F(" Fire ") << i << (" assigned to Tower ") << fireLayout[i] << endl;
   }
+  
+  // write to EEPROM if there's a change.
+  int addr = 69;
+  eeprom_update_block( (void*)&this->lightLayout, (void *)addr, sizeof(this->lightLayout) );
+  eeprom_update_block( (void*)&this->fireLayout, (void *)(addr+sizeof(this->lightLayout)), sizeof(this->fireLayout) );
+  
 }
 
 // resends and stuff
@@ -106,7 +116,7 @@ void Network::send() {
       towerState.light[i] = this->state.light[this->lightLayout[i]];
     } else {
       // towers are handling multiple color instructions
-       this->mergeColor(towerState.light[i]);
+      this->mergeColor(towerState.light[i]);
     }
     if( this->fireLayout[i] != N_COLORS ) {
       towerState.fire[i] = this->state.fire[this->fireLayout[i]];
@@ -122,7 +132,7 @@ void Network::send() {
 
 // we sum up the lighting instructions
 void Network::mergeColor(colorInstruction &inst) {
-  unsigned long red, green, blue = 0;
+  unsigned long red=0, green=0, blue=0;
   for( byte i=0; i<N_COLORS; i++ ) {
     red += this->state.light[i].red;
     green += this->state.light[i].green;
@@ -136,7 +146,7 @@ void Network::mergeColor(colorInstruction &inst) {
 
 // we sum up the fire instructions
 void Network::mergeFire(fireInstruction &inst) {
-  unsigned long duration, effect = 0;
+  unsigned long duration=0, effect=0;
   for( byte i=0; i<N_COLORS; i++ ) {
     duration += this->state.fire[i].duration;
     effect += this->state.fire[i].effect;
