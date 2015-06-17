@@ -41,7 +41,7 @@ Metro playerTimeout(3000UL);
 State fanfare = State(fanfareEnter, fanfareUpdate, fanfareExit);
 fanfare_t fanfareLevel;
 //int fanfareCorrectMapping[N_LEVELS] = { 8, 14, 20, 31 }; // stock simon numbers
-int fanfareCorrectMapping[N_LEVELS] = { 4, 8, 12, 16 }; // easier
+int fanfareCorrectMapping[N_LEVELS] = { 4, 7, 12, 18 }; // easier
 
 // Tests
 State test = State(testEnter, testUpdate, testExit);
@@ -208,13 +208,15 @@ void playerUpdate() {
   boolean hasTimedOut = playerTimeout.check();
   boolean hasWrongMove = !correct;
   if ( hasTimedOut ||  hasWrongMove ) {
-    if ( playerCurrent >= fanfareCorrectMapping[LEVEL4] ) {
+    Serial << "Done.  current is: " << playerCurrent << " gamecurrent: " << gameCurrent << endl;
+    
+    if ( gameCurrent > fanfareCorrectMapping[LEVEL4] ) {
       fanfareLevel = LEVEL4;
-    } else if ( playerCurrent >= fanfareCorrectMapping[LEVEL3] ) {
+    } else if ( gameCurrent > fanfareCorrectMapping[LEVEL3] ) {
       fanfareLevel = LEVEL3;
-    } else if ( playerCurrent >= fanfareCorrectMapping[LEVEL2] ) {
+    } else if ( gameCurrent > fanfareCorrectMapping[LEVEL2] ) {
       fanfareLevel = LEVEL2;
-    } else if ( playerCurrent >= fanfareCorrectMapping[LEVEL1] ) {
+    } else if ( gameCurrent > fanfareCorrectMapping[LEVEL1] ) {
       fanfareLevel = LEVEL1;
     } else {
       fanfareLevel = CONSOLATION;

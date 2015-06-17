@@ -10,7 +10,18 @@ boolean hearBeat = false;
 byte active = 0;
 byte tower, tower2 = I_RED;
 
-void oldplayerFanfare(fanfare_t level) {
+color incColor(color val) {
+  switch(val) {
+    case I_RED: return I_GRN;
+    case I_GRN: return I_BLU;
+    case I_BLU: return I_YEL;
+    case I_YEL: return I_RED;
+  }
+  
+  return I_RED;
+}
+
+void playerFanfare(fanfare_t level) {
   Serial << "***Inside alan playerFanFare: fanfareLevel: " << level << "\n";
 
   if (!FANFARE_ENABLED) {
@@ -26,34 +37,78 @@ void oldplayerFanfare(fanfare_t level) {
   int winTrack = sound.playWins();
 
   light.clear();
+  fire.clear();
+  network.update();
 
   mic.update();   // populate avg
   mic.update();   // populate avg
 
-  float beatThreshold = 3;
-  byte fireLevel = 2;  // power curve of fire fanfareLevel mapping, higher increases average fire fanfareLevel
-  byte airChance = 0;  // n in 10 chance of air effect
-  int fireBeat = 450;
+  unsigned long trackLength = 30000UL;
+  
+  switch(level) {
+    case LEVEL1:
+      trackLength = 7000UL;
+      break;
+    case LEVEL2:
+      trackLength = 12000UL;
+      break;
+    case LEVEL3:
+      trackLength = 20000UL;
+      break;
+    case LEVEL4:
+    case MAXOUT:
+      trackLength = 30000UL;
+      break;
+    case IDLE:
+    case CONSOLATION:
+      trackLength = 3000UL;
+      break;
+    case NONE:
+      return;      
+  }
+  
+  unsigned long startTime = millis() - 1;
+   Metro winTime(trackLength);  // TODO: How do we know the length in ms of the track?
+   winTime.reset();
 
-  // stats
-  int fireballs = 0;
-  int firepower = 0;
+   unsigned long beatInterval = 333;  // 180 BPM max
+   byte beatChance = 80;  // chance in 100 a beat triggers a fire.  Use to marshall amount of fire
+   byte airChance = 1;  // n in 10 chance of air effect
 
-  mic.setThreshold(bassBand, beatThreshold);
-  mic.setThreshold(bassBand2, beatThreshold);
+   unsigned long beatEndTime = millis();  // time left for beat effect
+   unsigned long beatWaitTime = millis();
+   unsigned long currTime;
+   int fireballs = 0;
+   unsigned long firepower = 1;
+   float threshold = 1.0;
+   unsigned long budget = (unsigned long) ((float)trackLength / 6.0);
+   float bt = (float) trackLength / budget;
+   byte active;
 
-  Metro winTime(30000);  // TODO: How do we know the length in ms of the track?
-  winTime.reset();
+  Serial << "Track Length: " << trackLength << " budget: " << budget << endl;;
+   
+   color fireTower = I_RED;
+   color lightTower = I_RED;
 
-  Metro beatWait(333);
-  beatWait.reset();
+   // Use the threshold to meet budget constraints for fire.  Ratio of current time / total Time and fire power / budget.
+   while(!winTime.check()) {
+     currTime = millis();
+     threshold *= bt * (float)firepower / ((float) (currTime - startTime));
+     threshold = constrain(threshold,1.0,5.0);
+     mic.setThreshold(bassBand, threshold);
+     mic.setThreshold(bassBand2, threshold);
+     network.update();
+     waitDuration(1UL);
+     mic.update();
 
-  while (!winTime.check()) {
-    Metro myWait(1UL);
-    myWait.reset();
-    while(!myWait.check()) network.update(); // resends, etc.
-
-    mic.update();
+     if (hearBeat && currTime > beatEndTime) {
+       Serial << "Beat over.  " << endl;
+       light.clear();
+       fire.clear();
+       network.update();
+       hearBeat = false;
+       waitDuration(10UL);
+     }
 
     for (byte i = 0; i < NUM_FREQUENCY_BANDS; i++) {
       if ( mic.getBeat(i) ) {
@@ -61,94 +116,85 @@ void oldplayerFanfare(fanfare_t level) {
       }
     }
 
-    //      if ((mic.getBeat(bassBand) || mic.getBeat(bassBand2)) && hearBeat == false) {
-    if (beatWait.check() && (mic.getVol(bassBand) > fireBeat || mic.getVol(bassBand2) > fireBeat) && hearBeat == false) {
-      tower++;
-      if (tower >= N_COLORS) tower = I_RED;
-      byte avgVol = max(mic.getAvg(bassBand), mic.getAvg(bassBand2));
-      //        Serial << "avgVol: " << avgVol << " fscale: " << fscale(0, 1024, 0, 255, avgVol, fireLevel) << endl;
-      //Serial << "band1: " << mic.getAvg(bassBand) << " band2: " << mic.getAvg(bassBand) << endl;
-
-      byte fireLevel = floor(fscale(0, 1024, 50, 255, avgVol, fireLevel));
-      flameEffect airEffect = veryRich;
-
-      if (random(0, 10) >= (10 - airChance)) {
-        byte effect = random(0, 6);
-        switch (effect) {
-        case 0:
-          airEffect = kickStart;
-          break;
-        case 1:
-          airEffect = kickMiddle;
-          break;
-        case 2:
-          airEffect = kickEnd;
-          break;
-        case 3:
-          airEffect = gatlingGun;
-          break;
-        case 4:
-          airEffect = randomly;
-          break;
-        case 5:
-          airEffect = veryLean;
-          break;
-        }
-      }
-      //Serial << "Fireballv3: " << (fire) << " air: " << (airEffect) << endl;
-      // I really thinkg you mean "setFire(I_RED)" or some directive to a tower.
-      fire.setFire((color)tower, fireLevel, airEffect);
-      hearBeat = true;
-      fireballs++;
-      firepower += fireLevel;
-      beatWait.interval(333);
-      beatWait.reset();
-
-    } 
-    else if (!(mic.getVol(bassBand) > fireBeat || mic.getVol(bassBand2) > fireBeat)) {
-      //light.setAllFire(0);  // TODO: Not sure we really want to shut off flame here
-      //light.show();
-      hearBeat = false;
-    }
-    // clear packet
-    light.clear();
-    fire.clear();
-
+    // Lights will queue changes based on activity level across all bands
     if (active > 0) {
       switch (active) {
       case 0:
-        // light.setAllLight(0);
         light.clear();
         break;
       case 1:
       case 2:
-        //light.setLight(I_RED, 255);
-        light.setLight((color)tower2, 255, 0 , 0);
+        light.setLight(lightTower, 255, 0 , 0);
         break;
       case 3:
       case 4:
-        //light.setLight(I_GRN, 255);
-        light.setLight((color)tower2, 0, 255, 0);
+        light.setLight(lightTower, 0, 255, 0);
         break;
       case 5:
       case 6:
-        //light.setLight(I_BLU, 255);
-        light.setLight((color)tower2, 0, 0, 255);
+        light.setLight(lightTower, 0, 0, 255);
         break;
       default:
-        // light.setAllLight(255);
-        light.setLight((color)tower2, 255, 255, 255);
+        light.setLight(lightTower, 255, 255, 255);
         active = 0;
         break;
       }
 
-      //light.show(tower2);
-      if (random(10) > 2) {
-        tower2++;
+      if (random(10) > 3) {
+        lightTower = incColor(lightTower);
       }
-      if (tower2 >= N_COLORS) tower2 = I_RED;
     }
-  }
+    
+    // Fire is queued to the bass channels.  Air effect is random but unlikely right now
+     if (currTime > beatWaitTime) {
+       if (mic.getBeat(bassBand) || mic.getBeat(bassBand2)) {
+         if (random(0,100) <= beatChance) {
+           Serial << "Fire" << endl;
+           hearBeat = true;
+           byte fireLevel = 10 + random(0,15);
+           unsigned long fireMs = fireLevel * 10; // each level is 10ms
+           
+           flameEffect airEffect = veryRich;
+
+            if (random(0, 10) >= (10 - airChance)) {
+              byte effect = random(0, 6);
+              switch (effect) {
+              case 0:
+                airEffect = kickStart;
+                break;
+              case 1:
+                airEffect = kickMiddle;
+                break;
+              case 2:
+                airEffect = kickEnd;
+                break;
+              case 3:
+                airEffect = gatlingGun;
+                break;
+              case 4:
+                airEffect = randomly;
+                break;
+              case 5:
+                airEffect = veryLean;
+                break;
+              }
+            }
+           fire.setFire(fireTower,fireLevel,airEffect);
+
+           network.update();
+           fireballs++;
+           firepower += fireMs;
+           beatEndTime = currTime + fireMs;
+           beatWaitTime = currTime + beatInterval;
+           
+           fireTower = incColor(fireTower);
+         } else {
+           Serial << "Ignore" << endl;
+         }
+       }
+     }
+     
+   }
 
   light.clear();
   fire.clear();
@@ -156,67 +202,9 @@ void oldplayerFanfare(fanfare_t level) {
   // ramp down the volume to exit the music playing cleanly.
   sound.fadeTrack(winTrack);
 
-  Serial << "Fireballs: " << fireballs << " power: " << firepower << endl;
+  Serial << "Fireballs: " << fireballs << " power: " << firepower << " budget: " << budget << endl;
   Serial << F("Gameplay: Player fanfare ended") << endl;
 
 }
 
-void playerFanfare(fanfare_t level) {
-  Serial << "***debug fanfare: fanfareLevel: " << level << "\n";
-
-  if (!FANFARE_ENABLED) {
-    Serial.println("Fanfare disabled");
-    return;
-  }
-
-  //Metro fanfareDuration(FANFARE_DURATION_PER_CORRECT * currentLength);
-
-  // make sweet fire/light/music.
-  sound.setLeveling(0, 1);
-  int winTrack = sound.playWins();
-
-  light.clear();
-  fire.clear();
-  network.update(); // immediate send
-
-  Metro winTime(5000);  // TODO: How do we know the length in ms of the track?
-  winTime.reset();
-
-  int fireballs = 0;
-  color tower = I_RED;
-  while(!winTime.check()) {
-    Serial << "Fire" << endl;
-    fireballs++;
-    //waitDuration(2UL);
-    light.setLight(I_RED,255,0,0);
-    light.setLight(I_GRN,255,0,0);
-    light.setLight(I_BLU,255,0,0);
-    light.setLight(I_YEL,255,0,0);
   
-    fire.setFire(I_RED,5,gatlingGun);
-    fire.setFire(I_GRN,5,gatlingGun);
-    fire.setFire(I_BLU,5,gatlingGun);
-    fire.setFire(I_YEL,5,gatlingGun);
-  /*
-    colorInstruction c = cMap[tower];
-    light.setLight(tower, c);
-  */
-    waitDuration(500UL);
-    
-    light.clear();
-    fire.clear();
-    //waitDuration(2UL);
-    //fire.setFire(tower,0,gatlingGun);
-    //light.setLight(tower,0,0,0);
-    waitDuration(500UL);
-  }
-
-  Serial << "Fireballs: " << fireballs << endl;
-
-  light.clear();
-  fire.clear();
-
-  // ramp down the volume to exit the music playing cleanly.
-  sound.fadeTrack(winTrack);
-}
-
