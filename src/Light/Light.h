@@ -1,5 +1,6 @@
 #ifndef Light_h
 #define Light_h
+
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_NeoMatrix.h>
@@ -7,8 +8,6 @@
 #include <Metro.h>
 #include <EasyTransfer.h>
 #include <LightMessage.h> // common message definition
-#include "Animations.h"
-//#include "ConcurrentAnimator.h"
 
 // watchdog timer
 #include <avr/wdt.h>

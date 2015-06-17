@@ -1,33 +1,26 @@
 #ifndef Animations_h
 #define Animations_h
 
+#include <Streaming.h>
 #include <Adafruit_Neopixel.h>
 #include <Adafruit_NeoMatrix.h>
-
-// Animations are defined within the Animations directory
-
-typedef void (*AnimateFunc)(Adafruit_NeoPixel&, int, int, int, void*);
+//#include "AnimateFunc.h"
+#include "AnimationConfig.h"
+#include "Light.h"
 
 // Animations designed for the NeoPixel Strips surrounding the buttons
-struct ButtonAnimations {
-    AnimateFunc LaserWipe;
-    AnimateFunc ColorWipe;
-};
+void laserWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
+void laserWipeEdge(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
+void colorWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
 
 // Animations designed for the NeoPixel Matrix wrapped around the inside of the console
-struct RimAnimations {
-    AnimateFunc ColorWipe;
-};
+void colorWipeMatrix(Adafruit_NeoMatrix &strip, int c);
 
-class Animations {
-    public:
-        int i;
-        RimAnimations Rim;
-        ButtonAnimations Btn;
-    //    Animations(){};
-        AnimateFunc Test;
-} animations;
-animations.i = 1;
+// Position information needed for the LaserWipe animation
+struct LaserWipePosition {
+    int prev;
+    int dir; // direction
+};
 
 #endif
 

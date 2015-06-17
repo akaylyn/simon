@@ -6,15 +6,16 @@
 #include <EasyTransfer.h>
 #include <LightMessage.h> // common message definition
 #include <avr/wdt.h> // watchdog timer
-#include "Light.h"
-#include "Animations.h"
 #include "ButtonTest.h"
+#include "Light.h"
+#include "AnimationConfig.h"
+#include "Animations.h"
 #include "ConcurrentAnimator.h"
-#include "All.h"
+#include "AnimateFunc.h"
 
 #define PIN 4
 
-extern Animations animations;
+//extern Animations animations;
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -135,11 +136,11 @@ void loop() {
   if (fasterStripUpdateInterval.check()) {
     //animator.animate(wipeStrip, rimConfig);
     Serial << "1";
-    animator.animate(animations.Btn.LaserWipe, redButtonConfig);
+    animator.animate(laserWipe, redButtonConfig);
     Serial << "2";
-    animator.animate(animations.Btn.LaserWipe, greenButtonConfig);
-    animator.animate(animations.Btn.LaserWipe, blueButtonConfig);
-    animator.animate(animations.Btn.LaserWipe, yellowButtonConfig);
+    animator.animate(laserWipe, greenButtonConfig);
+    animator.animate(laserWipe, blueButtonConfig);
+    animator.animate(laserWipe, yellowButtonConfig);
 
     fasterStripUpdateInterval.reset();
   }
