@@ -36,11 +36,11 @@ void Fire::perform(fireInstruction &inst) {
     return;
   }
   // we're not being asked for a flame effect
-  if( inst.flame == 0 ) return;
+  if( inst.duration == 0 ) return;
   
   // unpack flame instruction
   unsigned long flameTime = constrain(
-    (unsigned long)inst.flame * 10UL, // requested time in ms
+    (unsigned long)inst.duration * 10UL, // requested time in ms
     minPropaneTime, maxPropaneTime
   );
   // set the lockout appropriately
@@ -87,6 +87,10 @@ void Fire::perform(fireInstruction &inst) {
   }
 
   Serial << F("Fire: effect duration ") << flameTime << F(" ms. Effect ") << inst.effect << F(". Lockout ") << lockoutInterval << endl;
+  
+  // set fireInstruction back to idle
+  inst.duration = 0;
+  inst.effect = veryRich;
 }
 
 // pulse the air on 

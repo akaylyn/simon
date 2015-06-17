@@ -89,7 +89,7 @@ void loop() {
   // a place to store instructions
   static colorInstruction lastColorInst, newColorInst;
   static fireInstruction lastFireInst, newFireInst;
-  static modeSwitchInstruction lastModeInst, newModeInst;
+  static systemMode lastMode, newMode;
 
   // check for reset condition, and set the tanks to blink during reset
   if ( systemReset.update() ) { // reset state change
@@ -98,10 +98,10 @@ void loop() {
       Serial << F("reset.") << endl;
 
       newColorInst = cRed;
-      light.effect(BLINK);
+      light.effect(Blink);
     } else {
       Serial << F("normal.") << endl;
-      light.effect(SOLID);
+      light.effect(Solid);
     }
   }
 
@@ -109,7 +109,9 @@ void loop() {
   static Metro idleUpdate(IDLE_PERIOD);
 
   // check for radio traffic instructions
-  instruction.update(newColorInst, newFireInst, newModeInst);
+  if( instruction.update(newColorInst, newFireInst, newMode) )
+    // reset idle
+    idleUpdate.reset();
 
   if ( idleUpdate.check()) {
     idleTestPattern(newColorInst);
@@ -119,28 +121,24 @@ void loop() {
 
   // execute any new instructions
   if ( memcmp((void*)(&newColorInst), (void*)(&lastColorInst), sizeof(colorInstruction)) != 0 ) {
+    Serial << F("New color instruction. R:") << newColorInst.red << F(" G:") << newColorInst.green << F(" B:") << newColorInst.blue << endl;
     // change the lights
     light.perform(newColorInst);
     // cache
-    lastColorInst = newColorInst;
-    // reset idle
-    idleUpdate.reset();
+    lastColorInst = newColorInst;   
   }
   if ( memcmp((void*)(&newFireInst), (void*)(&lastFireInst), sizeof(fireInstruction)) != 0 ) {
+    Serial << F("New fire instruction. D:") << newFireInst.duration << F(" E:") << newFireInst.effect  << endl;
     // change the lights
     fire.perform(newFireInst);
     // cache
     lastFireInst = newFireInst;
-    // reset idle
-    idleUpdate.reset();
   }
-  if ( memcmp((void*)(&newModeInst), (void*)(&lastModeInst), sizeof(modeSwitchInstruction)) != 0 ) {
+  if ( newMode != lastMode ) {
     // change the mode
-    modeChange(newModeInst);
+    modeChange(newMode);
     // cache
-    lastModeInst = newModeInst;
-    // reset idle
-    idleUpdate.reset();
+    lastMode = newMode;
   }
 
 }
@@ -151,19 +149,20 @@ int freeRam () {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
-void modeChange(modeSwitchInstruction &inst) {
+void modeChange(systemMode &mode) {
 
-  Serial << F("Mode state change.  Going to mode: ") << inst.currentMode << endl;
+  Serial << F("Mode state change.  Going to mode: ") << mode << endl;
 
   // If we've gone to one of the test modes, display a color for 1.5 seconds.
   // This should be the same amount of time that the console is playing a
   // sound, so the delay won't get us out of sync
   colorInstruction color;
-  switch( inst.currentMode ) {
+  switch( mode ) {
     case 1: color=cRed; break;
     case 2: color=cGreen; break;
     case 3: color=cRed; break;
     case 4: color=cYellow; break;
+    default: color=cWhite; break;
   }
   light.perform(color);
   

@@ -57,6 +57,8 @@ void idleEnter() {
   gameCurrent = 0;
 
   light.clear();
+  fire.clear();
+  network.update();
   
   sound.setMasterGain();
   sound.setLeveling();
@@ -99,6 +101,8 @@ void gameEnter() {
 
   // clear
   light.clear();
+  fire.clear();
+
   sound.stopTones();
 
   // delay after a player's last move
@@ -117,7 +121,7 @@ void gameUpdate() {
   gameSequence[gameCurrent++] = (color)random(N_COLORS);
 
   // how long between each
-  unsigned long pauseDuration = 50; // ms
+  unsigned long pauseDuration = 100; // ms
 
   // how long to light and tone
   unsigned long playDuration = 420;
@@ -125,9 +129,9 @@ void gameUpdate() {
   if ( gameCurrent >= 14) playDuration = 220;
 
   for (int i = 0; i < gameCurrent; i++) {
-    // lights
     colorInstruction c = cMap[gameSequence[i]];
     light.setLight(gameSequence[i], c);
+    
     // sound
     sound.playTone(gameSequence[i]);
 
@@ -150,6 +154,10 @@ void gameExit() {
 //***** Player
 void playerEnter() {
   Serial << F("Simon: ->player") << endl;
+
+  // clear
+  light.clear();
+  fire.clear();
 
   // reset the timeout
   playerTimeout.reset();

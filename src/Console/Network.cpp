@@ -1,187 +1,154 @@
 #include "Network.h"
 
-void Network::begin(nodeID node, byte sendCount) {
+void Network::begin(color lightLayout[N_COLORS], color fireLayout[N_COLORS], nodeID node) {
   Serial << F("Network: begin") << endl;
 
-  this->sendCount = sendCount;
   this->node = networkStart(node);
+
+  // setup Light comms
+  Serial1.begin(115200);
+  //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc. 
+  this->ET.begin(details(this->state), &Serial1);
+  Serial << F("Network: serial comms with Light module.") << endl;
 
   // arise, Cthulu
   //radio.Wakeup();  // this was crashing startup
   
-  // check the send times
-  for ( int i = 0; i < N_DATAGRAMS; i++ ) {
-    Serial << F(" Datagram ") << i << F(" size (bytes)=") << instructionSizes[i];
-  
-    // make a buffer
-    byte sendBuffer[i];
-    unsigned long tic = micros();
-    // send.   match Network::update Send syntax exactly
-    radio.Send(255, sendBuffer, sizeof(sendBuffer));
-    radio.SendWait();
-    unsigned long toc = micros();
-        
-    Serial << F(" requires ") << toc-tic << F("us to send.") << endl;
+  // check the send time
+  Serial << F("Network: system datagram size (bytes)=") << sizeof(this->state) << endl;
+  unsigned long tic = micros();
+  // send.   match Network::update Send syntax exactly
+  radio.Send(255, (const void*)(&this->state), sizeof(this->state), false, 0);
+  radio.SendWait();
+  unsigned long toc = micros();
+  Serial << F("Network: system datagram requires ") << toc-tic << F("us to send.") << endl;
     
-    // save this, bumped slighly
-    this->packetSendTime[i] = float(toc-tic)*1.1;
-  }
+  // save this, bumped slighly and at least 5ms
+  this->packetSendInterval = max(5000UL, float(toc-tic)*1.1);
+  Serial << F("Network: sending system datagram every ") << this->packetSendInterval << F("us.") << endl;
+
+  this->resendCount = 10;
+  this->sentCount = this->resendCount;
+  Serial << F("Network: will resend new packets x") << this->resendCount << endl;
   
-  // and take a moment to check heap+stack remaining
-  extern int freeRam();
-  Serial << F("Network: free RAM: ") << freeRam() << endl;
-  
-  Serial << F("20 packet ping to BROADCAST") << endl;
-  this->ping(20);
-/*
-  Serial << F("20 packet ping to Tower1") << endl;
-  this->ping(20, TOWER1);
-  Serial << F("20 packet ping to Tower2") << endl;
-  this->ping(20, TOWER2);
-  Serial << F("20 packet ping to Tower3") << endl;
-  this->ping(20, TOWER3);
-  Serial << F("20 packet ping to Tower4") << endl;
-  this->ping(20, TOWER4);
-  */
-  
-  Serial << F("Network: free RAM: ") << freeRam() << endl;
+  // set layout
+  this->layout(lightLayout, fireLayout);
   
   Serial << F("Network: setup complete.") << endl;
-  delay(1000);
+}
 
+void Network::layout(color lightLayout[N_COLORS], color fireLayout[N_COLORS]) {
+  Serial << F("Network: layout:") << endl;
+  
+  // store it
+  for( byte i=0; i<N_COLORS; i++ ) {
+    this->lightLayout[i] = lightLayout[i];
+    Serial << F(" Color ") << i << (" assigned to Tower ") << lightLayout[i] << endl;
+    this->fireLayout[i] = fireLayout[i];
+    Serial << F(" Fire ") << i << (" assigned to Tower ") << fireLayout[i] << endl;
+  }
 }
 
 // resends and stuff
 void Network::update() {
   // track send times
-  static Metro radioReady(3UL);
+  static unsigned long lastSend = micros();
+  unsigned long now = micros();
   
-  // is there something queued?
-  if( !que.isEmpty()  ) {    
-    // and the resend interval has elapsed
-    if( !radioReady.check() ) return;
-    radioReady.reset();
+  // if the resend interval has not elapsed, exit
+  if( now-lastSend < this->packetSendInterval ) return;
     
-//    Serial << F("Network: poped que entry") << endl;
-//    // and take a moment to check heap+stack remaining
-//    extern int freeRam();
-//    Serial << F("Network: free RAM: ") << freeRam() << endl;
+  // if the sent count exceeds resend count, exit
+  if( this->sentCount >= this->resendCount ) return;
     
-    // yep. pop a que entry.
-    sendBuffer send = que.pop();
-    
-    // send. no ACK, no sleep.
-    radio.Send(send.address, send.buffer, send.size, false, 0);
-    
-    // increment sendCount
-    send.sendCount++;
-//    Serial << F("Network: popped.  sendCount=") << send.sendCount << endl;
+  // Radio: send. no ACK, no sleep.
+  this->send();
+  this->sentCount++;
 
-    // we might need to reque
-    if( send.sendCount <= this->sendCount ) { 
-      que.push(send);
-//      Serial << F("Network: reque") << endl;
-    }
-      
-  }
-}
 
-// de-queue conflicting network sends
-void Network::dropQueEntries(int size, nodeID node) {
-  
-  // how many entries are there?
-  int entries = que.count();
-  // cycle through the que, removing any that match size and node
-  for( int i=0; i<entries; i++ ) {
-    sendBuffer entry = que.pop();
-    if( entry.address != (byte)node || entry.size != size ) {
-      que.push(entry);
-    } else {
-      // otherwise, drop it.
-//      Serial << F("dropped conflicting que entry") << endl;
-    }
-  }
+  // record last send time
+  lastSend = now;
 }
 
 // makes the network do stuff with your stuff
-void Network::send(colorInstruction &inst, nodeID node, boolean dropConflictingInstructions) {
-//  Serial << F("send: r:") << inst.red << F(" g:") << inst.green << F(" b:") << inst.blue << endl;
-  send( (const void*)(&inst), sizeof(inst), node, dropConflictingInstructions );
+void Network::send(color position, colorInstruction &inst) {
+  this->state.light[position] = inst;
+  this->sentCount = 0;
 }
-void Network::send(fireInstruction &inst, nodeID node, boolean dropConflictingInstructions) { 
-  send( (const void*)(&inst), sizeof(inst), node, dropConflictingInstructions );
+void Network::send(color position, fireInstruction &inst) { 
+  this->state.fire[position] = inst;
+  this->sentCount = 0;
 }
-void Network::send(modeSwitchInstruction &inst, nodeID node, boolean dropConflictingInstructions) {
-  send( (const void*)(&inst), sizeof(inst), node, dropConflictingInstructions );
-}
-void Network::send(commsCheckInstruction &inst, nodeID node, boolean dropConflictingInstructions) {
-  send( (const void*)(&inst), sizeof(inst), node, dropConflictingInstructions );
-}
-// and are really just overloaded helpers for this
-void Network::send(const void* buffer, byte bufferSize, nodeID node, boolean dropConflictingInstructions) {
-  
-  // if requested, drop any que entries of the same message type to the same node
-  if( dropConflictingInstructions ) dropQueEntries(bufferSize, node);
-  
-  // whack it
-  sendBuffer buff;
-  buff.address = (byte)node;
-  buff.buffer = buffer;
-  buff.size = bufferSize;
-  buff.sendCount = 0;
-  
-  // stack it
-  que.push(buff);  
-
-//  Serial << F("Network: enqued") << endl;
-  // let it go
-  this->update();
+void Network::send(systemMode mode) {
+  this->state.mode = (byte)mode;
+  this->sentCount = 0;
 }
 
-void Network::ping(int count, nodeID node) {
-  commsCheckInstruction packet[count];
+// internal dispatcher
+void Network::send() {
   
-  // don't resend
-  byte saveSendCount = this->sendCount;
-  this->sendCount = 0;
+  // increment counter
+  this->state.packetNumber++;
   
-  for( int i=0; i<count; i++ ) {
-    packet[i].packetTotal = count;
-    packet[i].packetNumber = i;
-    
-//    radio.Send((byte)node, (const void*)(&packet), sizeof(packet)); // don't drop
-//    delay(2); // need 2ms between packets
+  // Light: send.
+  ET.sendData();
 
-    // use the same sends, just with que and no replacement
-    this->send(packet[i], node, false);
+//  radio.Send((byte)BROADCAST, (const void*)(&this->state), sizeof(this->state), false, 0);
+
+  // apply physical Tower layout 
+  systemState towerState;
+  towerState.packetNumber = this->state.packetNumber;
+  towerState.mode = this->state.mode;
+  
+  for( byte i=0; i<N_COLORS; i++ ) {
+    if( this->lightLayout[i] != N_COLORS ) {
+      // if single tower are handling single colors
+      towerState.light[i] = this->state.light[this->lightLayout[i]];
+    } else {
+      // towers are handling multiple color instructions
+       this->mergeColor(towerState.light[i]);
+    }
+    if( this->fireLayout[i] != N_COLORS ) {
+      towerState.fire[i] = this->state.fire[this->fireLayout[i]];
+    } else {
+      // towers are handling multiple fire instructions
+      this->mergeFire(towerState.fire[i]);
+    }
   }
-  
-  // wait until sent
-  while( !que.isEmpty() ) this->update();
-  
-  // reset sendCount  
-  this->sendCount = saveSendCount;
 
+  // Radio: send.  
+  radio.Send((byte)BROADCAST, (const void*)(&towerState), sizeof(towerState), false, 0);
 }
 
-void Network::clear() {
-  while( !que.isEmpty() ) que.pop();
+// we sum up the lighting instructions
+void Network::mergeColor(colorInstruction &inst) {
+  unsigned long red, green, blue = 0;
+  for( byte i=0; i<N_COLORS; i++ ) {
+    red += this->state.light[i].red;
+    green += this->state.light[i].green;
+    blue += this->state.light[i].blue;
+  }
+
+  inst.red = constrain(red, 0, 255);
+  inst.green = constrain(green, 0, 255);
+  inst.blue = constrain(blue, 0, 255);
+}
+
+// we sum up the fire instructions
+void Network::mergeFire(fireInstruction &inst) {
+  unsigned long duration, effect = 0;
+  for( byte i=0; i<N_COLORS; i++ ) {
+    duration += this->state.fire[i].duration;
+    effect += this->state.fire[i].effect;
+  }
+
+  inst.duration = constrain(duration, 0, 255);
+  inst.effect = constrain(effect, veryRich, veryLean);
 }
 
 // starts the radio
 nodeID Network::networkStart(nodeID node) {
   
-  // check that the tower payloads aren't the same size.
-  for ( int i = 0; i < N_DATAGRAMS; i++ ) {
-    for ( int j = i + 1; j < N_DATAGRAMS; j++ ) {
-      if ( instructionSizes[i] == instructionSizes[j] ) {
-        Serial << F("Network: radio instructions are indistinguishable by size!  Halting.") << endl;
-        Serial << F("Datagrams matched by size: ") << i << F(" and ") << j << endl;
-        while (1); // halt
-      }
-    }
-  }
-
   // EEPROM location for radio settings.
   const byte radioConfigLocation = 42;
 
@@ -198,6 +165,7 @@ nodeID Network::networkStart(nodeID node) {
     Serial << F(" Band: ") << band;
     Serial << endl;
 
+//    radio.Initialize(node, band, groupID, 0, 0x7F); // 38300 bps
     radio.Initialize(node, band, groupID, 0, 0x02); // 115200 bps
 
     Serial << F("Network: RFM12b radio module startup complete. ") << endl;

@@ -11,12 +11,11 @@
 #include <SPI.h> // radio transmitter is a SPI device
 #include <EEPROM.h> // saving and loading radio settings
 #include <RFM12B.h> // RFM12b radio transmitter module
-#include <QueueArray.h> // queing for IR transmissions
+// Light module
+#include <EasyTransfer.h> 
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h> 
-
-#include <RFM12B.h> // Console
 
 // once we get radio comms, wait this long  before returning false from externUpdate.
 #define EXTERNAL_COMMS_TIMEOUT 10000UL
@@ -29,50 +28,48 @@
 #define RADIO_IRQ 2 // IRQ 0
 #define D_CS_PIN 10 // default SS pin for RFM module
 
-#define CONFIG_SEND_INTERVAL 30000UL // ms. 
-#define SEND_INTERVAL 5UL
-#define PING_COUNT 10
-
-typedef struct {
-  byte address;
-  const void * buffer; // Look the fuck out, people.  I assume _you_ keep the instruction in memory long enough for the resend feature to work.
-  int size;
-  byte sendCount;  
-} sendBuffer;
-
 class Network {
   public:
-    void begin(nodeID node=BROADCAST, byte sendCount=3); // resend for robustness
-    void update(); // should be called frequently for resends.
+    void begin(color lightLayout[N_COLORS], color fireLayout[N_COLORS], nodeID node=BROADCAST); // defaults to getting nodeID from EEPROM
+    void layout(color lightLayout[N_COLORS], color fireLayout[N_COLORS]); // update layout
+    void update(); // should be called frequently for sync.
     
     // makes the network do stuff with your stuff
-    // NOTE: WE ASSUME THE INSTRUCTIONS REMAIN IN MEMORY (FOR RESEND).
-    //  if it's deallocated, we'll send a garbage packet
-    // light. and fire. maintain buffers for this purpose, but if you're calling these directly, it's on you to do so.
-    void send(colorInstruction &inst, nodeID node=BROADCAST, boolean dropConflictingInstructions=true);
-    void send(fireInstruction &inst, nodeID node=BROADCAST, boolean dropConflictingInstructions=true);
-    void send(modeSwitchInstruction &inst, nodeID nodeD=BROADCAST, boolean dropConflictingInstructions=true);
-    void send(commsCheckInstruction &inst, nodeID node=BROADCAST, boolean dropConflictingInstructions=true);
-    // internal actuator of public send methods
-    void send(const void* buffer, byte bufferSize, nodeID node=BROADCAST, boolean dropConflictingInstructions=true);
-    
-    void ping(int count=10, nodeID node=BROADCAST);
+    void send(color position, colorInstruction &inst);
+    void send(color position, fireInstruction &inst);
+    void send(systemMode mode);
     
     void clear(); // clears all queued entries.
   
   private:
+    // total system state, built up by public methods
+    systemState state;
+  
+    // internal actuator of public send methods
+    void send();
+    
+    // merges color and fire instructions when towers handle multiple channels
+    void mergeColor(colorInstruction &inst);
+    void mergeFire(fireInstruction &inst);
+
     // gets the network setup
     nodeID networkStart(nodeID node);
     nodeID node; // who am I, really?
     
-    // que control for sending
-    QueueArray <sendBuffer> que;
-    byte sendCount;
-    void dropQueEntries(int size, nodeID node); // drops messages of size queued to node
-    unsigned long packetSendTime[N_DATAGRAMS];
+    // send on an interval
+    unsigned long packetSendInterval; // us
+    byte resendCount, sentCount;
+    
+    // stores which towers should be sent color commands
+    color lightLayout[N_COLORS];
+    // stores which towers should be sent fire commands
+    color fireLayout[N_COLORS];
     
     // Need an instance of the Radio Module.  
     RFM12B radio;
+    
+    // Need an instance of Easy Transfer
+    EasyTransfer ET; 
 };
 
 extern Network network;

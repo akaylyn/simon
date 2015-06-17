@@ -13,7 +13,6 @@
 #include <RFM12B.h> // RFM12b radio transmitter module
 #include <EasyTransfer.h> // used for sending message to the sound module
 #include <wavTrigger.h> // sound board
-#include <QueueArray.h> // queing for radio transmissions
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
@@ -51,28 +50,23 @@ void setup() {
   mic.begin();
   
   //------ Network
-  network.begin();
+  // this layout has towers arranged to only listen to one color channel
+  color Each2Own[N_COLORS] = {
+                      I_RED, // Tower 1, RED, upper right.  
+                      I_GRN, // Tower 2, GREEN, upper left. 
+                      I_BLU, // Tower 3, BLUE, lower right.  
+                      I_YEL  // Tower 4, YELLOW, lower left.  
+  };
+
+  // this layout has all towers listening to every color channel
+  color AllIn[N_COLORS] = { N_COLORS, N_COLORS, N_COLORS, N_COLORS };
+
+  network.begin(Each2Own, Each2Own);
 
   //------ Output units.
-  // this layout has towers arranged to only listen to one color channel
-  nodeID Each2Own[N_COLORS] = {
-                      TOWER1, // RED, upper right.  
-                      TOWER2, // GREEN, upper left. 
-                      TOWER3, // BLUE, lower right.  could also be BROADCAST.
-                      TOWER4  // YELLOW, lower left.  could also be BROADCAST.
-  };
-  // this layout has all towers listening to every color channel
-  nodeID AllIn[N_COLORS] = { BROADCAST, BROADCAST, BROADCAST, BROADCAST };
-  
-//  fire.begin(Each2Own); //
-  fire.begin(Each2Own); //
-  
-  Serial1.begin(19200);
-  light.begin(Each2Own, &Serial1); // 
-//  light.begin(AllIn, &Serial1); // 
-  
-  sound.begin();
-     
+  fire.begin(); //
+  light.begin(); //  
+  sound.begin(); //
      
   Serial << F("Network: free RAM: ") << freeRam() << endl;
 
@@ -86,9 +80,7 @@ void loop() {
   
   // perform Tower resends; you should do this always if you want meaningful synchronization with Towers
   network.update();
-  
-  //Serial << F(".") << endl;
-  //delay(1000);
+
 }
 
 int freeRam () {

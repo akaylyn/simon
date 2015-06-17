@@ -31,13 +31,9 @@ void setup() {
 
   Serial << F("Light startup.") << endl;
 
-  LightComms.begin(LIGHT_COMMS_RATE);
+  Serial1.begin(115200);
   //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc.
-  ET.begin(details(lightInst), &LightComms);
-
-  // use WDT to reboot if we hang.
-  watchdogSetup();
-  Serial << F("Watchdog timer setup complete. 8000 ms reboot time if hung.") << endl;
+  ET.begin(details(inst), &Serial1);
 
   Serial << F("Total strip memory usage: ") << TOTAL_LED_MEM << F(" bytes.") << endl;
   Serial << F("Free RAM: ") << freeRam() << endl;
@@ -53,26 +49,19 @@ void setup() {
   Serial << F("RimJob: RED starts at: ") << RED_SEG_START << endl;
   Serial << F("RimJob: GRN starts at: ") << GRN_SEG_START << endl;
 
-  // Initialize all pixels to 'sweet love makin'
-  setupStrip(rimJob, Dead);
-  theaterChase(rimJob, SweetLoveMakin, 10);
+  // start
+  rimJob.begin();
+  redL.begin();
+  grnL.begin();
+  bluL.begin();
+  yelL.begin();
+  cirL.begin();
+  placL.begin();
 
-  setupStrip(midL, Dead);
-  theaterChase(midL, SweetLoveMakin, 10);
-
-  setupStrip(redL, Dead);
-  theaterChase(redL, Red, 10);
-  setupStrip(grnL, Dead);
-  theaterChase(grnL, Grn, 10);
-  setupStrip(bluL, Dead);
-  theaterChase(bluL, Blu, 10);
-  setupStrip(yelL, Dead);
-  theaterChase(yelL, Yel, 10);
   Serial << F("Free RAM: ") << freeRam() << endl;
 
   Serial << F("Light: startup complete.") << endl;
 
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
 }
 
 void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
@@ -88,8 +77,6 @@ void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
 }
 
 void loop() {
-  wdt_reset(); // must be called periodically to prevent spurious reboot.
-
   // update the strip automata on an interval
   /*
   if ( stripUpdateInterval.check() ) {
@@ -109,99 +96,38 @@ void loop() {
     stripUpdateInterval.reset();
   }
 */
+  static Metro quietUpdateInterval(10UL *1000UL); // after 10 second of not instructions, we should do something.
 
   //check and see if a data packet has come in.
   if (ET.receiveData()) {
-    quietUpdateInterval.reset();
   
-    Serial << F("recv: r:") << lightInst.red << F(" g:") << lightInst.green << F(" b:") << lightInst.blue << endl;
+    Serial << F("I");
     
-    boolean pressed = false;
-    if ( lightInst.red > 0 && lightInst.green > 0) {
-      buttonPressPattern(3);
-      pressed = true;
-    }
-    if ( lightInst.red > 0 && lightInst.green == 0) {
-      buttonPressPattern(0);
-      pressed = true;
-    }
-    if ( lightInst.green > 0  && lightInst.red == 0) {
-      buttonPressPattern(1);
-      pressed = true;
-    }
-    if ( lightInst.blue > 0 ) {
-      buttonPressPattern(2);
-      pressed = true;
-    }
+//    for( byte i=0; i<N_COLORS; i++ ) {
+//      Serial << F(" Color ") << i << F("; R:") << inst.light[i].red << F(" G:") << inst.light[i].green << F(" B:") << inst.light[i].blue << endl;
+//    }
+    
+    // dispatch the requests
+    setStripColor(redL, inst.light[I_RED]);
+    setStripColor(grnL, inst.light[I_GRN]);
+    setStripColor(bluL, inst.light[I_BLU]);
+    setStripColor(yelL, inst.light[I_YEL]);
 
-    if (!pressed) {
-       setStripColor(redL, LED_OFF, LED_OFF, LED_OFF);
-       setStripColor(grnL, LED_OFF, LED_OFF, LED_OFF);
-       setStripColor(bluL, LED_OFF, LED_OFF, LED_OFF);
-       setStripColor(yelL, LED_OFF, LED_OFF, LED_OFF);
-       setStripColor(rimJob, LED_OFF, LED_OFF, LED_OFF);
-    }
-
-    if ( pressed ) {
-      digitalWrite(LED_PIN, HIGH);
-      Serial << "pressed" << endl;
-    } else {
-      digitalWrite(LED_PIN, LOW);
-    }
-  }
-
-  // when it's quiet, add some pixels
-  if ( quietUpdateInterval.check() ) {
-    quietAddPixels();
+    // toggle LED to ACK new button press
+    static boolean ledStatus=false;
+    ledStatus = !ledStatus;
+    digitalWrite(LED_PIN, ledStatus); 
+    
     quietUpdateInterval.reset();
   }
 
-  // go to press, if update has occured.
-  if ( rimUpdated && rimJob.canShow() ) {
-    rimJob.show();
-    rimUpdated = false;
-  }
-  if ( redUpdated && redL.canShow() ) {
-    redL.show();
-    redUpdated = false;
-  }
-  if ( grnUpdated && grnL.canShow() ) {
-    grnL.show();
-    grnUpdated = false;
-  }
-  if ( bluUpdated && bluL.canShow() ) {
-    bluL.show();
-    bluUpdated = false;
-  }
-  if ( yelUpdated && yelL.canShow() ) {
-    yelL.show();
-    yelUpdated = false;
-  }
-  if ( midUpdated && midL.canShow() ) {
-    midL.show();
-    midUpdated = false;
+  // when it's quiet, we need to do something with the LEDs
+  if( quietUpdateInterval.check() ) {
+    Serial << F("Quiet interval elapsed.") << endl;
+    Serial << F("Free RAM=") << freeRam() << endl;
   }
 
-}
 
-// from: http://forum.arduino.cc/index.php?action=dlattach;topic=63651.0;attach=3585
-void watchdogSetup() {
-  cli();
-
-  wdt_reset();
-
-  // enter watchdog config mode
-  WDTCSR |= (1 << WDCE) | (1 << WDE);
-
-  // set watchdog settings; 8000 ms timout.
-  WDTCSR = (1 << WDIE) | (1 << WDE) | (1 << WDP3) | (0 << WDP2) | (0 << WDP1) | (1 << WDP0);
-
-  sei();
-}
-
-ISR(WDT_vect) {
-  Serial << F("WATCHDOG!  Rebooting!") << endl;
-  Serial << F("Free RAM: ") << freeRam() << endl;
 }
 
 int freeRam () {
@@ -210,107 +136,18 @@ int freeRam () {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
-void quietAddPixels() {
-  switch (random(0, 4)) {
-    case 0:
-      rimJob.setPixelColor(random(0, RIM_N), Red);
-      redL.setPixelColor(random(0, BUTTON_N), Red);
-      midL.setPixelColor(random(0, MIDDLE_N), Red);
-      redUpdated = true;
-      break;
-    case 1:
-      rimJob.setPixelColor(random(0, RIM_N), Grn);
-      grnL.setPixelColor(random(0, BUTTON_N), Grn);
-      midL.setPixelColor(random(0, MIDDLE_N), Grn);
-      grnUpdated = true;
-      break;
-    case 2:
-      rimJob.setPixelColor(random(0, RIM_N), Blu);
-      bluL.setPixelColor(random(0, BUTTON_N), Blu);
-      midL.setPixelColor(random(0, MIDDLE_N), Blu);
-      bluUpdated = true;
-      break;
-    case 3:
-      rimJob.setPixelColor(random(0, RIM_N), Yel);
-      yelL.setPixelColor(random(0, BUTTON_N), Yel);
-      midL.setPixelColor(random(0, MIDDLE_N), Yel);
-      yelUpdated = true;
-      break;
-  }
-  rimUpdated = true;
-  midUpdated = true;
-
-}
-
-void buttonPressPattern(uint8_t button) {
-
-  switch (button) {
-    case 0:  // red
-      buttonPressToButton(redL, BTN_COLOR_RED);
-      redUpdated = true;
-
-      buttonPressToRim(Red, RED_SEG_START, RIM_SEG_LENGTH);
-      break;
-    case 2:  // blue
-      buttonPressToButton(bluL, BTN_COLOR_BLUE);
-      bluUpdated = true;
-
-      buttonPressToRim(Blu, BLU_SEG_START, RIM_SEG_LENGTH);
-      break;
-    case 3:  // yellow
-      buttonPressToButton(yelL, BTN_COLOR_YELLOW);
-      yelUpdated = true;
-
-      buttonPressToRim(Yel, YEL_SEG_START, RIM_SEG_LENGTH);
-      break;
-    case 1:  // green
-      buttonPressToButton(grnL, BTN_COLOR_GREEN);
-      grnUpdated = true;
-
-      buttonPressToRim(Grn, GRN_SEG_START, RIM_SEG_LENGTH);
-      break;
-  }
-
-  // flag that update happened.
-  rimUpdated = true;
-}
-
-void buttonPressToButton(Adafruit_NeoPixel &strip, const uint32_t color) {
-
-
-  Serial << F("Button.  Adding pixels to Button color: ");
-  printColor(color);
-
-  // clear the segment and lay down this color
-  for ( uint16_t i = 0; i < strip.numPixels(); i++ )  {
-    strip.setPixelColor(i, color);
-  }
-
-}
-
-void buttonPressToRim(const uint32_t color, uint16_t segStart, uint16_t segLength) {
-
-  Serial << F("Button.  Adding pixels to Rim from ") << segStart << F(" to ") << (segStart + segLength - 1) % RIM_N << F(". Color: ");
-  printColor(color);
-
-  // clear the segment and lay down this color
-  for ( uint16_t i = 1; i < segLength; i++ )  {
-    //rimJob.setPixelColor((segStart + i) % RIM_N, color);
-    int x = (segStart + i) % RIM_N;
-    rimJob.drawPixel(x, 0, color);
-    rimJob.drawPixel(x, 1, color);
-    rimJob.drawPixel(x, 2, color);
-  }
-}
-
 // unpack and pack functions
 void extractColor(uint32_t c, uint8_t * cv) {
   cv[0] = (c << 8 ) >> 24;
   cv[1] = (c << 16) >> 24;
   cv[2] = (c << 24) >> 24;
 }
-uint32_t packColor(uint8_t * cv) {
-  return ( rimJob.Color(cv[0], cv[1], cv[2]) );
+// apprently, the color handling is slightly different btw matrix and strip?
+uint32_t packColor(Adafruit_NeoPixel &strip, uint8_t * cv) {
+  return ( strip.Color(cv[0], cv[1], cv[2]) );
+}
+uint32_t packColor(Adafruit_NeoMatrix &matrix, uint8_t * cv) {
+  return ( matrix.Color(cv[0], cv[1], cv[2]) );
 }
 void printColor(uint32_t c) {
   // pull out RGB elements
@@ -345,7 +182,7 @@ uint32_t adjustColor(uint32_t c, unsigned long ttl) {
 
   //  while(1);
   // repack and return
-  return ( packColor(cv) );
+  return ( packColor(redL, cv) );
 }
 
 // merge colors with some kind of XOR
@@ -370,7 +207,7 @@ uint32_t mergeColor(uint32_t c1, uint32_t c2) {
       cv[i] = max(c1v[i], c2v[i]);
     }
   }
-  return ( packColor(cv) );
+  return ( packColor(redL, cv) );
 }
 
 // updates the automata using a modified Rule 90
@@ -393,9 +230,9 @@ void updateRule90(Adafruit_NeoPixel &strip, unsigned long ttl) {
     }
 
     // apply Rule 90
-    if ( ps == Dead ) {
+    if ( ps == 0 ) {
       color = adjustColor(ns, ttl);
-    } else if ( ns == Dead ) {
+    } else if ( ns == 0 ) {
       color = adjustColor(ps, ttl);
     } else {
       color = mergeColor(adjustColor(ps, ttl), adjustColor(ns, ttl));
@@ -577,10 +414,20 @@ void twinkleRand(Adafruit_NeoPixel &strip, int num, uint32_t c, uint32_t bg) {
 
 // other options for effects at: http://funkboxing.com/wordpress/wp-content/_postfiles/sk_qLEDFX_POST.ino
 
-void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b) {
+void setStripColor(Adafruit_NeoPixel &strip, uint32_t c) {
   for (int i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, strip.Color(r, g, b));
+    strip.setPixelColor(i, c);
   }
   strip.show();
+}
+void setStripColor(Adafruit_NeoPixel &strip, colorInstruction &inst) {
+  setStripColor(strip, strip.Color(inst.red, inst.green, inst.blue) );
+}
+
+void setStripColor(Adafruit_NeoMatrix &matrix, uint32_t c) {
+  for (int i = 0; i < matrix.numPixels(); i++) {
+    matrix.setPixelColor(i, c);
+  }
+  matrix.show();
 }
 

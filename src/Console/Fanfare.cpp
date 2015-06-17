@@ -3,13 +3,12 @@
 
 #define FANFARE_ENABLED true
 
-int tower = 2;
 int bassBand = 0;
 int bassBand2 = 1;
 int band2 = 6;
 boolean hearBeat = false;
 byte active = 0;
-int tower2 = 0;
+byte tower, tower2 = I_RED;
 
 void oldplayerFanfare(fanfare_t level) {
   Serial << "***Inside alan playerFanFare: fanfareLevel: " << level << "\n";
@@ -65,7 +64,7 @@ void oldplayerFanfare(fanfare_t level) {
     //      if ((mic.getBeat(bassBand) || mic.getBeat(bassBand2)) && hearBeat == false) {
     if (beatWait.check() && (mic.getVol(bassBand) > fireBeat || mic.getVol(bassBand2) > fireBeat) && hearBeat == false) {
       tower++;
-      if (tower > 5) tower = 2;
+      if (tower >= N_COLORS) tower = I_RED;
       byte avgVol = max(mic.getAvg(bassBand), mic.getAvg(bassBand2));
       //        Serial << "avgVol: " << avgVol << " fscale: " << fscale(0, 1024, 0, 255, avgVol, fireLevel) << endl;
       //Serial << "band1: " << mic.getAvg(bassBand) << " band2: " << mic.getAvg(bassBand) << endl;
@@ -76,36 +75,37 @@ void oldplayerFanfare(fanfare_t level) {
       if (random(0, 10) >= (10 - airChance)) {
         byte effect = random(0, 6);
         switch (effect) {
-          case 0:
-            airEffect = kickStart;
-            break;
-          case 1:
-            airEffect = kickMiddle;
-            break;
-          case 2:
-            airEffect = kickEnd;
-            break;
-          case 3:
-            airEffect = gatlingGun;
-            break;
-          case 4:
-            airEffect = randomly;
-            break;
-          case 5:
-            airEffect = veryLean;
-            break;
+        case 0:
+          airEffect = kickStart;
+          break;
+        case 1:
+          airEffect = kickMiddle;
+          break;
+        case 2:
+          airEffect = kickEnd;
+          break;
+        case 3:
+          airEffect = gatlingGun;
+          break;
+        case 4:
+          airEffect = randomly;
+          break;
+        case 5:
+          airEffect = veryLean;
+          break;
         }
       }
       //Serial << "Fireballv3: " << (fire) << " air: " << (airEffect) << endl;
       // I really thinkg you mean "setFire(I_RED)" or some directive to a tower.
-      fire.setFire((nodeID)(tower - 2), fireLevel, airEffect);
+      fire.setFire((color)tower, fireLevel, airEffect);
       hearBeat = true;
       fireballs++;
       firepower += fireLevel;
       beatWait.interval(333);
       beatWait.reset();
 
-    } else if (!(mic.getVol(bassBand) > fireBeat || mic.getVol(bassBand2) > fireBeat)) {
+    } 
+    else if (!(mic.getVol(bassBand) > fireBeat || mic.getVol(bassBand2) > fireBeat)) {
       //light.setAllFire(0);  // TODO: Not sure we really want to shut off flame here
       //light.show();
       hearBeat = false;
@@ -116,37 +116,37 @@ void oldplayerFanfare(fanfare_t level) {
 
     if (active > 0) {
       switch (active) {
-        case 0:
-          // light.setAllLight(0);
-          light.clear();
-          break;
-        case 1:
-        case 2:
-          //light.setLight(I_RED, 255);
-          light.setLight(BROADCAST, 255, 0 , 0);
-          break;
-        case 3:
-        case 4:
-          //light.setLight(I_GRN, 255);
-          light.setLight(BROADCAST, 0, 255, 0);
-          break;
-        case 5:
-        case 6:
-          //light.setLight(I_BLU, 255);
-          light.setLight(BROADCAST, 0, 0, 255);
-          break;
-        default:
-          // light.setAllLight(255);
-          light.setLight(BROADCAST, 255, 255, 255);
-          active = 0;
-          break;
+      case 0:
+        // light.setAllLight(0);
+        light.clear();
+        break;
+      case 1:
+      case 2:
+        //light.setLight(I_RED, 255);
+        light.setLight((color)tower2, 255, 0 , 0);
+        break;
+      case 3:
+      case 4:
+        //light.setLight(I_GRN, 255);
+        light.setLight((color)tower2, 0, 255, 0);
+        break;
+      case 5:
+      case 6:
+        //light.setLight(I_BLU, 255);
+        light.setLight((color)tower2, 0, 0, 255);
+        break;
+      default:
+        // light.setAllLight(255);
+        light.setLight((color)tower2, 255, 255, 255);
+        active = 0;
+        break;
       }
 
       //light.show(tower2);
       if (random(10) > 2) {
         tower2++;
       }
-      if (tower2 > 6) tower2 = 0;
+      if (tower2 >= N_COLORS) tower2 = I_RED;
     }
   }
 
@@ -176,31 +176,40 @@ void playerFanfare(fanfare_t level) {
   int winTrack = sound.playWins();
 
   light.clear();
+  fire.clear();
+  network.update(); // immediate send
 
-   Metro winTime(5000);  // TODO: How do we know the length in ms of the track?
-   winTime.reset();
+  Metro winTime(5000);  // TODO: How do we know the length in ms of the track?
+  winTime.reset();
 
   int fireballs = 0;
   color tower = I_RED;
-   while(!winTime.check()) {
-     Serial << "Fire" << endl;
-     fireballs++;
-     //waitDuration(2UL);
-     //light.setLight(tower,255,0,0);
-     fire.setFire(tower,5,gatlingGun);
-     colorInstruction c = cMap[tower];
-     c.red = 255;
-     c.green = 0;
-     c.blue = 0;
-     //light.setLight(tower, c);
-     waitDuration(500UL);
-     light.clear();
-     fire.clear();
-     //waitDuration(2UL);
-     //fire.setFire(tower,0,gatlingGun);
-     //light.setLight(tower,0,0,0);
-     waitDuration(500UL);
-   }
+  while(!winTime.check()) {
+    Serial << "Fire" << endl;
+    fireballs++;
+    //waitDuration(2UL);
+    light.setLight(I_RED,255,0,0);
+    light.setLight(I_GRN,255,0,0);
+    light.setLight(I_BLU,255,0,0);
+    light.setLight(I_YEL,255,0,0);
+  
+    fire.setFire(I_RED,5,gatlingGun);
+    fire.setFire(I_GRN,5,gatlingGun);
+    fire.setFire(I_BLU,5,gatlingGun);
+    fire.setFire(I_YEL,5,gatlingGun);
+  /*
+    colorInstruction c = cMap[tower];
+    light.setLight(tower, c);
+  */
+    waitDuration(500UL);
+    
+    light.clear();
+    fire.clear();
+    //waitDuration(2UL);
+    //fire.setFire(tower,0,gatlingGun);
+    //light.setLight(tower,0,0,0);
+    waitDuration(500UL);
+  }
 
   Serial << "Fireballs: " << fireballs << endl;
 
@@ -210,3 +219,4 @@ void playerFanfare(fanfare_t level) {
   // ramp down the volume to exit the music playing cleanly.
   sound.fadeTrack(winTrack);
 }
+
