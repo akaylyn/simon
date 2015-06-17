@@ -244,7 +244,7 @@ void fanfareEnter() {
   fire.clear();
   
   // defined in Fanfare.h/.cpp
-//  playerFanfare(fanfareLevel);
+  playerFanfare(fanfareLevel);
   
   simon.transitionTo(idle);
 }
