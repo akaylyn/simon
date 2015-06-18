@@ -204,6 +204,15 @@ void RFM12B::Initialize(uint8_t ID, uint8_t freqBand, uint8_t networkid, uint8_t
 
 // access to the RFM12B internal registers with interrupts disabled
 uint16_t RFM12B::Control(uint16_t cmd) {
+
+// MGD added these to handle Mega better.  See http://forum.arduino.cc/index.php?topic=191576.0
+#if defined(__AVR_ATmega2560__) || defined(__AVR_ATmega1280__)
+   bitClear(EIMSK, INT4);
+   uint16_t r1 = XFERSlow(cmd);
+   bitSet(EIMSK, INT4);
+   return r1;
+#endif
+
 #ifdef EIMSK
   bitClear(EIMSK, INT0);
   uint16_t r = XFERSlow(cmd);

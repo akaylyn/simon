@@ -3,12 +3,22 @@
 Bounce modeEnable = Bounce(MODE_ENABLE_PIN, SENSOR_DEBOUCE_TIME);
 Bounce fireEnable = Bounce(FIRE_ENABLE_PIN, SENSOR_DEBOUCE_TIME);
 
+#define ARMED_TRACK 900
+#define DISARMED_TRACK 901
+
 
 void Sensor::begin() { // remote control
   Serial << "Sensor: startup." << endl;
 
   pinMode(MODE_ENABLE_PIN, INPUT_PULLUP);
   pinMode(FIRE_ENABLE_PIN, INPUT_PULLUP);
+  
+  Metro startupReads(SENSOR_DEBOUCE_TIME*2UL);
+  startupReads.reset();
+  while( ! startupReads.check() ) {
+    modeEnable.update();
+    fireEnable.update();
+  }
 }
 
 // remote control.  There's a relay that will pull FIRE_ENABLE_PIN to LOW when pressed (enable fire).
@@ -30,16 +40,7 @@ boolean Sensor::fireEnabled() {
     else Serial << "Fire disabled!" << endl;
 
     // for tones
-    extern Sound sound;
-
-    // this could be replaced by asking Music to play an mp3 file.  For now, we'll just use the tone system.
-    for ( int i = 0; i < 3; i++ ) {
-      // TODO: need a "klaxon" track!!!
-//      sound.playTone(I_RED, !fireMode); // if fireMode, we'll get a RED tone (high freq); false, we get a WRONG tone (low freq)
-//      delay( 250UL ); // wait 0.25 seconds
-//      sound.stop();
-//      delay( 100UL ); // wait 0.1 seconds
-    }
+    sound.playTrack(fireMode ? ARMED_TRACK : DISARMED_TRACK);
   }
 
   // return mode
@@ -48,9 +49,7 @@ boolean Sensor::fireEnabled() {
 
 // remote control.  There's a relay that will pull MODE_ENABLE_PIN to LOW when pressed.
 // goes to HIGH when pressed again.  We use this flip-flop to change modes
-boolean Sensor::modeEnabledHasChanged() {
-  // track state
-  static boolean gamePlayMode = modeEnable.read() == MODE_ENABLED;
+boolean Sensor::modeChange() {
 
   // is there a change in state?
   if ( modeEnable.update() ) {

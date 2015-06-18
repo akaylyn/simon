@@ -21,15 +21,20 @@ const int trTones[N_TONES] = {1, 2, 3, 4, 5}; // red, grn, blu, yel, wrong
 
 // define track ranges for other play types.  used to select random tracks of these types.
 // must be in the range [1,999]
-const int trWins[2] = {100, 101}; // store WINS in 100-299
+//const int trWins[2] = {502, 511}; // store WINS in 100-299
+const int trWins[2] = {502, 511}; // store WINS in 100-299   512 is pure bass test
 const int trLose[2] = {300, 300}; // store LOSE in 300-499
-const int trRock[2] = {501, 501}; // store ROCK in 500-699
+const int trRock[2] = {102, 102}; // store ROCK in 500-699
 const int trBaff[2] = {700, 701}; // store BAFF in 700-999
+
+#define BOOP_TRACK 100
+#define ARMED_TRACK 900
+#define DISARMED_TRACK 901
 
 // some defaults
 // gains.  remember that polyphonic sounds get stacked, so clipping can easily occur.  gonna have to tune this.
 #define MASTER_GAIN 0 // -70 to +4 dB.  0 is nominal.
-#define TONE_GAIN_RELATIVE_TO_MASTER 0 // we want the tones to be as loud as possible
+#define TONE_GAIN_RELATIVE_TO_MASTER -3 // we want the tones to be as loud as possible
 #define TRACK_GAIN_RELATIVE_TO_TONE -12 // other tracks (music) should be slighly quieter
 
 #define TONE_GAIN MASTER_GAIN + TONE_GAIN_RELATIVE_TO_MASTER // proportionality is additive in log-space

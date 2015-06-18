@@ -13,9 +13,10 @@
 
 #define NUM_FREQUENCY_BANDS    7
 
-#define NUM_SAMPLES 10
+#define NUM_SAMPLES 20
 
 #define DEFAULT_THRESHOLD 4.0 // just a suggesting.  setThreshold can can tune this.  
+#define DEFAULT_MIN_BEAT 70  // Avg Vol we must have for a beat
 
 // see this discussion on what instruments appear in what band:
 // http://homerecording.com/bbs/general-discussions/mixing-techniques/frequency-charts-50110/
@@ -39,6 +40,7 @@ class Mic {
     float getSD(byte band);
     float getTh(byte band);
     void setThreshold(byte band, float threshold); 
+    void setBeatMin(byte band, int val);
       
   private:
     // index for last read
@@ -51,6 +53,7 @@ class Mic {
     float bandSD[NUM_FREQUENCY_BANDS];
     // threshold settings, by band, for beat detection
     float bandTh[NUM_FREQUENCY_BANDS];
+    int bandBeatMin[NUM_FREQUENCY_BANDS];
     // beat tracking
     bool isBeat[NUM_FREQUENCY_BANDS];
 };

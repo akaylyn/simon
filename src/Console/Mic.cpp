@@ -16,8 +16,11 @@ void Mic::begin() {
   digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
 
   // set threshold
-  for ( int i = 0; i < NUM_FREQUENCY_BANDS; i++ ) setThreshold(i, DEFAULT_THRESHOLD);
-
+  for ( int i = 0; i < NUM_FREQUENCY_BANDS; i++ ) {
+    setThreshold(i, DEFAULT_THRESHOLD);
+    setBeatMin(i, DEFAULT_MIN_BEAT);
+  }
+  
   // start sampling
   sampleIndex = 0;
   for ( int i = 0; i < NUM_SAMPLES; i++ ) update();
@@ -68,7 +71,7 @@ void Mic::update() {
 
   // flag a beat in the band if currVol >= volAvg + threshold*volSD.
   for (int i = 0; i < NUM_FREQUENCY_BANDS; i++) {
-    isBeat[i] = currVol[i] >= bandAvg[i] + bandTh[i] * bandSD[i];
+    isBeat[i] = (currVol[i] > bandBeatMin[i]) & (currVol[i] >= bandAvg[i] + bandTh[i] * bandSD[i]);
 //    if( isBeat[i] ) {
 //      Serial << "band " << i << ": vol=" << currVol[i] << " avg=" << bandAvg[i] << " sd=" << bandSD[i] << " th=" << bandTh[i] << endl;
 //      delay(5);
@@ -123,6 +126,10 @@ float Mic::getTh(byte b) {
 
 void Mic::setThreshold(byte b, float threshold) {
   bandTh[b] = threshold;
+}
+
+void Mic::setBeatMin(byte b, int val) {
+  bandBeatMin[b] = val;
 }
 
 Mic mic;

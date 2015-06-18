@@ -13,7 +13,7 @@
 #include <Simon_Common.h>
 
 // debounce time
-#define SENSOR_DEBOUCE_TIME 100UL
+#define SENSOR_DEBOUCE_TIME 10UL
 
 // remote control
 #define MODE_ENABLE_PIN A8
@@ -30,7 +30,9 @@ class Sensor {
     void begin();
     
     // returns true if the sensor indicates an enabled reading
-    boolean modeEnabledHasChanged();
+    boolean modeChange();
+    
+    // returns true if fire is enabled
     boolean fireEnabled();
 };
 

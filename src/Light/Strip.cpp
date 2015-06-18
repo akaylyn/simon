@@ -5,7 +5,7 @@
 EasyTransfer ET;
 
 //give a name to the group of data
-LightET lightInst;
+systemState inst;
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -34,8 +34,9 @@ Adafruit_NeoPixel grnL = Adafruit_NeoPixel(BUTTON_N, GRN_PIN, NEO_GRB + NEO_KHZ8
 Adafruit_NeoPixel bluL = Adafruit_NeoPixel(BUTTON_N, BLU_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel yelL = Adafruit_NeoPixel(BUTTON_N, YEL_PIN, NEO_GRB + NEO_KHZ800);
 
-// strip around the middle chotsky
-Adafruit_NeoPixel midL = Adafruit_NeoPixel(MIDDLE_N, MIDDLE_PIN, NEO_GRB + NEO_KHZ800);
+// strip around the middle chotskies
+Adafruit_NeoPixel cirL = Adafruit_NeoPixel(CIRCLE_N, PLACARD_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel placL = Adafruit_NeoPixel(PLACARD_N, PLACARD_PIN, NEO_GRB + NEO_KHZ800);
 
 // define some colors
 const uint32_t SweetLoveMakin = rimJob.Color(RED_MAX / 4, GRN_MAX / 6, BLU_MAX / 9);
@@ -56,9 +57,9 @@ boolean bluUpdated = false;
 boolean yelUpdated = false;
 boolean midUpdated = false;
 
-
 Metro quietUpdateInterval(STRIP_ADD_PIXEL);
-
 Metro stripUpdateInterval(STRIP_UPDATE);
 Metro fasterStripUpdateInterval(STRIP_UPDATE);
+
+#endif
 

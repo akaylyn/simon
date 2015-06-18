@@ -53,7 +53,7 @@
 #define STRIP_ADD_PIXEL PIXEL_TTL/3
 
 // update the automata on the rim at this interval
-#define STRIP_UPDATE 100
+#define STRIP_UPDATE 20UL
 #define FASTER_STIRP_UPDATE 30
 
 // count memory usage for LEDs, which is reported at startup.

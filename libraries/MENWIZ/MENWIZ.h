@@ -26,16 +26,12 @@
 #ifndef MENWIZ_h
 #define MENWIZ_h
 
-#define EEPROM_SUPPORT     //uncomment if you want to use the readEeprom and writeEeprom methods!
-// MGD use custom adafruit shield buttons
-// #define BUTTON_SUPPORT     //uncomment if you want to use the readEeprom and writeEeprom methods!
+#define EEPROM_SUPPORT     //comment if you do'nt want to use the readEeprom and writeEeprom methods!
+//#define BUTTON_SUPPORT     //comment if you do'nt want to use the Button methods!
 
 #include <Wire.h>
-// October 28, 2013 - W. Radigan  Removed the reference to LCD.h andadded the two "Adafruit" lines below.
-// Also changed "#define MW_LCD" at line 130 below
-//#include <LCD.h>
-#include <Adafruit_MCP23017.h>
-#include <Adafruit_RGBLCDShield.h>
+#include <avr/pgmspace.h>
+#include <LCD.h>
 
 #ifdef BUTTON_SUPPORT 
   #include <buttons.h>
@@ -55,10 +51,14 @@
 #define getVer()         (char*) MW_ver
 extern const char MW_ver[];
 
-// DIMENSIONS (DIMENSIONAL LIMITS OF STATICALLY ALLOCATED STRUCTURES)
+// SIZES (DIMENSIONAL LIMITS OF STATICALLY ALLOCATED STRUCTURES)
 // ---------------------------------------------------------------------------
-#define MAX_MENU       	15   //maximum number of nodes (absolute supported max number of addMenu calls)
-#define MAX_OPTXMENU   	9    //maximum number of options/submenus for each node (max number of addItem call for each menu item) 
+#define MAX_MENU       	20  //maximum number of nodes (absolute supported max number of addMenu calls)
+#define MAX_OPTXMENU   	7   //maximum number of options/submenus for each node (max number of addItem call for each menu item) 
+
+// OTHER SIZES 
+// ---------------------------------------------------------------------------
+#define MW_FLOAT_DEC    1    //decimal digits in float screen representation
 
 // VALUE TYPES
 // ---------------------------------------------------------------------------
@@ -67,11 +67,13 @@ extern const char MW_ver[];
 #define MW_AUTO_INT    	13  //INTEGER VALUE WITH INCREMENT STEP
 #define MW_AUTO_FLOAT  	14  //FLOATING POINT VALUE WITH INCREMENT STEP
 #define MW_AUTO_BYTE   	15  //byte VALUE WITH INCREMENT STEP
-#define MW_TEXT        	16  //not implemented yet
-#define MW_ACTION      	17  //FIRE AN ACTION WHEN CONFIRM BUTTON IS PUSHED
-#define MW_EDIT_INT    	18  //not implemented yet
-#define MW_EDIT_FLOAT  	19  //not implemented yet
+#define MW_ACTION      	16  //FIRE AN ACTION WHEN CONFIRM BUTTON IS PUSHED
+#define MW_EDIT_INT    	17  //not implemented yet
+#define MW_EDIT_FLOAT  	18  //not implemented yet
+#define MW_EDIT_TEXT   	19  //not implemented yet
 
+#define MW_MAX_CHARLIST 90
+#define MW_MIN_CHARLIST 32
 // NODE TYPES 
 // ---------------------------------------------------------------------------
 #define MW_ROOT        	20  //root menu
@@ -116,18 +118,21 @@ extern const char MW_ver[];
 #define MW_LIST_2COLUMNS        2
 #define MW_LIST_3COLUMNS        3
 #define MW_MENU_COLLAPSED	4
-
+//user grants 
+#define MW_GRANT_USER1		5
+#define MW_GRANT_USER2		6
+#define MW_GRANT_USER3		7
 
 // OTHERS
 // ---------------------------------------------------------------------------
-#define MW_EOL_CHAR    0x0A
+//#define MW_EOL_CHAR    0x0A
+//#define MW_EOL_CHAR    0x0A
+#define MW_EOL_CHAR    '\n'
 #define MW_TYPE        uint8_t
-//#define MW_LCD         LCD   // this could help to change the library: your lcd data type
-// Changed October 28, 2013 WTR
-#define MW_LCD         Adafruit_RGBLCDShield 
+#define MW_LCD         LCD   // this could help to change the library: your lcd data type
 #define MW_LABEL       const __FlashStringHelper*  
 #define MW_FLAGS       uint8_t
-#define MW_4BTN        0
+#define MW_4BTN        0MW_MENU_INDEX
 #define MW_6BTN        1
 
 typedef struct{
@@ -138,12 +143,12 @@ typedef struct{
 
 #ifdef BUTTON_SUPPORT
 typedef struct{
-  Button    BTU;   
-  Button    BTD;   
-  Button    BTL;   
-  Button    BTR;   
-  Button    BTE;   
-  Button    BTC;   
+  Button   BTU;   
+  Button   BTD;   
+  Button   BTL;   
+  Button   BTR;   
+  Button   BTE;   
+  Button   BTC;   
 }_nav;
 #endif
 
@@ -151,16 +156,19 @@ typedef struct{
   MW_TYPE  type;
   void*    val;
   void*    old;
-  void     (*action)();
   void*    lower;
   void*    upper;
   void*    incr;   
 }_var;
 
+typedef struct{
+  MW_TYPE  type;
+  void     (*action)();
+}_act;
+
 class _option{
 public:
            _option();
-
   MW_TYPE  type;
   MW_LABEL label;
   byte     sbm;  //submemu id if type=SUBMENU
@@ -175,13 +183,14 @@ public:
   void     addVar(MW_TYPE, byte*,byte ,byte ,byte);
   void     addVar(MW_TYPE, boolean*);
   void     addVar(MW_TYPE, void (*f)());
+  void     addVar(MW_TYPE t,char *s);
   void     setBehaviour(MW_FLAGS,boolean);
   _option* addItem(int, MW_LABEL);
 
   MW_TYPE  type;
   MW_FLAGS flags;
   MW_LABEL label;
-  _var     *var;
+  void     *var;
   byte     cod;
   byte     parent;
   byte     cur_item;
@@ -191,6 +200,7 @@ private:
 protected:
 };
 
+
 class menwiz{
 public:
            menwiz();
@@ -199,15 +209,18 @@ public:
   void     addUsrScreen(void (*f)(), unsigned long);
   void     addUsrNav(int (*f)(), int);
   void     setBehaviour(MW_FLAGS,boolean);
+  void     setCurrentUser(int);
   _menu*   addMenu(int, _menu *, MW_LABEL);
   void     draw();
   void     drawUsrScreen(char *);       //draw user screen(s)
   int      getErrorMessage(boolean); 	//if arg=true, err message is printed to the default Serial terminal, otherwise the function returns error code only
+  int      getLastbutton(){return last_button;} 
   int      freeRam();
 
 #ifdef EEPROM_SUPPORT
   void     writeEeprom();
   void     readEeprom();
+  int      eeprom_offset;
 #endif
 
 #ifdef BUTTON_SUPPORT 
@@ -219,19 +232,21 @@ public:
 
   MW_FLAGS flags;
   MW_LCD*  lcd;
-  char*    sbuf;                        //lcd screen buffer (+ 1 for each line) 
-  _cback   usrScreen;	        	//callback
+  char*    sbuf;             //lcd screen buffer (+ 1 for each line) 
+  _cback   usrScreen;	     //callback
   _cback   usrNav;    
   byte     idx_m;
-  _menu    m[MAX_MENU];
   _menu*   cur_menu;
+  byte     cur_user;
   _menu*   root;
+  void     actBTE();
+  _menu    m[MAX_MENU];
 private:
   byte     row;
   byte     col;
   byte     cur_mode;
-  int 	   last_button;                 //last pushed button code
-  unsigned long tm_push;                //last pushed button time
+  int 	   last_button;             //last pushed button code
+  unsigned long tm_push;            //last pushed button time
   unsigned long tm_start;       	//start time (set when begin method is invocated)
   unsigned long tm_splash;      	//splash screen duration  
   unsigned long tm_usrScreen;   	//lap time before usrscreen  
@@ -244,7 +259,6 @@ private:
   void     actBTD();
   void     actBTL();
   void     actBTR();
-  void     actBTE();
   void     actBTC();
 protected:
 };
