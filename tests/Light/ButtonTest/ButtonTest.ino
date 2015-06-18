@@ -6,8 +6,8 @@
 #include <EasyTransfer.h>
 #include <LightMessage.h> // common message definition
 #include <avr/wdt.h> // watchdog timer
-#include "ButtonTest.h"
-#include "Light.h"
+
+#include "Strip.h"
 #include "AnimationConfig.h"
 #include "Animations.h"
 #include "ConcurrentAnimator.h"
@@ -25,7 +25,12 @@
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //Adafruit_NeoPixel strip = Adafruit_NeoPixel(49, PIN, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoMatrix strip = rimJob;
+extern Adafruit_NeoMatrix rimJob;
+extern Adafruit_NeoPixel redL;
+extern Adafruit_NeoPixel grnL;
+extern Adafruit_NeoPixel bluL;
+extern Adafruit_NeoPixel yelL;
+extern Metro fasterStripUpdateInterval;
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -81,7 +86,7 @@ void setup() {
   rimJob.show();
 
   rimConfig.name = "Outer rim";
-  rimConfig.strip = &strip;
+  rimConfig.strip = &rimJob;
   rimConfig.color = red;
   rimConfig.ready = true;
   rimConfig.position = 0;
@@ -146,7 +151,7 @@ void loop() {
   }
 }
 
-
+/*
 void rainbow(uint8_t wait) {
   uint16_t i, j;
 
@@ -222,4 +227,5 @@ uint32_t Wheel(byte WheelPos) {
     return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
   }
 }
+*/
 
