@@ -13,12 +13,12 @@
 // radio nodes/adddresses/ID's
 // Simon 1-10
 enum nodeID {
-	BROADCAST=0, // _everyone_ on group 188
-	CONSOLE=1,
-	TOWER1=2,
-	TOWER2=3,
-	TOWER3=4,
-	TOWER4=5
+  BROADCAST=0, // _everyone_ on group 188
+  CONSOLE=1,
+  TOWER1=2,
+  TOWER2=3,
+  TOWER3=4,
+  TOWER4=5
 };
 
 // Giles 11-20
@@ -40,25 +40,25 @@ const unsigned long airPulseTime = 50UL;
 const unsigned long delayAirTime = 50UL;
 
 enum flameEffect {
-	// no air.  just straight propane.
-	veryRich=0, // "very rich"
-	
-	// add some air to 1/3rd of the flame time; not notably different for small (<100ms) flames
-	kickStart,  // toss in some air at the beginning
-	kickMiddle,  // toss in some air in the middle
-	kickEnd,  // toss in some air at the end
-	
-	// add air throughout flame time
-	gatlingGun, // staccato bursts of air throughout
-	randomly, // air tossed in throughout in a random pattern
-	veryLean, // as much air as as we can before getting "too lean"
-	
-	N_flameEffects  // use this to size arrays appropriately
+  // no air.  just straight propane.
+  veryRich=0, // "very rich"
+  
+  // add some air to 1/3rd of the flame time; not notably different for small (<100ms) flames
+  kickStart,  // toss in some air at the beginning
+  kickMiddle,  // toss in some air in the middle
+  kickEnd,  // toss in some air at the end
+  
+  // add air throughout flame time
+  gatlingGun, // staccato bursts of air throughout
+  randomly, // air tossed in throughout in a random pattern
+  veryLean, // as much air as as we can before getting "too lean"
+  
+  N_flameEffects  // use this to size arrays appropriately
 };
 
 typedef struct {
-	byte duration; // flame duration in 10's of ms. e.g. "42" maps to 420 ms.  See min and max constraints.
-	byte effect; // see above
+  byte duration; // flame duration in 10's of ms. e.g. "42" maps to 420 ms.  See min and max constraints.
+  byte effect; // see above
 } fireInstruction;
 
 // and some definitions, so we're all on the same page
@@ -69,18 +69,18 @@ const fireInstruction ragingInferno = {maxPropaneTime/10, randomly};
 
 // relative locations for the colors on the Simon Console
 enum color {
-	I_RED=0, // upper right
-	I_GRN,   // upper left
-	I_BLU,   // lower right
-	I_YEL,   // lower left
-	
-	N_COLORS // use this to size arrays appropriately
+  I_RED=0, // upper right
+  I_GRN,   // upper left
+  I_BLU,   // lower right
+  I_YEL,   // lower left
+  
+  N_COLORS // use this to size arrays appropriately
 };
 
 typedef struct {
-	byte red;
-	byte green;
-	byte blue;
+  byte red;
+  byte green;
+  byte blue;
 } colorInstruction;
 
 // and some definitions, so we're all on the same page
@@ -96,29 +96,29 @@ const colorInstruction cMap[N_COLORS] = {cRed, cGreen, cBlue, cYellow};
 //**** System Modes
 
 enum systemMode {
-	GAMEPLAY=0, 
+  GAMEPLAY=0, 
   WHITEOUT,
-	BONGO,
-	PROXIMITY,
-	FIRE,
-	LIGHTS,
-	LAYOUT,
-	
-	EXTERN, // for other projects driving Simon
-	
-	N_systemMode // 
+  BONGO,
+  PROXIMITY,
+  FIRE,
+  LIGHTS,
+  LAYOUT,
+  
+  EXTERN, // for other projects driving Simon
+  
+  N_systemMode // 
 };
 
 //**** Tie everything together for total system state send
 
 typedef struct {
-	byte packetNumber; // track packet number; useful for checking for dropped packets
-	
-	byte mode; // what mode are we operating in?
-	
-	colorInstruction light[N_COLORS]; 
-	fireInstruction fire[N_COLORS];
-	
+  byte packetNumber; // track packet number; useful for checking for dropped packets
+  
+  byte mode; // what mode are we operating in?
+  
+  colorInstruction light[N_COLORS]; 
+  fireInstruction fire[N_COLORS];
+  
 } systemState;
 
 #endif

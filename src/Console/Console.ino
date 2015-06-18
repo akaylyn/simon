@@ -9,8 +9,7 @@
 #include <FiniteStateMachine.h> // using a FSM to run the game
 #include <LED.h> // led control abstraction
 #include <SPI.h> // radio transmitter is a SPI device
-#include <EEPROM.h> // saving and loading radio and layout settings
-#include <avr/eeprom.h>
+#include <EEPROMex.h> // saving and loading radio and layout settings
 #include <RFM12B.h> // RFM12b radio transmitter module
 #include <EasyTransfer.h> // used for sending message to the sound module
 #include <wavTrigger.h> // sound board
