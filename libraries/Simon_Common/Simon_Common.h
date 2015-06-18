@@ -84,6 +84,7 @@ typedef struct {
 } colorInstruction;
 
 // and some definitions, so we're all on the same page
+const colorInstruction cOff = {0, 0, 0};
 const colorInstruction cRed = {255, 0, 0};
 const colorInstruction cGreen = {0, 255, 0};
 const colorInstruction cBlue = {0, 0, 255};
@@ -96,6 +97,7 @@ const colorInstruction cMap[N_COLORS] = {cRed, cGreen, cBlue, cYellow};
 
 enum systemMode {
 	GAMEPLAY=0, 
+  WHITEOUT,
 	BONGO,
 	PROXIMITY,
 	FIRE,
