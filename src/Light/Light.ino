@@ -8,7 +8,7 @@
 // have: 2K memory, 3 bytes memory per LED, 60 LEDs per meter.
 // so, we can support 2000/3/60=11.1 meters, other memory usage notwithstanding.
 
-#include "Light.h"
+#include "Strip.h"
 
 // MGD: please include #includes in top level .ino.
 #include <Adafruit_GFX.h>
@@ -23,6 +23,21 @@
 #include <Simon_Common.h>
 
 #include "ConcurrentAnimator.h"
+#include "AnimationConfig.h"
+#include "Animations.h"
+#include "ConcurrentAnimator.h"
+#include "AnimateFunc.h"
+
+extern Adafruit_NeoMatrix rimJob;
+extern Adafruit_NeoPixel redL;
+extern Adafruit_NeoPixel grnL;
+extern Adafruit_NeoPixel bluL;
+extern Adafruit_NeoPixel yelL;
+extern Adafruit_NeoPixel cirL;
+extern Adafruit_NeoPixel placL;
+extern Metro fasterStripUpdateInterval;
+extern EasyTransfer ET;
+extern systemState inst;
 
 void setup() {
   Serial.begin(115200);
@@ -100,13 +115,13 @@ void loop() {
 
   //check and see if a data packet has come in.
   if (ET.receiveData()) {
-  
+
     Serial << F("I");
-    
+
 //    for( byte i=0; i<N_COLORS; i++ ) {
 //      Serial << F(" Color ") << i << F("; R:") << inst.light[i].red << F(" G:") << inst.light[i].green << F(" B:") << inst.light[i].blue << endl;
 //    }
-    
+
     // dispatch the requests
     setStripColor(redL, inst.light[I_RED]);
     setStripColor(grnL, inst.light[I_GRN]);
@@ -116,8 +131,8 @@ void loop() {
     // toggle LED to ACK new button press
     static boolean ledStatus=false;
     ledStatus = !ledStatus;
-    digitalWrite(LED_PIN, ledStatus); 
-    
+    digitalWrite(LED_PIN, ledStatus);
+
     quietUpdateInterval.reset();
   }
 

@@ -6,12 +6,16 @@
 #include <EasyTransfer.h>
 #include <LightMessage.h> // common message definition
 #include <avr/wdt.h> // watchdog timer
-#include "Light.h"
+
+#include "Strip.h"
+#include "AnimationConfig.h"
 #include "Animations.h"
 #include "ConcurrentAnimator.h"
-#include "ButtonTest.h"
+#include "AnimateFunc.h"
 
 #define PIN 4
+
+//extern Animations animations;
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -21,7 +25,12 @@
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //Adafruit_NeoPixel strip = Adafruit_NeoPixel(49, PIN, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoMatrix strip = rimJob;
+extern Adafruit_NeoMatrix rimJob;
+extern Adafruit_NeoPixel redL;
+extern Adafruit_NeoPixel grnL;
+extern Adafruit_NeoPixel bluL;
+extern Adafruit_NeoPixel yelL;
+extern Metro fasterStripUpdateInterval;
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -38,11 +47,18 @@ void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b) {
 ConcurrentAnimator animator;
 AnimationConfig rimConfig;
 AnimationConfig redButtonConfig;
+AnimationConfig greenButtonConfig;
+AnimationConfig blueButtonConfig;
+AnimationConfig yellowButtonConfig;
 RgbColor red;
+RgbColor green;
+RgbColor blue;
+RgbColor yellow;
 
-AnimateFunc wipeStrip = colorWipe;
-AnimateFunc laserStrip = laserWipe;
-LaserWipePosition laserPos;
+LaserWipePosition redLaserPos;
+LaserWipePosition greenLaserPos;
+LaserWipePosition blueLaserPos;
+LaserWipePosition yellowLaserPos;
 
 void setup() {
 
@@ -50,102 +66,92 @@ void setup() {
 
   // Colors
   red.red = RED_MAX;
-  red.blue = LED_OFF;
   red.green = LED_OFF;
+  red.blue = LED_OFF;
+
+  yellow.red = RED_MAX;
+  yellow.green = GRN_MAX;
+  yellow.blue = LED_OFF;
+
+  green.red = LED_OFF;
+  green.green = GRN_MAX;
+  green.blue = LED_OFF;
+
+  blue.red = LED_OFF;
+  blue.green = LED_OFF;
+  blue.blue = BLU_MAX;
 
   // Neopixel strips
   rimJob.begin();
   rimJob.show();
 
   rimConfig.name = "Outer rim";
-  rimConfig.strip = &strip;
+  rimConfig.strip = &rimJob;
   rimConfig.color = red;
   rimConfig.ready = true;
   rimConfig.position = 0;
   rimConfig.timer = Metro(10);
 
+  // Init neo pixel strips for the buttons
   redL.begin();
   redL.show();
-  redButtonConfig.name = "Red Button";
+  grnL.begin();
+  grnL.show();
+  bluL.begin();
+  bluL.show();
+  yelL.begin();
+  yelL.show();
+
+  // Red Button
+  redButtonConfig.name = "red button";
   redButtonConfig.strip = &redL;
   redButtonConfig.color = red;
   redButtonConfig.ready = true;
-  redButtonConfig.position = &laserPos;
-  redButtonConfig.timer = Metro(10);
+  redButtonConfig.position = &redLaserPos;
+  redButtonConfig.timer = Metro(1);
+
+  // Green button
+  memcpy(&greenButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
+  greenButtonConfig.name = "green button";
+  greenButtonConfig.strip = &grnL;
+  greenButtonConfig.color = green;
+  greenButtonConfig.position = &greenLaserPos;
+
+  // Blue button
+  memcpy(&blueButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
+  blueButtonConfig.name = "blue button";
+  blueButtonConfig.strip = &bluL;
+  blueButtonConfig.color = blue;
+  blueButtonConfig.position = &blueLaserPos;
+
+  // Yellow button
+  memcpy(&yellowButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
+  yellowButtonConfig.name = "yellow button";
+  yellowButtonConfig.strip = &yelL;
+  yellowButtonConfig.color = yellow;
+  yellowButtonConfig.position = &yellowLaserPos;
+
+  Serial << "Setup Complete" << endl;
 }
 
 /******************************************************************************
  * Main Loop
  ******************************************************************************/
 void loop() {
-  if (stripUpdateInterval.check()) {
+  if (fasterStripUpdateInterval.check()) {
     //animator.animate(wipeStrip, rimConfig);
-    animator.animate(laserStrip, redButtonConfig);
-    stripUpdateInterval.reset();
+    Serial << "1";
+    animator.animate(laserWipe, redButtonConfig);
+    Serial << "2";
+    animator.animate(laserWipe, greenButtonConfig);
+    animator.animate(laserWipe, blueButtonConfig);
+    animator.animate(laserWipe, yellowButtonConfig);
+
+    fasterStripUpdateInterval.reset();
   }
 }
 
-void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int c, int wait) {
-  for (uint16_t x = 0; x < matrix.width(); x++) {
-    matrix.drawPixel(x, 0, c);
-    matrix.drawPixel(x, 1, c);
-    matrix.drawPixel(x, 2, c);
-    matrix.show();
-  }
-}
-
-// Fill the dots one after the other with a color
-// returns the position of the led that was lit
-void colorWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
-  int* pos = (int*) posData;
-  int next = (*pos);
-
-  if (next > strip.numPixels()) {
-    next = 0;
-  } else {
-    ++next;
-  }
-
-  strip.setPixelColor(next, strip.Color(r, g, b));
-  Serial << F("Set pixel: ") << next << endl;
-  posData = (void*) next;
-}
-
-// color wipes the last 8 pixels
-void laserWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
-  LaserWipePosition* pos = static_cast<LaserWipePosition*>(posData);
-
-  // next is relative to the previous position
-  int next = pos->prev;
-  int end = strip.numPixels() - 1;
-  int start = end - 3;
-
-  // first pixel on, direction set
-  if (pos->prev == 0) {
-    next = start;
-  }
-
-  // reverse direction if at an edge
-  if (pos->prev == end) {
-    pos->dir = 1;
-  }
-  else if (pos->prev == start) {
-    pos->dir = 0;
-  }
-
-  // proceed to the next position
-  if (pos->dir == 1) {
-    --next;
-  } else {
-    ++next;
-  }
-
-  // clear out the last color and set the next one
-  strip.setPixelColor(pos->prev, strip.Color(LED_OFF, LED_OFF, LED_OFF));
-  strip.setPixelColor(next, strip.Color(r, g, b));
-  pos->prev = next;
-}
-
+/*
 void rainbow(uint8_t wait) {
   uint16_t i, j;
 
@@ -221,4 +227,5 @@ uint32_t Wheel(byte WheelPos) {
     return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
   }
 }
+*/
 

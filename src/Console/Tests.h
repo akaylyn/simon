@@ -21,6 +21,7 @@ class TestModes {
     boolean update(); 
     
   private:
+    void whiteoutModeLoop(boolean performStartup);
     void bongoModeLoop(boolean performStartup);
     void proximityModeLoop(boolean performStartup);
     void lightsTestModeLoop(boolean performStartup);

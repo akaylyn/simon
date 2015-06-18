@@ -5,24 +5,7 @@
 #include <Metro.h>
 #include <Streaming.h>
 #include <Arduino.h>
-
-typedef void (*AnimateFunc)(Adafruit_NeoPixel&, int, int, int, void*);
-
-struct RgbColor {
-  int red;
-  int green;
-  int blue;
-};
-
-struct AnimationConfig {
-  char* name;
-  Adafruit_NeoPixel *strip;
-  RgbColor color;
-  void* position;
-  bool ready;
-  Metro timer;
-  AnimationConfig() : timer(1){};
-};
+#include "AnimationConfig.h"
 
 class ConcurrentAnimator {
   public:
