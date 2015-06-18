@@ -18,7 +18,7 @@
 class Flood {
   public:
     // startup
-    void begin(byte floodPin, unsigned long sendInterval = 5UL, byte sendCount = 3);
+    void begin(byte floodPin, unsigned long sendInterval = 5UL, byte sendCount = 2);
 
     // update routine for resends
     void update();
@@ -29,27 +29,13 @@ class Flood {
     void on();
     void off();
 
-    void setBright(byte level);
-    void queCode(unsigned long data);
-    void dropQue();
     void sendCode(unsigned long data);
-
-    colorInstruction currentColor;
-    int currentBright;
-    boolean isOn;
-
-    // que control for IR blaster
-    QueueArray <unsigned long> que;
-    unsigned long sendInterval; // Need to wait before resending IR packets.
-    byte sendCount; // NEC IR protocol requires packets get sent in triplicate. Testing suggests duplicate is enough.
-
+    unsigned long currentCode, sendInterval;
+    byte sendCount;
+    
     // Use NEC IR protocol
     IRsend *ir;
     
-    byte avgIntensity(unsigned long c1, unsigned long c2, unsigned long c3);
-    byte avgIntensity(unsigned long c1, unsigned long c2);
-    byte intensityToBright(byte intensity);
-
 };
 
 

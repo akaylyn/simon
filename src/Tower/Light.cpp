@@ -24,14 +24,14 @@ void Light::perform(colorInstruction &inst) {
   rgb.blue = inst.blue;
   
   // apply
-  flood->setColor(inst); 
   tank->writeRGB(rgb);
+  flood->setColor(inst); 
 }
 
 void Light::update() {
   // run the update functions
-  flood->update(); 
   tank->update();
+  flood->update(); 
 }
 
 void Flood::begin(byte floodPin, unsigned long sendInterval, byte sendCount) {
@@ -45,12 +45,10 @@ void Flood::begin(byte floodPin, unsigned long sendInterval, byte sendCount) {
   
   // instantiate
   this->ir = new IRsend();
-  
-  // save parameters
+
+  // timing and resends    
   this->sendInterval = sendInterval;
   this->sendCount = sendCount;
-  // assume we're at the dimmest setting at startup
-  this->currentBright = 0;
   
   // turn it on
   this->on(); 
@@ -62,111 +60,57 @@ void Flood::begin(byte floodPin, unsigned long sendInterval, byte sendCount) {
 
 
 void Flood::on() {
-  this->queCode(K24_ON);
-  this->queCode(K24_ON); // make sure
-  this->isOn = true;
+  this->sendCode(K24_ON);
+  this->sendCode(K24_ON);
+  this->sendCode(K24_UP);
+  this->sendCode(K24_UP);
+  this->sendCode(K24_UP);
+  this->sendCode(K24_UP);
+  this->sendCode(K24_UP);
+  this->sendCode(K24_UP);
 }
 void Flood::off() {
-  this->queCode(K24_OFF);
-  this->queCode(K24_OFF); // make sure
-//  send(K24_SMOOTH);
-  this->isOn = false;
-}
-
-void Flood::setBright(byte level) {
-  if( level > N_BRIGHT_STEPS ) level = N_BRIGHT_STEPS;
-  
-//  Serial << F("Flood: bright: ") << level << endl;
-  if( level > currentBright ) {
-    for( byte sends=level-currentBright; sends > 0; sends--) this->queCode(K24_UP);
-  } else if( level < currentBright) {
-    for( byte sends=currentBright-level; sends > 0; sends--) this->queCode(K24_DOWN);
-  }
-  // track
-  this->currentBright = level;
+ this->sendCode(K24_OFF);
+ //  send(K24_SMOOTH);
 }
 
 void Flood::sendCode(unsigned long data) {
-//  Serial << F("Flood: send: ") << _HEX(data) << endl;
-  ir->sendNEC(data, 32);
-}
-
-void Flood::queCode(unsigned long data) {
-  for( byte i=0; i<sendCount; i++)
-    que.push(data);
-}
-
-void Flood::update() {
-  // send on an interval
-  static Metro canSend(this->sendInterval);
-  
-  // check the que and the timer
-  if( canSend.check() & !que.isEmpty() ) {
-    sendCode(que.pop());
-    canSend.reset();
+  Serial << F("Flood: send: ") << _HEX(data) << endl;
+  for( byte i=0; i < this->sendCount; i++ ) {
+    ir->sendNEC(data, 32);
+//    delay( this->sendInterval );
   }
 }
 
-void Flood::dropQue() {
-  while( !que.isEmpty() ) que.pop();
+void Flood::update() {
 }
 
 void Flood::setColor(colorInstruction &color) {  
-  
-  // kill the que.
-  dropQue();
   
   unsigned long code;
   byte bright;
   if( color.red > 0 && color.green > 0 && color.blue > 0 ) {
     // white
-    queCode(K24_WHT);
-    setBright(intensityToBright(avgIntensity(color.red, color.green, color.blue)));
+    code = K24_WHT;
   } else if( color.red > 0 && color.green > 0 ) {
     // yellow
-    queCode(K24_YEL);
-    setBright(intensityToBright(avgIntensity(color.red, color.green)));
+    code = K24_YEL;
   } else if( color.red > 0 ) {
     // red
-    queCode(K24_RED);
-    setBright(intensityToBright(color.red));
+    code = K24_RED;
   } else if( color.green > 0 ) {
     // green
-    queCode(K24_GRN);
-    setBright(intensityToBright(color.green));
+    code = K24_GRN;
   } else if( color.blue > 0 ) {
     // blue
-    queCode(K24_BLU);
-    setBright(intensityToBright(color.blue));
+    code = K24_BLU;
   } else {
-    // note-quite-off
-//    queCode(K24_WHT);
-//    setBright(intensityToBright(0));
-    // too much buffering
-    queCode(K24_SMOOTH);
-    setBright(intensityToBright(255));
+    code = K24_SMOOTH;
   }
   
+  if( code != currentCode ) this->sendCode(code);
   // track
-  currentColor = color;
+  currentCode = code;
 
 }
 
-// helper functions
-byte Flood::avgIntensity(unsigned long c1, unsigned long c2, unsigned long c3) {
-  unsigned long sum = c1 + c2 + c3;
-  return( sum/3UL );
-}
-byte Flood::avgIntensity(unsigned long c1, unsigned long c2) {
-  unsigned long sum = c1 + c2;
-  return( sum/2UL );
-}
-byte Flood::intensityToBright(byte intensity) {
-  // serious "magic number" time
-  // we only have N_BRIGHT_STEPS=5 color steps into which we map 0-255
-  const byte cutoff[N_BRIGHT_STEPS] = {0, 8, 26, 82, 255};
-  
-  for( byte b=0; b<N_BRIGHT_STEPS; b++ ) {
-    if( intensity <= cutoff[b] ) return( b );
-  }
-}
