@@ -61,5 +61,3 @@ Metro quietUpdateInterval(STRIP_ADD_PIXEL);
 Metro stripUpdateInterval(STRIP_UPDATE);
 Metro fasterStripUpdateInterval(STRIP_UPDATE);
 
-#endif
-

@@ -8,6 +8,7 @@
 #include <Metro.h>
 #include <EasyTransfer.h>
 #include <LightMessage.h> // common message definition
+#include <Simon_Common.h> // common message definition
 
 // watchdog timer
 #include <avr/wdt.h>
@@ -29,6 +30,14 @@
 #define YEL_PIN 7 // wire to button DI pin.  Include a 330 Ohm resistor in series.
 // geometry
 #define BUTTON_N 49 // wrapped around each button
+
+// 2x chotsky lighting
+#define CIRCLE_PIN 8 //
+// geometry
+#define CIRCLE_N 18 // wrapped around middle chotsky
+#define PLACARD_PIN 8 //
+// geometry
+#define PLACARD_N 18 // wrapped around middle chotsky
 
 // 1x chotsky lighting
 #define MIDDLE_PIN 8 //
@@ -58,5 +67,6 @@
 
 // count memory usage for LEDs, which is reported at startup.
 #define TOTAL_LED_MEM (RIM_N + BUTTON_N*4 + MIDDLE_N)*3
+
 #endif
 
