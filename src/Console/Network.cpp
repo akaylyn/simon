@@ -26,18 +26,24 @@ void Network::begin(nodeID node) {
   Serial << F("Network: system datagram requires ") << toc - tic << F("us to send.") << endl;
 
   // save this, bumped slighly and at least 5ms
-  this->packetSendInterval = max(5000UL, float(toc - tic) * 1.1);
+//  this->packetSendInterval = max(5000UL, float(toc - tic) * 1.1);
+  this->packetSendInterval = float(toc - tic) * 1.1;
   Serial << F("Network: sending system datagram every ") << this->packetSendInterval << F("us.") << endl;
 
   this->resendCount = 10;
   this->sentCount = this->resendCount;
   Serial << F("Network: will resend new packets x") << this->resendCount << endl;
 
-  // write to EEPROM if there's a change.
+  // Get layout
   int addr = 69;
-  EEPROM.readBlock(addr, &this->lightLayout);
-  EEPROM.readBlock(addr+sizeof(this->lightLayout), &this->fireLayout);
-  this->layout( this->lightLayout, this->fireLayout ); // redundant, but I want the print
+  color lightLayout[N_COLORS] = {I_RED, I_GRN, I_BLU, I_YEL}, fireLayout[N_COLORS] = {I_RED, I_GRN, I_BLU, I_YEL};
+  for ( byte i = 0; i < N_COLORS; i++ ) {
+    lightLayout[i] = (color)EEPROM.read(addr+i);
+    fireLayout[i] = (color)EEPROM.read(addr+i+N_COLORS);
+  }
+  
+  // sanity check  
+  this->layout( lightLayout, fireLayout ); // redundant, but I want the print
 
   Serial << F("Network: setup complete.") << endl;
 }
@@ -45,19 +51,27 @@ void Network::begin(nodeID node) {
 void Network::layout(color lightLayout[N_COLORS], color fireLayout[N_COLORS]) {
   Serial << F("Network: layout:") << endl;
 
+  // write to EEPROM if there's a change.
+  int addr = 69;
+
   // store it
   for ( byte i = 0; i < N_COLORS; i++ ) {
     this->lightLayout[i] = lightLayout[i];
     Serial << F(" Color ") << i << (" assigned to Tower ") << lightLayout[i] << endl;
 
+    if( EEPROM.read(addr+i) != (byte)lightLayout[i] ) {
+      Serial << F("  set EEPROM") << endl;
+      EEPROM.write(addr+i, (byte)lightLayout[i]);
+    } 
+    
     this->fireLayout[i] = fireLayout[i];
     Serial << F(" Fire ") << i << (" assigned to Tower ") << fireLayout[i] << endl;
-  }
 
-  // write to EEPROM if there's a change.
-  int addr = 69;
-  EEPROM.updateBlock(addr, &this->lightLayout);
-  EEPROM.updateBlock(addr+sizeof(this->lightLayout), &this->fireLayout);
+    if( EEPROM.read(addr+i+N_COLORS) != (byte)fireLayout[i] ) {
+      Serial << F("  set EEPROM") << endl;
+      EEPROM.write(addr+i+N_COLORS, (byte)fireLayout[i]);
+    } 
+  }
 
 }
 
@@ -66,32 +80,26 @@ void Network::update() {
   // if the sent count exceeds resend count, exit
   if ( this->sentCount >= this->resendCount ) return;
 
-//  // track send times
-//  static unsigned long lastSend = micros();
-//  unsigned long now = micros();
-//  // if the resend interval has not elapsed, exit
-//  if( now-lastSend < this->packetSendInterval ) return;
+  // track send times
+  static unsigned long lastSend = micros();
+  unsigned long now = micros();
 
   // if this is the first time we've sent, update the packet number
   if ( this->sentCount == 0 ) {
     this->state.packetNumber++;
     // note that the timer check won't be made, so we could be partway through a send.
-//  } else {
-//    // issuing resends, so check timer
-//    // if the resend interval has not elapsed, exit
-//    if ( now - lastSend < this->packetSendInterval ) return;
+  } else {
+    // if the resend interval has not elapsed, exit
+    if( now-lastSend < this->packetSendInterval ) return;
   }
 
   // Radio: send. no ACK, no sleep.
   this->send();
-  // Radio: wait for the packet transmission to complete.  BLOCKING.
-  // also has the effect of guaranteeting that the EasyTransfer send to Light will have completed (same baud rate, less overhead).
-  radio.SendWait(); 
   
   this->sentCount++;
 
   // record last send time
-//  lastSend = now;
+  lastSend = now;
 }
 
 // makes the network do stuff with your stuff

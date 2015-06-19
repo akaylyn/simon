@@ -6,11 +6,12 @@
 #include <MPR121.h> // MPR121 capsense board
 #include <Wire.h> // capsense is an I2C device
 #include <Bounce.h> // with debounce routine.
+#include <EEPROM.h> // saving 
 #include <FiniteStateMachine.h> // using a FSM to run the game
 #include <LED.h> // led control abstraction
 #include <SPI.h> // radio transmitter is a SPI device
-#include <EEPROMex.h> // saving and loading radio and layout settings
 #include <RFM12B.h> // RFM12b radio transmitter module
+#include <EEPROM.h> // saving settings
 #include <EasyTransfer.h> // used for sending message to the sound module
 #include <wavTrigger.h> // sound board
 
@@ -37,6 +38,9 @@
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  
+//  Serial << F("SETUP: pausing 500ms after REBOOT") << endl;
+//  delay(500);
 
   // random seed set from electrical noise on an analog pin.
   randomSeed(analogRead(A5));

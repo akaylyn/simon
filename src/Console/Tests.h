@@ -6,6 +6,7 @@
 
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
+#include <EEPROM.h> // layout retrieval
 #include "Sound.h" // for sound module
 #include "Touch.h" // for touch module
 #include "Network.h" // for mode switch sends and Tower comms

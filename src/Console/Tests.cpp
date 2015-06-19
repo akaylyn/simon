@@ -159,12 +159,8 @@ void TestModes::whiteoutModeLoop(boolean performStartup) {
 void TestModes::layoutModeLoop(boolean performStartup) {
 
   static boolean showNow = true;
-  static color layout[N_COLORS] = {
-                      I_RED, // Tower 1, RED, upper right.  
-                      I_GRN, // Tower 2, GREEN, upper left. 
-                      I_BLU, // Tower 3, BLUE, lower right.  
-                      I_YEL  // Tower 4, YELLOW, lower left.  
-  };
+  static color layout[N_COLORS];
+
   // track idle for saving
   static Metro writeSettingsNow(5000UL);
   
@@ -180,7 +176,13 @@ void TestModes::layoutModeLoop(boolean performStartup) {
     while( ! delayFor.check() ) network.update();
     
     showNow = true;
+
+    int addr = 69;
+    for ( byte i = 0; i < N_COLORS; i++ ) {
+      layout[i] = (color)EEPROM.read(addr+i);
+    }
     writeSettingsNow.reset();
+    
   }
 
   if ( touch.anyChanged() ) { 
