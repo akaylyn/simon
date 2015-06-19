@@ -9,16 +9,43 @@ void ConcurrentAnimator::calculateAnimation(AnimateFunc animate, AnimationConfig
   if (!config.ready) {
     return;
   }
-  Serial << "---" << config.name << "---" << endl;
-
   (*animate)((*config.strip),
       config.color.red, config.color.green, config.color.blue, config.position);
   config.ready = false;
 }
 
 void ConcurrentAnimator::push(AnimationConfig &config) {
-  if (!config.timer.check()) return;
+  if (!config.timer.check()) {
+      return;
+  }
   config.strip->show();
   config.ready = true;
+  config.timer.reset();
 }
+
+// Matrix
+
+void ConcurrentAnimator::animate(AnimateMatrixFunc animate, AnimationConfig &config) {
+  calculateAnimation(animate, config);
+  pushMatrix(config);
+}
+
+void ConcurrentAnimator::calculateAnimation(AnimateMatrixFunc animate, AnimationConfig &config) {
+    if (!config.ready) {
+        return;
+    }
+    (*animate)((*config.matrix),
+            config.color.red, config.color.green, config.color.blue, config.position);
+    config.ready = false;
+}
+
+void ConcurrentAnimator::pushMatrix(AnimationConfig &config) {
+  if (!config.timer.check()) {
+      return;
+  }
+  config.strip->show();
+  config.ready = true;
+  config.timer.reset();
+}
+
 

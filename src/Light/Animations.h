@@ -14,7 +14,7 @@ void laserWipeEdge(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData)
 void colorWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
 
 // Animations designed for the NeoPixel Matrix wrapped around the inside of the console
-void colorWipeMatrix(Adafruit_NeoMatrix &strip, int c);
+void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
 
 // Position information needed for the LaserWipe animation
 struct LaserWipePosition {

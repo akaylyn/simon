@@ -13,11 +13,11 @@ struct RgbColor {
 struct AnimationConfig {
   char* name;
   Adafruit_NeoPixel *strip;
+  Adafruit_NeoMatrix *matrix;
   RgbColor color;
   void* position;
   bool ready;
   Metro timer;
-  AnimationConfig() : timer(1){};
 };
 
 #endif

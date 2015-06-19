@@ -101,11 +101,12 @@ void configureAnimations() {
   rimJob.begin();
 
   rimConfig.name = "Outer rim";
+  rimConfig.matrix = &rimJob;
   rimConfig.strip = &rimJob;
-  rimConfig.color = red;
+  rimConfig.color = blue;
   rimConfig.ready = true;
   rimConfig.position = 0;
-  rimConfig.timer = Metro(10);
+  rimConfig.timer = Metro(500);
 
   // Init neo pixel strips for the buttons
   redL.begin();
@@ -122,7 +123,7 @@ void configureAnimations() {
   redButtonConfig.color = red;
   redButtonConfig.ready = true;
   redButtonConfig.position = &redLaserPos;
-  redButtonConfig.timer = Metro(1);
+  redButtonConfig.timer = Metro(500);
 
   // Green button
   memcpy(&greenButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
@@ -130,6 +131,7 @@ void configureAnimations() {
   greenButtonConfig.strip = &grnL;
   greenButtonConfig.color = green;
   greenButtonConfig.position = &greenLaserPos;
+  greenButtonConfig.timer = Metro(1000);
 
   // Blue button
   memcpy(&blueButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
