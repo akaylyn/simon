@@ -6,6 +6,7 @@
 #include <Adafruit_NeoMatrix.h>
 #include "AnimationConfig.h"
 #include "Strip.h"
+#include "ConcurrentAnimator.h"
 
 // Animations designed for the NeoPixel Strips surrounding the buttons
 void laserWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);

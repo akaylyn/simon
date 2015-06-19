@@ -59,15 +59,16 @@ void idleEnter() {
   light.clear();
   fire.clear();
   network.update();
-  
+
   sound.setMasterGain();
   sound.setLeveling();
-  sound.stopAll();      
+  sound.stopAll();
 
   idleBeforeFanfare.reset();
 
 }
 void idleUpdate() {
+  light.animate(A_LaserWipe);
   // check buttons for game play start
   if ( touch.anyPressed() ) {
     // going to start a game
@@ -131,7 +132,7 @@ void gameUpdate() {
   for (int i = 0; i < gameCurrent; i++) {
     colorInstruction c = cMap[gameSequence[i]];
     light.setLight(gameSequence[i], c);
-    
+
     // sound
     sound.playTone(gameSequence[i]);
 
@@ -209,7 +210,7 @@ void playerUpdate() {
   boolean hasWrongMove = !correct;
   if ( hasTimedOut ||  hasWrongMove ) {
     Serial << "Done.  current is: " << playerCurrent << " gamecurrent: " << gameCurrent << endl;
-    
+
     if ( gameCurrent > fanfareCorrectMapping[LEVEL4] ) {
       fanfareLevel = LEVEL4;
     } else if ( gameCurrent > fanfareCorrectMapping[LEVEL3] ) {
@@ -239,15 +240,15 @@ void playerExit() {
 //***** Fanfare
 void fanfareEnter() {
   Serial << F("Simon: ->fanfare") << endl;
-  
+
   // clear everthing
   sound.stopAll();
   light.clear();
   fire.clear();
-  
+
   // defined in Fanfare.h/.cpp
   playerFanfare(fanfareLevel);
-  
+
   simon.transitionTo(idle);
 }
 void fanfareUpdate() {

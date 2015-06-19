@@ -32,6 +32,12 @@ extern Adafruit_NeoPixel bluL;
 extern Adafruit_NeoPixel yelL;
 extern Metro fasterStripUpdateInterval;
 
+extern ConcurrentAnimator animator;
+extern AnimationConfig redButtonConfig;
+extern AnimationConfig greenButtonConfig;
+extern AnimationConfig blueButtonConfig;
+extern AnimationConfig yellowButtonConfig;
+
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
 // and minimize distance between Arduino and first pixel.  Avoid connecting
@@ -44,93 +50,9 @@ void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b) {
   strip.show();
 }
 
-ConcurrentAnimator animator;
-AnimationConfig rimConfig;
-AnimationConfig redButtonConfig;
-AnimationConfig greenButtonConfig;
-AnimationConfig blueButtonConfig;
-AnimationConfig yellowButtonConfig;
-RgbColor red;
-RgbColor green;
-RgbColor blue;
-RgbColor yellow;
-
-LaserWipePosition redLaserPos;
-LaserWipePosition greenLaserPos;
-LaserWipePosition blueLaserPos;
-LaserWipePosition yellowLaserPos;
-
 void setup() {
-
   Serial.begin(115200);
-
-  // Colors
-  red.red = RED_MAX;
-  red.green = LED_OFF;
-  red.blue = LED_OFF;
-
-  yellow.red = RED_MAX;
-  yellow.green = GRN_MAX;
-  yellow.blue = LED_OFF;
-
-  green.red = LED_OFF;
-  green.green = GRN_MAX;
-  green.blue = LED_OFF;
-
-  blue.red = LED_OFF;
-  blue.green = LED_OFF;
-  blue.blue = BLU_MAX;
-
-  // Neopixel strips
-  rimJob.begin();
-  rimJob.show();
-
-  rimConfig.name = "Outer rim";
-  rimConfig.strip = &rimJob;
-  rimConfig.color = red;
-  rimConfig.ready = true;
-  rimConfig.position = 0;
-  rimConfig.timer = Metro(10);
-
-  // Init neo pixel strips for the buttons
-  redL.begin();
-  redL.show();
-  grnL.begin();
-  grnL.show();
-  bluL.begin();
-  bluL.show();
-  yelL.begin();
-  yelL.show();
-
-  // Red Button
-  redButtonConfig.name = "red button";
-  redButtonConfig.strip = &redL;
-  redButtonConfig.color = red;
-  redButtonConfig.ready = true;
-  redButtonConfig.position = &redLaserPos;
-  redButtonConfig.timer = Metro(1);
-
-  // Green button
-  memcpy(&greenButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
-  greenButtonConfig.name = "green button";
-  greenButtonConfig.strip = &grnL;
-  greenButtonConfig.color = green;
-  greenButtonConfig.position = &greenLaserPos;
-
-  // Blue button
-  memcpy(&blueButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
-  blueButtonConfig.name = "blue button";
-  blueButtonConfig.strip = &bluL;
-  blueButtonConfig.color = blue;
-  blueButtonConfig.position = &blueLaserPos;
-
-  // Yellow button
-  memcpy(&yellowButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
-  yellowButtonConfig.name = "yellow button";
-  yellowButtonConfig.strip = &yelL;
-  yellowButtonConfig.color = yellow;
-  yellowButtonConfig.position = &yellowLaserPos;
-
+  configureAnimations();
   Serial << "Setup Complete" << endl;
 }
 
@@ -140,9 +62,7 @@ void setup() {
 void loop() {
   if (fasterStripUpdateInterval.check()) {
     //animator.animate(wipeStrip, rimConfig);
-    Serial << "1";
     animator.animate(laserWipe, redButtonConfig);
-    Serial << "2";
     animator.animate(laserWipe, greenButtonConfig);
     animator.animate(laserWipe, blueButtonConfig);
     animator.animate(laserWipe, yellowButtonConfig);

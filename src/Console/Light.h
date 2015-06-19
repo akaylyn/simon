@@ -14,7 +14,7 @@
 #include "Network.h"
 
 // LED abstracting
-#include <LED.h> 
+#include <LED.h>
 
 // Manual button lights, panels, under console.  wire to N-channel MOSFET + and any GND.
 #define LED_YEL 8 // can move, PWM
@@ -30,13 +30,15 @@ class Light {
     // set fire level, taking advantage of layout position
     void setLight(color position, byte red, byte green, byte blue);
     void setLight(color position, colorInstruction &inst);
+    void animate(animationInstruction animation);
+    void stopAnimation();
 
-    void clear(); // clear 
-    
+    void clear(); // clear
+
   private:
 
     // hardware LED
-    LED *led[N_COLORS];  
+    LED *led[N_COLORS];
 };
 
 extern Light light;
