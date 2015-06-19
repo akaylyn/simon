@@ -7,13 +7,13 @@ void Network::begin(nodeID node) {
 
   // setup Light comms
   Serial1.begin(115200);
-  //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc. 
+  //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc.
   this->ET.begin(details(this->state), &Serial1);
   Serial << F("Network: serial comms with Light module.") << endl;
 
   // arise, Cthulu
   //radio.Wakeup();  // this was crashing startup
-  
+
   // check the send time
   Serial << F("Network: system datagram size (bytes)=") << sizeof(this->state) << endl;
   unsigned long tic = micros();
@@ -22,7 +22,7 @@ void Network::begin(nodeID node) {
   radio.SendWait();
   unsigned long toc = micros();
   Serial << F("Network: system datagram requires ") << toc-tic << F("us to send.") << endl;
-    
+
   // save this, bumped slighly and at least 5ms
   this->packetSendInterval = max(5000UL, float(toc-tic)*1.1);
   Serial << F("Network: sending system datagram every ") << this->packetSendInterval << F("us.") << endl;
@@ -30,33 +30,33 @@ void Network::begin(nodeID node) {
   this->resendCount = 10;
   this->sentCount = this->resendCount;
   Serial << F("Network: will resend new packets x") << this->resendCount << endl;
-  
+
   // write to EEPROM if there's a change.
   int addr = 69;
   eeprom_read_block( (void*)&this->lightLayout, (void *)addr, sizeof(this->lightLayout) );
   eeprom_read_block( (void*)&this->fireLayout, (void *)(addr+sizeof(this->lightLayout)), sizeof(this->fireLayout) );
   this->layout( this->lightLayout, this->fireLayout ); // redundant, but I want the print
-  
+
   Serial << F("Network: setup complete.") << endl;
 }
 
 void Network::layout(color lightLayout[N_COLORS], color fireLayout[N_COLORS]) {
   Serial << F("Network: layout:") << endl;
-  
+
   // store it
   for( byte i=0; i<N_COLORS; i++ ) {
     this->lightLayout[i] = lightLayout[i];
     Serial << F(" Color ") << i << (" assigned to Tower ") << lightLayout[i] << endl;
-    
+
     this->fireLayout[i] = fireLayout[i];
     Serial << F(" Fire ") << i << (" assigned to Tower ") << fireLayout[i] << endl;
   }
-  
+
   // write to EEPROM if there's a change.
   int addr = 69;
   eeprom_update_block( (void*)&this->lightLayout, (void *)addr, sizeof(this->lightLayout) );
   eeprom_update_block( (void*)&this->fireLayout, (void *)(addr+sizeof(this->lightLayout)), sizeof(this->fireLayout) );
-  
+
 }
 
 // resends and stuff
@@ -64,13 +64,13 @@ void Network::update() {
   // track send times
   static unsigned long lastSend = micros();
   unsigned long now = micros();
-  
+
   // if the resend interval has not elapsed, exit
   if( now-lastSend < this->packetSendInterval ) return;
-    
+
   // if the sent count exceeds resend count, exit
   if( this->sentCount >= this->resendCount ) return;
-    
+
   // Radio: send. no ACK, no sleep.
   this->send();
   this->sentCount++;
@@ -85,7 +85,7 @@ void Network::send(color position, colorInstruction &inst) {
   this->state.light[position] = inst;
   this->sentCount = 0;
 }
-void Network::send(color position, fireInstruction &inst) { 
+void Network::send(color position, fireInstruction &inst) {
   this->state.fire[position] = inst;
   this->sentCount = 0;
 }
@@ -93,23 +93,26 @@ void Network::send(systemMode mode) {
   this->state.mode = (byte)mode;
   this->sentCount = 0;
 }
+void Network::send(animationInstruction &inst) {
+    this->state.animation = inst;
+}
 
 // internal dispatcher
 void Network::send() {
-  
+
   // increment counter
   this->state.packetNumber++;
-  
+
   // Light: send.
   ET.sendData();
 
 //  radio.Send((byte)BROADCAST, (const void*)(&this->state), sizeof(this->state), false, 0);
 
-  // apply physical Tower layout 
+  // apply physical Tower layout
   systemState towerState;
   towerState.packetNumber = this->state.packetNumber;
   towerState.mode = this->state.mode;
-  
+
   for( byte i=0; i<N_COLORS; i++ ) {
     if( this->lightLayout[i] != N_COLORS ) {
       // if single tower are handling single colors
@@ -126,7 +129,7 @@ void Network::send() {
     }
   }
 
-  // Radio: send.  
+  // Radio: send.
   radio.Send((byte)BROADCAST, (const void*)(&towerState), sizeof(towerState), false, 0);
 }
 
@@ -158,7 +161,7 @@ void Network::mergeFire(fireInstruction &inst) {
 
 // starts the radio
 nodeID Network::networkStart(nodeID node) {
-  
+
   // EEPROM location for radio settings.
   const byte radioConfigLocation = 42;
 

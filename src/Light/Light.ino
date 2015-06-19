@@ -22,6 +22,7 @@
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
 
+#include "Strip.h"
 #include "ConcurrentAnimator.h"
 #include "AnimationConfig.h"
 #include "Animations.h"
@@ -38,6 +39,7 @@ extern Adafruit_NeoPixel placL;
 extern Metro fasterStripUpdateInterval;
 extern EasyTransfer ET;
 extern systemState inst;
+extern ConcurrentAnimator animator;
 
 void setup() {
   Serial.begin(115200);
@@ -65,13 +67,7 @@ void setup() {
   Serial << F("RimJob: GRN starts at: ") << GRN_SEG_START << endl;
 
   // start
-  rimJob.begin();
-  redL.begin();
-  grnL.begin();
-  bluL.begin();
-  yelL.begin();
-  cirL.begin();
-  placL.begin();
+  configureAnimations();
 
   Serial << F("Free RAM: ") << freeRam() << endl;
 
@@ -127,6 +123,9 @@ void loop() {
     setStripColor(grnL, inst.light[I_GRN]);
     setStripColor(bluL, inst.light[I_BLU]);
     setStripColor(yelL, inst.light[I_YEL]);
+
+    // animation instructions
+    mapToAnimation(animator, inst);
 
     // toggle LED to ACK new button press
     static boolean ledStatus=false;

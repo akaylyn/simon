@@ -61,3 +61,97 @@ Metro quietUpdateInterval(STRIP_ADD_PIXEL);
 Metro stripUpdateInterval(STRIP_UPDATE);
 Metro fasterStripUpdateInterval(STRIP_UPDATE);
 
+// Animations
+ConcurrentAnimator animator;
+AnimationConfig rimConfig;
+AnimationConfig redButtonConfig;
+AnimationConfig greenButtonConfig;
+AnimationConfig blueButtonConfig;
+AnimationConfig yellowButtonConfig;
+RgbColor red;
+RgbColor green;
+RgbColor blue;
+RgbColor yellow;
+
+LaserWipePosition redLaserPos;
+LaserWipePosition greenLaserPos;
+LaserWipePosition blueLaserPos;
+LaserWipePosition yellowLaserPos;
+
+void configureAnimations() {
+
+  // Colors
+  red.red = RED_MAX;
+  red.green = LED_OFF;
+  red.blue = LED_OFF;
+
+  yellow.red = RED_MAX;
+  yellow.green = GRN_MAX;
+  yellow.blue = LED_OFF;
+
+  green.red = LED_OFF;
+  green.green = GRN_MAX;
+  green.blue = LED_OFF;
+
+  blue.red = LED_OFF;
+  blue.green = LED_OFF;
+  blue.blue = BLU_MAX;
+
+  // Neopixel strips
+  rimJob.begin();
+
+  rimConfig.name = "Outer rim";
+  rimConfig.strip = &rimJob;
+  rimConfig.color = red;
+  rimConfig.ready = true;
+  rimConfig.position = 0;
+  rimConfig.timer = Metro(10);
+
+  // Init neo pixel strips for the buttons
+  redL.begin();
+  grnL.begin();
+  bluL.begin();
+  yelL.begin();
+
+  cirL.begin();
+  placL.begin();
+
+  // Red Button
+  redButtonConfig.name = "red button";
+  redButtonConfig.strip = &redL;
+  redButtonConfig.color = red;
+  redButtonConfig.ready = true;
+  redButtonConfig.position = &redLaserPos;
+  redButtonConfig.timer = Metro(1);
+
+  // Green button
+  memcpy(&greenButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
+  greenButtonConfig.name = "green button";
+  greenButtonConfig.strip = &grnL;
+  greenButtonConfig.color = green;
+  greenButtonConfig.position = &greenLaserPos;
+
+  // Blue button
+  memcpy(&blueButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
+  blueButtonConfig.name = "blue button";
+  blueButtonConfig.strip = &bluL;
+  blueButtonConfig.color = blue;
+  blueButtonConfig.position = &blueLaserPos;
+
+  // Yellow button
+  memcpy(&yellowButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
+  yellowButtonConfig.name = "yellow button";
+  yellowButtonConfig.strip = &yelL;
+  yellowButtonConfig.color = yellow;
+  yellowButtonConfig.position = &yellowLaserPos;
+}
+
+void mapToAnimation(ConcurrentAnimator animator, systemState state) {
+    if (state.animation == A_LaserWipe) {
+        animator.animate(laserWipe, redButtonConfig);
+        animator.animate(laserWipe, greenButtonConfig);
+        animator.animate(laserWipe, blueButtonConfig);
+        animator.animate(laserWipe, yellowButtonConfig);
+    }
+}
+
