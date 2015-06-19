@@ -22,6 +22,7 @@
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
 
+#include "Strip.h"
 #include "ConcurrentAnimator.h"
 #include "AnimationConfig.h"
 #include "Animations.h"
@@ -38,6 +39,7 @@ extern Adafruit_NeoPixel placL;
 extern Metro fasterStripUpdateInterval;
 extern EasyTransfer ET;
 extern systemState inst;
+extern ConcurrentAnimator animator;
 
 void setup() {
   Serial.begin(115200);
@@ -65,13 +67,7 @@ void setup() {
   Serial << F("RimJob: GRN starts at: ") << GRN_SEG_START << endl;
 
   // start
-  rimJob.begin();
-  redL.begin();
-  grnL.begin();
-  bluL.begin();
-  yelL.begin();
-  cirL.begin();
-  placL.begin();
+  configureAnimations();
 
   Serial << F("Free RAM: ") << freeRam() << endl;
 
@@ -90,27 +86,17 @@ void setupStrip(Adafruit_NeoPixel &strip, const uint32_t color) {
 
   strip.show();
 }
+int gameplayCounter = 0;
+const int maxGameplayCounter = 100;
 
 void loop() {
-  // update the strip automata on an interval
-  /*
-  if ( stripUpdateInterval.check() ) {
+    if (fasterStripUpdateInterval.check()) {
+        // animation instructions
+        mapToAnimation(animator, inst);
 
-    // compute the next step and flag for show.
-    updateRule90(rimJob, PIXEL_TTL); rimUpdated = true;
+        fasterStripUpdateInterval.reset();
+    }
 
-    // if we wanted the buttons to animate differently than the rim, this would be the place to do it.
-    updateRule90(redL, PIXEL_TTL); redUpdated = true;
-    updateRule90(grnL, PIXEL_TTL); grnUpdated = true;
-    updateRule90(bluL, PIXEL_TTL); bluUpdated = true;
-    updateRule90(yelL, PIXEL_TTL); yelUpdated = true;
-
-    // if we wanted the middle chotsky to animate differently than the rim, this would be the place to do it.
-    updateRule90(midL, PIXEL_TTL); midUpdated = true;
-
-    stripUpdateInterval.reset();
-  }
-*/
   static Metro quietUpdateInterval(10UL *1000UL); // after 10 second of not instructions, we should do something.
 
   //check and see if a data packet has come in.
@@ -127,7 +113,6 @@ void loop() {
     setStripColor(grnL, inst.light[I_GRN]);
     setStripColor(bluL, inst.light[I_BLU]);
     setStripColor(yelL, inst.light[I_YEL]);
-
     // toggle LED to ACK new button press
     static boolean ledStatus=false;
     ledStatus = !ledStatus;
@@ -141,6 +126,21 @@ void loop() {
     Serial << F("Quiet interval elapsed.") << endl;
     Serial << F("Free RAM=") << freeRam() << endl;
   }
+
+  /*
+    TODO: fix this and put it in a metro loop
+    // compute the next step and flag for show.
+    updateRule90(rimJob, PIXEL_TTL); rimUpdated = true;
+
+    // if we wanted the buttons to animate differently than the rim, this would be the place to do it.
+    updateRule90(redL, PIXEL_TTL); redUpdated = true;
+    updateRule90(grnL, PIXEL_TTL); grnUpdated = true;
+    updateRule90(bluL, PIXEL_TTL); bluUpdated = true;
+    updateRule90(yelL, PIXEL_TTL); yelUpdated = true;
+
+    // if we wanted the middle chotsky to animate differently than the rim, this would be the place to do it.
+    updateRule90(midL, PIXEL_TTL); midUpdated = true;
+    */
 
 
 }

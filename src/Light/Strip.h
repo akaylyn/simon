@@ -7,11 +7,15 @@
 #include <Streaming.h>
 #include <Metro.h>
 #include <EasyTransfer.h>
-#include <LightMessage.h> // common message definition
 #include <Simon_Common.h> // common message definition
 
 // watchdog timer
 #include <avr/wdt.h>
+
+#include "AnimationConfig.h"
+#include "Animations.h"
+#include "ConcurrentAnimator.h"
+#include "AnimateFunc.h"
 
 // RIM of LEDs
 #define RIM_PIN 3 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
@@ -67,6 +71,9 @@
 
 // count memory usage for LEDs, which is reported at startup.
 #define TOTAL_LED_MEM (RIM_N + BUTTON_N*4 + MIDDLE_N)*3
+
+void configureAnimations();
+void mapToAnimation(ConcurrentAnimator, systemState);
 
 #endif
 

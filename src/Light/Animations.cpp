@@ -1,11 +1,10 @@
 #include "Animations.h"
 
-void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int c) {
+void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
   for (uint16_t x = 0; x < matrix.width(); x++) {
-    matrix.drawPixel(x, 0, c);
-    matrix.drawPixel(x, 1, c);
-    matrix.drawPixel(x, 2, c);
-    matrix.show();
+    matrix.drawPixel(x, 0, matrix.Color(r,g,b));
+    matrix.drawPixel(x, 1, matrix.Color(r,g,b));
+    matrix.drawPixel(x, 2, matrix.Color(r,g,b));
   }
 }
 

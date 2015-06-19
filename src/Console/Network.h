@@ -12,10 +12,10 @@
 #include <EEPROMex.h> // saving and loading radio settings
 #include <RFM12B.h> // RFM12b radio transmitter module
 // Light module
-#include <EasyTransfer.h> 
+#include <EasyTransfer.h>
 
 //------ sizes, indexing and inter-unit data structure definitions.
-#include <Simon_Common.h> 
+#include <Simon_Common.h>
 
 // once we get radio comms, wait this long  before returning false from externUpdate.
 #define EXTERNAL_COMMS_TIMEOUT 10000UL
@@ -33,21 +33,22 @@ class Network {
     void begin(nodeID node=BROADCAST); // defaults to getting nodeID from EEPROM
     void layout(color lightLayout[N_COLORS], color fireLayout[N_COLORS]); // update layout
     void update(); // should be called frequently for sync.
-    
+
     // makes the network do stuff with your stuff
     void send(color position, colorInstruction &inst);
     void send(color position, fireInstruction &inst);
+    void send(animationInstruction &inst);
     void send(systemMode mode);
-    
+
     void clear(); // clears all queued entries.
-  
+
   private:
     // total system state, built up by public methods
     systemState state;
-  
+
     // internal actuator of public send methods
     void send();
-    
+
     // merges color and fire instructions when towers handle multiple channels
     void mergeColor(colorInstruction &inst);
     void mergeFire(fireInstruction &inst);
@@ -55,21 +56,21 @@ class Network {
     // gets the network setup
     nodeID networkStart(nodeID node);
     nodeID node; // who am I, really?
-    
+
     // send on an interval
     unsigned long packetSendInterval; // us
     byte resendCount, sentCount;
-    
+
     // stores which towers should be sent color commands
     color lightLayout[N_COLORS];
     // stores which towers should be sent fire commands
     color fireLayout[N_COLORS];
-    
-    // Need an instance of the Radio Module.  
+
+    // Need an instance of the Radio Module.
     RFM12B radio;
-    
+
     // Need an instance of Easy Transfer
-    EasyTransfer ET; 
+    EasyTransfer ET;
 };
 
 extern Network network;

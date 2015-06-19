@@ -66,21 +66,23 @@ void Network::update() {
   // if the sent count exceeds resend count, exit
   if ( this->sentCount >= this->resendCount ) return;
 
-  // track send times
-  static unsigned long lastSend = micros();
-  unsigned long now = micros();
+//  // track send times
+//  static unsigned long lastSend = micros();
+//  unsigned long now = micros();
+//  // if the resend interval has not elapsed, exit
+//  if( now-lastSend < this->packetSendInterval ) return;
 
   // if this is the first time we've sent, update the packet number
   if ( this->sentCount == 0 ) {
     this->state.packetNumber++;
     // note that the timer check won't be made, so we could be partway through a send.
-  } else {
-    // issuing resends, so check timer
-    // if the resend interval has not elapsed, exit
-    if ( now - lastSend < this->packetSendInterval ) return;
+//  } else {
+//    // issuing resends, so check timer
+//    // if the resend interval has not elapsed, exit
+//    if ( now - lastSend < this->packetSendInterval ) return;
   }
 
-  // Radio: send.
+  // Radio: send. no ACK, no sleep.
   this->send();
   // Radio: wait for the packet transmission to complete.  BLOCKING.
   // also has the effect of guaranteeting that the EasyTransfer send to Light will have completed (same baud rate, less overhead).
@@ -105,6 +107,10 @@ void Network::send(systemMode mode) {
   this->state.mode = (byte)mode;
   this->sentCount = 0;
 }
+void Network::send(animationInstruction &inst) {
+  this->state.animation = inst;
+  this->sentCount = 0;
+}
 
 // internal dispatcher
 void Network::send() {
@@ -114,11 +120,13 @@ void Network::send() {
 
   // apply physical Tower layout
   systemState towerState;
+  // copy out invariants
   towerState.packetNumber = this->state.packetNumber;
   towerState.mode = this->state.mode;
+  towerState.animation = this->state.animation;
 
-  for ( byte i = 0; i < N_COLORS; i++ ) {
-    if ( this->lightLayout[i] != N_COLORS ) {
+  for( byte i=0; i<N_COLORS; i++ ) {
+    if( this->lightLayout[i] != N_COLORS ) {
       // if single tower are handling single colors
       towerState.light[i] = this->state.light[this->lightLayout[i]];
     } else {
@@ -133,7 +141,6 @@ void Network::send() {
     }
   }
 
-  // Radio: send, no ACK, no wait.
   radio.Send((byte)BROADCAST, (const void*)(&towerState), sizeof(towerState), false, 0);
 }
 
