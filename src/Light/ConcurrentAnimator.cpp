@@ -27,7 +27,7 @@ void ConcurrentAnimator::push(AnimationConfig &config) {
 
 void ConcurrentAnimator::animate(AnimateMatrixFunc animate, AnimationConfig &config) {
   calculateAnimation(animate, config);
-  pushMatrix(config);
+  push(config);
 }
 
 void ConcurrentAnimator::calculateAnimation(AnimateMatrixFunc animate, AnimationConfig &config) {
@@ -38,14 +38,4 @@ void ConcurrentAnimator::calculateAnimation(AnimateMatrixFunc animate, Animation
             config.color.red, config.color.green, config.color.blue, config.position);
     config.ready = false;
 }
-
-void ConcurrentAnimator::pushMatrix(AnimationConfig &config) {
-  if (!config.timer.check()) {
-      return;
-  }
-  config.strip->show();
-  config.ready = true;
-  config.timer.reset();
-}
-
 
