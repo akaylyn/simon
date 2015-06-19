@@ -91,7 +91,7 @@ void Network::update() {
   this->sentCount++;
 
   // record last send time
-  lastSend = now;
+//  lastSend = now;
 }
 
 // makes the network do stuff with your stuff
