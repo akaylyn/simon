@@ -4,8 +4,8 @@
 #include <Streaming.h>
 #include <Metro.h>
 #include <EasyTransfer.h>
-#include <LightMessage.h> // common message definition
 #include <avr/wdt.h> // watchdog timer
+#include <Simon_Common.h> // common message definition
 
 #include "Strip.h"
 #include "AnimationConfig.h"
@@ -37,22 +37,24 @@ extern AnimationConfig redButtonConfig;
 extern AnimationConfig greenButtonConfig;
 extern AnimationConfig blueButtonConfig;
 extern AnimationConfig yellowButtonConfig;
+extern AnimationConfig rimConfig;
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
 // and minimize distance between Arduino and first pixel.  Avoid connecting
 // on a live circuit...if you must, connect GND first.
 
-void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b) {
-  for (int i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, strip.Color(r, g, b));
+void setStripColor(Adafruit_NeoPixel *strip, int r, int g, int b) {
+  for (int i = 0; i < strip->numPixels(); i++) {
+    strip->setPixelColor(i, strip->Color(r, g, b));
   }
-  strip.show();
+  strip->show();
 }
 
 void setup() {
   Serial.begin(115200);
   configureAnimations();
+  //setStripColor(&rimJob, 255, 255, 255);
   Serial << "Setup Complete" << endl;
 }
 
@@ -61,7 +63,7 @@ void setup() {
  ******************************************************************************/
 void loop() {
   if (fasterStripUpdateInterval.check()) {
-    //animator.animate(wipeStrip, rimConfig);
+    animator.animate(colorWipeMatrix, rimConfig);
     animator.animate(laserWipe, redButtonConfig);
     animator.animate(laserWipe, greenButtonConfig);
     animator.animate(laserWipe, blueButtonConfig);
