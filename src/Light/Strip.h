@@ -7,7 +7,6 @@
 #include <Streaming.h>
 #include <Metro.h>
 #include <EasyTransfer.h>
-#include <LightMessage.h> // common message definition
 #include <Simon_Common.h> // common message definition
 
 // watchdog timer

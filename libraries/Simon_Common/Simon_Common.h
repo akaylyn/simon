@@ -84,6 +84,7 @@ typedef struct {
 } colorInstruction;
 
 enum animationInstruction {
+    A_None,
     A_RandomStrip,
     A_RandomMatrix,
 
