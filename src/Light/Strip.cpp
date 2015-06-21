@@ -77,6 +77,7 @@ LaserWipePosition redLaserPos;
 LaserWipePosition greenLaserPos;
 LaserWipePosition blueLaserPos;
 LaserWipePosition yellowLaserPos;
+int rimPos = 0;
 
 void configureAnimations() {
 
@@ -105,8 +106,8 @@ void configureAnimations() {
   rimConfig.strip = &rimJob;
   rimConfig.color = blue;
   rimConfig.ready = true;
-  rimConfig.position = 0;
-  rimConfig.timer = Metro(500);
+  rimConfig.position = &rimPos;
+  rimConfig.timer = Metro(10);
 
   // Init neo pixel strips for the buttons
   redL.begin();
@@ -123,7 +124,7 @@ void configureAnimations() {
   redButtonConfig.color = red;
   redButtonConfig.ready = true;
   redButtonConfig.position = &redLaserPos;
-  redButtonConfig.timer = Metro(500);
+  redButtonConfig.timer = Metro(50);
 
   // Green button
   memcpy(&greenButtonConfig, &redButtonConfig, sizeof(AnimationConfig));
@@ -131,7 +132,6 @@ void configureAnimations() {
   greenButtonConfig.strip = &grnL;
   greenButtonConfig.color = green;
   greenButtonConfig.position = &greenLaserPos;
-  greenButtonConfig.timer = Metro(1000);
 
   // Blue button
   memcpy(&blueButtonConfig, &redButtonConfig, sizeof(AnimationConfig));

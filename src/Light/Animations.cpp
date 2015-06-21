@@ -8,18 +8,20 @@ void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b) {
 }
 
 void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
-  int* pos = (int*) posData;
-  int next = (*pos);
+    int* pos = (int*) posData;
+    int next = (*pos);
 
-  if (next > matrix.width()) {
-      next = 0;
-      setStripColor((Adafruit_NeoPixel&) matrix, LED_OFF, LED_OFF, LED_OFF);
-  }
-  //for (uint16_t x = 0; x < matrix.width(); x++) {
+    Serial << F("Set pixel: ") << next << " max: " << matrix.width() << endl;
+    if (next > matrix.width()) {
+        next = 0;
+        setStripColor((Adafruit_NeoPixel&) matrix, LED_OFF, LED_OFF, LED_OFF);
+    } else {
+        ++next;
+    }
     matrix.drawPixel(next, 0, matrix.Color(r,g,b));
     matrix.drawPixel(next, 1, matrix.Color(r,g,b));
     matrix.drawPixel(next, 2, matrix.Color(r,g,b));
-  //}
+    (*pos) = next;
 }
 
 // Fill the dots one after the other with a color
@@ -36,7 +38,7 @@ void colorWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
 
   strip.setPixelColor(next, strip.Color(r, g, b));
   Serial << F("Set pixel: ") << next << endl;
-  posData = (void*) next;
+  (*pos) = next;
 }
 
 // color wipes the last 8 pixels on the buttons

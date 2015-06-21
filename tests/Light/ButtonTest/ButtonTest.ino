@@ -55,7 +55,7 @@ void setStripColor(Adafruit_NeoPixel *strip, int r, int g, int b) {
 void setup() {
   Serial.begin(115200);
   configureAnimations();
-  setStripColor(&rimJob, LED_OFF, LED_OFF, LED_OFF);
+  //setStripColor(rimJob, LED_OFF, LED_OFF, LED_OFF);
   Serial << "Setup Complete" << endl;
 }
 
@@ -65,11 +65,10 @@ void setup() {
 void loop() {
   if (fasterStripUpdateInterval.check()) {
     animator.animate(colorWipeMatrix, rimConfig);
-    /*animator.animate(laserWipe, redButtonConfig);
+    animator.animate(laserWipe, redButtonConfig);
     animator.animate(laserWipe, greenButtonConfig);
     animator.animate(laserWipe, blueButtonConfig);
     animator.animate(laserWipe, yellowButtonConfig);
-    */
 
     fasterStripUpdateInterval.reset();
   }
