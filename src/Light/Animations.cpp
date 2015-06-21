@@ -11,7 +11,6 @@ void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posD
     int* pos = (int*) posData;
     int next = (*pos);
 
-    Serial << F("Set pixel: ") << next << " max: " << matrix.width() << endl;
     if (next > matrix.width()) {
         next = 0;
         setStripColor((Adafruit_NeoPixel&) matrix, LED_OFF, LED_OFF, LED_OFF);
@@ -32,6 +31,7 @@ void colorWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
 
   if (next > strip.numPixels()) {
     next = 0;
+    setStripColor(strip, LED_OFF, LED_OFF, LED_OFF);
   } else {
     ++next;
   }

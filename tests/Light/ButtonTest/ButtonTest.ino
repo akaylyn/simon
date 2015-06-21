@@ -38,6 +38,8 @@ extern AnimationConfig greenButtonConfig;
 extern AnimationConfig blueButtonConfig;
 extern AnimationConfig yellowButtonConfig;
 extern AnimationConfig rimConfig;
+extern AnimationConfig circleConfig;
+extern AnimationConfig placardConfig;
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -68,7 +70,11 @@ void loop() {
     animator.animate(laserWipe, redButtonConfig);
     animator.animate(laserWipe, greenButtonConfig);
     animator.animate(laserWipe, blueButtonConfig);
-    animator.animate(laserWipe, yellowButtonConfig);
+
+    animator.animate(colorWipe, yellowButtonConfig);
+
+    animator.animate(colorWipe, circleConfig);
+    animator.animate(colorWipe, placardConfig);
 
     fasterStripUpdateInterval.reset();
   }

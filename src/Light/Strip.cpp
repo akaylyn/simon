@@ -35,7 +35,7 @@ Adafruit_NeoPixel bluL = Adafruit_NeoPixel(BUTTON_N, BLU_PIN, NEO_GRB + NEO_KHZ8
 Adafruit_NeoPixel yelL = Adafruit_NeoPixel(BUTTON_N, YEL_PIN, NEO_GRB + NEO_KHZ800);
 
 // strip around the middle chotskies
-Adafruit_NeoPixel cirL = Adafruit_NeoPixel(CIRCLE_N, PLACARD_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel cirL = Adafruit_NeoPixel(CIRCLE_N, CIRCLE_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel placL = Adafruit_NeoPixel(PLACARD_N, PLACARD_PIN, NEO_GRB + NEO_KHZ800);
 
 // define some colors
@@ -68,16 +68,23 @@ AnimationConfig redButtonConfig;
 AnimationConfig greenButtonConfig;
 AnimationConfig blueButtonConfig;
 AnimationConfig yellowButtonConfig;
+AnimationConfig circleConfig;
+AnimationConfig placardConfig;
+
+// Colors
 RgbColor red;
 RgbColor green;
 RgbColor blue;
 RgbColor yellow;
 
+// Animation position configurations
 LaserWipePosition redLaserPos;
 LaserWipePosition greenLaserPos;
 LaserWipePosition blueLaserPos;
 LaserWipePosition yellowLaserPos;
 int rimPos = 0;
+int placPos = 0;
+int circPos = 0;
 
 void configureAnimations() {
 
@@ -146,14 +153,47 @@ void configureAnimations() {
   yellowButtonConfig.strip = &yelL;
   yellowButtonConfig.color = yellow;
   yellowButtonConfig.position = &yellowLaserPos;
+
+  // Circle
+  circleConfig.name = "circle";
+  circleConfig.strip = &cirL;
+  circleConfig.color = yellow;
+  circleConfig.ready = true;
+  circleConfig.position = &circPos;
+  circleConfig.timer = Metro(100);
+
+  // Placard
+  placardConfig.name = "placard";
+  placardConfig.strip = &placL;
+  placardConfig.color = green;
+  placardConfig.ready = true;
+  placardConfig.position = &placPos;
+  placardConfig.timer = Metro(1000);
+
+
+  // Clear all strips
+  setStripColor(redL, LED_OFF, LED_OFF, LED_OFF);
+  setStripColor(grnL, LED_OFF, LED_OFF, LED_OFF);
+  setStripColor(bluL, LED_OFF, LED_OFF, LED_OFF);
+  setStripColor(yelL, LED_OFF, LED_OFF, LED_OFF);
+  setStripColor(placL, LED_OFF, LED_OFF, LED_OFF);
+  setStripColor(cirL, LED_OFF, LED_OFF, LED_OFF);
+  setStripColor(rimJob, LED_OFF, LED_OFF, LED_OFF);
 }
 
 void mapToAnimation(ConcurrentAnimator animator, systemState state) {
-    if (state.animation == A_LaserWipe) {
+    if (state.animation == A_None) {
+
+    }
+    else if (state.animation == A_LaserWipe) {
         animator.animate(laserWipe, redButtonConfig);
         animator.animate(laserWipe, greenButtonConfig);
         animator.animate(laserWipe, blueButtonConfig);
         animator.animate(laserWipe, yellowButtonConfig);
+    }
+    else if (state.animation == A_ColorWipe) {
+        animator.animate(colorWipe, placardConfig);
+        animator.animate(colorWipe, circleConfig);
     }
 }
 
