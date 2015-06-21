@@ -1,3 +1,4 @@
+
 #include "Fanfare.h"
 
 
@@ -34,8 +35,14 @@ void playerFanfare(fanfare_t level) {
 
   // make sweet fire/light/music.
   sound.setLeveling(0, 1);
-  int winTrack = sound.playWins();
-
+  int track;
+  
+  if (level == CONSOLATION) {
+    track = sound.playWins();
+  } else {
+    track = sound.playLose();
+  }
+  
   light.clear();
   fire.clear();
   network.update();
@@ -56,12 +63,13 @@ void playerFanfare(fanfare_t level) {
       trackLength = 20000UL;
       break;
     case LEVEL4:
-    case IDLE:
     case MAXOUT:
       trackLength = 30000UL;
       break;
+    case IDLE:
     case CONSOLATION:
       trackLength = 3000UL;
+      Serial << "IDLE level: " << trackLength << endl;
       break;
     case NONE:
       return;      
@@ -72,9 +80,12 @@ void playerFanfare(fanfare_t level) {
    winTime.reset();
 
    unsigned long beatInterval = 333;  // 180 BPM max
-   byte beatChance = 80;  // chance in 100 a beat triggers a fire.  Use to marshall amount of fire
-   byte airChance = 1;  // n in 10 chance of air effect
-
+   byte beatChance = 80;  // chance in 100 a beat triggers a fire.  Makes the anim for a specific track different each time
+   byte airChance = 10;  // n in 10- chance of air effect
+   byte lightMoveChance = 20;  // n in 100 chance of the light moving on a beat
+   byte minFirePerFireball = 50;  // min fire level(ms) per fireball
+   byte maxFirePerFireball = 200;  // max fire level(ms) per fireball
+   
    unsigned long beatEndTime = millis();  // time left for beat effect
    unsigned long beatWaitTime = millis();
    unsigned long currTime;
@@ -140,7 +151,7 @@ void playerFanfare(fanfare_t level) {
         break;
       }
 
-      if (random(10) > 3) {
+      if (random(0,100) <= lightMoveChance) {
         lightTower = incColor(lightTower);
       }
     }
@@ -151,12 +162,12 @@ void playerFanfare(fanfare_t level) {
          if (random(0,100) <= beatChance) {
            Serial << "Fire" << endl;
            hearBeat = true;
-           byte fireLevel = 10 + random(0,15);
+           byte fireLevel = minFirePerFireball / 10 + random(0,maxFirePerFireball / 10);
            unsigned long fireMs = fireLevel * 10; // each level is 10ms
            
            flameEffect airEffect = veryRich;
 
-            if (random(0, 10) >= (10 - airChance)) {
+            if (random(0, 100) <= airChance) {
               byte effect = random(0, 6);
               switch (effect) {
               case 0:
@@ -200,7 +211,7 @@ void playerFanfare(fanfare_t level) {
   fire.clear();
 
   // ramp down the volume to exit the music playing cleanly.
-  sound.fadeTrack(winTrack);
+  sound.fadeTrack(track);
 
   Serial << "Fireballs: " << fireballs << " power: " << firepower << " budget: " << budget << endl;
   Serial << F("Gameplay: Player fanfare ended") << endl;
