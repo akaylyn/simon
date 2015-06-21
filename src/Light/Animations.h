@@ -8,6 +8,9 @@
 #include "Strip.h"
 #include "ConcurrentAnimator.h"
 
+// Utilities
+void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b);
+
 // Animations designed for the NeoPixel Strips surrounding the buttons
 void laserWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
 void laserWipeEdge(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);

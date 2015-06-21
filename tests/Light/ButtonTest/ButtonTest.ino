@@ -43,13 +43,14 @@ extern AnimationConfig rimConfig;
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
 // and minimize distance between Arduino and first pixel.  Avoid connecting
 // on a live circuit...if you must, connect GND first.
-
+/*
 void setStripColor(Adafruit_NeoPixel *strip, int r, int g, int b) {
   for (int i = 0; i < strip->numPixels(); i++) {
     strip->setPixelColor(i, strip->Color(r, g, b));
   }
   strip->show();
 }
+*/
 
 void setup() {
   Serial.begin(115200);
@@ -63,11 +64,12 @@ void setup() {
  ******************************************************************************/
 void loop() {
   if (fasterStripUpdateInterval.check()) {
-    //animator.animate(colorWipeMatrix, rimConfig);
-    animator.animate(laserWipe, redButtonConfig);
+    animator.animate(colorWipeMatrix, rimConfig);
+    /*animator.animate(laserWipe, redButtonConfig);
     animator.animate(laserWipe, greenButtonConfig);
     animator.animate(laserWipe, blueButtonConfig);
     animator.animate(laserWipe, yellowButtonConfig);
+    */
 
     fasterStripUpdateInterval.reset();
   }

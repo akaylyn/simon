@@ -1,11 +1,25 @@
 #include "Animations.h"
 
-void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
-  for (uint16_t x = 0; x < matrix.width(); x++) {
-    matrix.drawPixel(x, 0, matrix.Color(r,g,b));
-    matrix.drawPixel(x, 1, matrix.Color(r,g,b));
-    matrix.drawPixel(x, 2, matrix.Color(r,g,b));
+void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b) {
+  for (int i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, strip.Color(r, g, b));
   }
+  strip.show();
+}
+
+void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
+  int* pos = (int*) posData;
+  int next = (*pos);
+
+  if (next > matrix.width()) {
+      next = 0;
+      setStripColor((Adafruit_NeoPixel&) matrix, LED_OFF, LED_OFF, LED_OFF);
+  }
+  //for (uint16_t x = 0; x < matrix.width(); x++) {
+    matrix.drawPixel(next, 0, matrix.Color(r,g,b));
+    matrix.drawPixel(next, 1, matrix.Color(r,g,b));
+    matrix.drawPixel(next, 2, matrix.Color(r,g,b));
+  //}
 }
 
 // Fill the dots one after the other with a color
