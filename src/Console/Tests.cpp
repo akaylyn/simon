@@ -27,29 +27,32 @@ boolean TestModes::update() {
     modeChange = false;
   } 
 
-  // yes, we could accomplish this with an array of function pointers...
+  // yes, we could accomplish this with an array of function pointers, if we were real software engineers...
   switch( currentMode ) {
-  case GAMEPLAY:
-    modeChange = true; // when we return from gameplay, we'll need to start up again.
-    return( true );
-    break;
-  case BONGO: 
-    bongoModeLoop(performStartup);
-    break;
-  case PROXIMITY:
-    proximityModeLoop(performStartup);
-    break;
-  case FIRE:
-    fireTestModeLoop(performStartup);
-    break;
-  case LIGHTS:
-    lightsTestModeLoop(performStartup);
-    break;
-  case LAYOUT:
-    layoutModeLoop(performStartup);
-    break;
-  case EXTERN:
-    break;
+    case GAMEPLAY:
+      modeChange = true; // when we return from gameplay, we'll need to start up again.
+      return( true );
+      break;
+    case WHITEOUT:
+      whiteoutModeLoop(performStartup);
+      break;
+    case BONGO: 
+      bongoModeLoop(performStartup);
+      break;
+    case PROXIMITY:
+      proximityModeLoop(performStartup);
+      break;
+    case FIRE:
+      fireTestModeLoop(performStartup);
+      break;
+    case LIGHTS:
+      lightsTestModeLoop(performStartup);
+      break;
+    case LAYOUT:
+      layoutModeLoop(performStartup);
+      break;
+    case EXTERN:
+      break;
   }
 
   // for our next visit
@@ -58,16 +61,106 @@ boolean TestModes::update() {
   return(false);
 }
 
+/*
+  This mode is to be used for sudden whiteouts, when we need safety lighting, and we need to dump the propane.
+   
+  Press any button and hold it to dump propane.  When the button is not pressed, bright white light is on.
+*/
+void TestModes::whiteoutModeLoop(boolean performStartup) {
+  static Metro nextStepTimer(400UL);
+  
+  static Metro fireOnMetro(500UL);   // 0.5 seconds
+  static Metro fireOffMetro(1100UL); // 1.1 seconds, enough for the coolDown
+  static int step = 0;
+  static boolean fireIsOn = false;
+  
+  if( performStartup ) {
+    Serial << "Starting up whiteout mode!" << endl;
+    sound.stopAll();
+    sound.setLeveling(1, 0); // prep for 1x tones and no music.
+    
+    step = 0;
+    
+    fire.clear();
+    
+    // Turn all the towers on for visibility
+    colorInstruction cInst = cWhite;
+    for(int index = 0; index < N_COLORS; index++) 
+      light.setLight((color)index, cInst);      
+  }
+  
+  if(!touch.anyPressed()) {
+    // No button is being pressed, so go back to bright white light
+    step = 0;
+    
+    // make sure we're not still shooting fire
+    fire.clear();
+    
+    // Turn the colors back to white
+    colorInstruction cInst = cWhite;
+    for(int index = 0; index < N_COLORS; index++) 
+      light.setLight((color)index, cInst);
+  }
+  else {  
+    // The user is holding down a button.  Decide what to do about that.
+    
+    if(step >= N_COLORS + 1) {
+      // The user has held the button down long enough.  Starting dumping propane.
+      // To do this, we alternate between turning the fire on for 500 milliseconds, and then letting it cool down for 11000 milliseconds.
+      Serial << "Turn and burn!" << endl;
+      
+      if(!fireIsOn && fireOffMetro.check()) {
+        // The fire is currently off, and we've waited long enough.  Turn the fire on!
+        fireIsOn = true;
+        
+        // Turn all the fire on!
+        for(int index = 0; index < N_COLORS; index++) {
+          fire.setFire((color)index, 50, veryRich);
+        }              
+        
+        // Start the timer for switching to cooldown mode
+        fireOffMetro.reset();
+      }
+
+      if(fireIsOn && fireOffMetro.check()) {
+        // The fire is on, and it's time to cool down
+        // it's also important we tell the towers to turn the fire off, as they will ignore duplicated "on" instructions
+        fire.clear();
+        
+        fireIsOn = false;
+        
+        // Reset the timer for turning hte fire back on
+        fireOnMetro.reset();
+      }
+      
+    }
+    else if(nextStepTimer.check()) {
+      // The user hasn held the button down long enough to go to the next step of the count down
+      
+      Serial << "next step: " << step << endl;      
+      
+      step++;
+      
+      sound.playTrack(BOOP_TRACK);
+      
+      // Turn on red lights in accordance with the count down
+      for(int index = 0; index < min(step, N_COLORS); index++) {
+        colorInstruction cInst = cRed;
+        light.setLight((color)index, cInst);
+      }
+      
+      // wait for the *next* next step
+      nextStepTimer.reset();
+    }
+  }
+}
+
 // assign towers to locations around the Simon bezel
 void TestModes::layoutModeLoop(boolean performStartup) {
 
   static boolean showNow = true;
-  static color layout[N_COLORS] = {
-                      I_RED, // Tower 1, RED, upper right.  
-                      I_GRN, // Tower 2, GREEN, upper left. 
-                      I_BLU, // Tower 3, BLUE, lower right.  
-                      I_YEL  // Tower 4, YELLOW, lower left.  
-  };
+  static color layout[N_COLORS];
+
   // track idle for saving
   static Metro writeSettingsNow(5000UL);
   
@@ -83,7 +176,13 @@ void TestModes::layoutModeLoop(boolean performStartup) {
     while( ! delayFor.check() ) network.update();
     
     showNow = true;
+
+    int addr = 69;
+    for ( byte i = 0; i < N_COLORS; i++ ) {
+      layout[i] = (color)EEPROM.read(addr+i);
+    }
     writeSettingsNow.reset();
+    
   }
 
   if ( touch.anyChanged() ) { 
@@ -131,6 +230,10 @@ void TestModes::bongoModeLoop(boolean performStartup) {
     Serial << "Starting up bongoMode" << endl;
     sound.stopAll();
     sound.setLeveling(4, 0); // prep for 4x tones and no music.
+    
+    //turn all of the lights off to start out with
+    fire.clear();
+    light.clear();
   }
 
   // track the last time we fired
@@ -224,177 +327,146 @@ void TestModes::proximityModeLoop(boolean performStartup) {
 
 }
 
+/*
+  This mode lets the user step each tower through the primary colors, white, and off.  It's usefull for debugging issues with the LED strands
+  Pressing any button advances the associated tower to the next color in the sequence.
+*/
 void TestModes::lightsTestModeLoop(boolean performStartup) {
-  static Metro switchInterval(100UL);
-  static byte intensity=255;
-  static byte currentColor=0;
-  static colorInstruction c; 
   
-  if(performStartup) {
-    Serial << "Starting up light mode" << endl;
-
-    sound.stopAll();
-    sound.setLeveling(1, 0);
-
-    light.clear();
-    fire.clear();
-  }
+  colorInstruction colorSequence[] = { cOff, cRed, cGreen, cBlue, cWhite };
   
-  if( switchInterval.check() ) {
+  static int towerSpotInSequence [N_COLORS];
   
-    intensity+=10;
-
-    if( intensity<=10 ) {
-      currentColor++;
-      if( currentColor==N_COLORS ) {
-        // white
-        c = cWhite;
-        currentColor = 255; // will wrap
-      } else {
-        c = cMap[currentColor];
-      }
-      intensity = 1;
-    }
-    c.red = c.red>0 ? intensity : 0;
-    c.green = c.green>0 ? intensity : 0;    
-    c.blue = c.blue>0 ? intensity : 0;
+  if(performStartup)
+  {
+    // Start all of the towers at the start of the sequence (off)
+    for(int index = 0; index < N_COLORS; index++)
+      towerSpotInSequence[index] = 0;
     
-    light.setLight(I_RED, c);
-    light.setLight(I_GRN, c);
-    light.setLight(I_BLU, c);
-    light.setLight(I_YEL, c);
-
+    // Turn the lights off;
+    light.clear();
   }
   
-  /*
-  for(int index = 0; index < N_TOWERS; index++)
-   {    
-   if(touch.changed(index) && touch.pressed(index)) {
-   sound.playTrack(BOOP_TRACK);
-   
-   lightColorIndex[index]++;
-   lightColorIndex[index] %= N_COLORS;
-   
-   Serial << "Setting light " << index << " to color " << lightColorIndex[index] << endl;
-   
-   // Send an instruction to go black.  This will (among other things) turn off the console lights off
-   for(int index = 0; index < N_COLORS; index++) {        
-   instruction.lightLevel[index] = 0;
-   instruction.fireLevel[index] = 0; // Oh, and no fire in this mode!
-   }
-   light.sendInstruction(instruction, towerNodeID[index]);
-   
-   // Figure out which new color to send
-   // (In the case of 0, stay black)
-   if(lightColorIndex[index] == 1) {
-   Serial << "Red" << endl;
-   instruction.lightLevel[I_RED] = 255;
-   instruction.lightLevel[I_GRN] = 0;
-   instruction.lightLevel[I_BLU] = 0;
-   instruction.lightLevel[I_YEL] = 0;
-   }
-   else if(lightColorIndex[index] == 2) {
-   Serial << "Green" << endl;
-   instruction.lightLevel[I_RED] = 0;
-   instruction.lightLevel[I_GRN] = 255;
-   instruction.lightLevel[I_BLU] = 0;
-   instruction.lightLevel[I_YEL] = 0;
-   }
-   else if(lightColorIndex[index] == 3) {
-   Serial << "Blue" << endl;
-   instruction.lightLevel[I_RED] = 0;
-   instruction.lightLevel[I_GRN] = 0;
-   instruction.lightLevel[I_BLU] = 255;
-   instruction.lightLevel[I_YEL] = 0;
-   }
-   else if(lightColorIndex[index] == 4) {
-   Serial << "Yellow" << endl;
-   instruction.lightLevel[I_RED] = 0;
-   instruction.lightLevel[I_GRN] = 0;
-   instruction.lightLevel[I_BLU] = 0;
-   instruction.lightLevel[I_YEL] = 255;
-   }
-   else if(lightColorIndex[index] == 5) {
-   Serial << "White" << endl;
-   instruction.lightLevel[I_RED] = 128;
-   instruction.lightLevel[I_GRN] = 128;
-   instruction.lightLevel[I_BLU] = 128;
-   instruction.lightLevel[I_YEL] = 0;
-   }
-   
-   // Send the new color
-   light.sendInstruction(instruction, towerNodeID[index]);
-   }
-   }
-   */
+  if ( touch.anyChanged() ) { 
+    if ( touch.anyPressed()) {  
+      sound.playTrack(BOOP_TRACK);
+      
+      color whatPressed = touch.whatPressed();
+      
+      // advance the tower pressed into the next step of the sequence, wrap around.
+      towerSpotInSequence[whatPressed] ++;
+      towerSpotInSequence[whatPressed] %= 5;
+      
+      // send the correct color to that tower
+      colorInstruction c = colorSequence[towerSpotInSequence[whatPressed]];
+      light.setLight(whatPressed, c);
+    }
+  }   
 }
 
-#define FIRE_TEST_ARMED_TIMEOUT_MILLIS 5 * 1000
+/*
+  This mode lets the user test the solenoids/fire of each tower individually.
+  Pressing a button "arms" that tower.  Pressing the button again while the tower is armed will fire maximum fire out of the tower.
+  Towers automatically disarm after two seconds.
+  Only one tower can be armed at one.
+*/
+
+#define FIRE_TEST_ARMED_TIMEOUT_MILLIS 2 * 1000
 void TestModes::fireTestModeLoop(boolean performStartup) {
-  /*
+    
   static Metro armedTimer(FIRE_TEST_ARMED_TIMEOUT_MILLIS);
-   static bool armed[N_TOWERS];
+  static bool armed[N_COLORS];
+  
+  // I was having trouble with some timing (the touch panels are not debounced), so I keep a frame count for debugging.
+  static int frame = 0;
+  frame++;
    
-   if(performStartup) {
-   for(int index = 0; index < N_TOWERS; index++) {
-   armed[index] = false;
-   light.setAllLight(0, true); // Turn all the lights off
-   }
-   }
-   // If our armed timer has timed out and anything is armed, disarm things
-   bool anyArmed = false;
-   for(int index = 0; index < N_TOWERS; index++)
-   if(armed[index])
-   anyArmed = true;
-   
-   
-   if(anyArmed && armedTimer.check()) {
-   for(int index = 0; index < N_TOWERS; index++) {
-   armed[index] = false;     
-   }
-   
-   light.setFire(0, 0, FE_veryRich, false);
-   light.setAllLight(0, true); // Turn all the lights off
-   sound.playTrack(DISARMED_TRACK);
-   }
-   
-   //look for button presses 
-   for(int index = 0; index < N_TOWERS; index++)
-   {
-   if(touch.changed(index) && touch.pressed(index)) {
-   if(sensor.fireEnabled()) {
-   if(armed[index]) {
-   // Fire!
-   Serial << "Firing on tower " << index << endl;
-   light.setFire(I_RED, 255, FE_veryRich, true, towerNodeID[index]);
-   
-   // Disarm us
-   armed[index] = false;
-   
-   // Turn the lights off
-   light.setFire(0, 0, FE_veryRich, false);
-   light.setAllLight(0, true);
-   }        
-   else if(!anyArmed) {
-   Serial << "Arming on tower " << index << endl;
-   
-   // Light the tower up
-   light.setFire(0, 0, FE_veryRich, false);
-   light.setLight(index, 255, true, towerNodeID[index]);
-   
-   armed[index] = true;
-   sound.playTrack(ARMED_TRACK);
-   
-   armedTimer.reset();
-   }
-   // else, ignore it, so we can only arm one tower at once.
-   }
-   else {
-   sound.playTrack(DISARMED_TRACK);
-   }
-   }
-   }
-   */
+  if(performStartup) {
+    
+    // Turn off the fire and lights
+    fire.clear();
+    light.clear();
+    
+    // Disarm each tower.
+    for(int index = 0; index < N_COLORS; index++) {
+      armed[index] = false;
+    }
+  }
+
+  // Check to see if any of the towers are armed
+  bool anyArmed = false;  
+  for(int index = 0; index < N_COLORS; index++) {
+    if(armed[index]) {
+      anyArmed = true;
+    }
+  }
+  
+  // If our armed timer has timed out and anything is armed, disarm every tower
+  if(anyArmed && armedTimer.check()) {
+    Serial << "Disarmed timer fired.  Disarm everything!";
+    
+    // Disarm all the towers
+    for(int index = 0; index < N_COLORS; index++) {
+      armed[index] = false;     
+    }
+
+    fire.clear(); // turn the fire off
+    light.clear(); // turn the lights off
+    
+    // Let the user know
+    sound.playTrack(DISARMED_TRACK);
+  }
+
+  //look for button presses 
+  if (touch.anyChanged() && touch.anyPressed()) {  
+    color whatPressed = touch.whatPressed();
+      
+    if(!sensor.fireEnabled()) {
+      // If the fire solenoid is off, pressing the buttons doesn't do anything.  Warn the user
+      sound.playTrack(DISARMED_TRACK);
+    }
+    else {
+      if(armed[whatPressed]) {
+        // The button has been pressed on an armed tower, fire it!
+        
+        Serial << "Firing on tower " << whatPressed << " on frame " << frame << endl;          
+        
+        // Make fire go now!
+        fire.setFire(whatPressed, 255, kickMiddle);
+        
+        //  Play a sound.  This is helpful for debugging, to now we *tried* to fire, even if a solenoid failed.
+        sound.playTrack(BOOP_TRACK);
+        
+        // Update the network, then wait until the send has gone out.
+        network.update();
+        delay(100);
+
+        // Disarm us
+        armed[whatPressed] = false;
+        
+        // turn our color and fire back off
+        fire.clear(); // turn the fire off
+        light.clear(); // turn the lights off
+      }        
+      else if(!anyArmed) {
+        // A button was pressed, and now towers are armed.  Armed the tower that was pressed
+        Serial << "Arming on tower " << whatPressed << " on frame " << frame << endl;
+
+        // Light the tower up
+        colorInstruction cInst = cRed;
+        light.setLight(whatPressed, cInst);
+
+        // Arm the tower
+        armed[whatPressed] = true;
+        
+        // Tell the user
+        sound.playTrack(ARMED_TRACK);
+
+        // Reset the automatic disarm timer.
+        armedTimer.reset();
+      }
+    }
+  }
 }
 
 TestModes testModes;

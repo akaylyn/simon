@@ -38,10 +38,10 @@
 // 2x chotsky lighting
 #define CIRCLE_PIN 8 //
 // geometry
-#define CIRCLE_N 18 // wrapped around middle chotsky
-#define PLACARD_PIN 8 //
+#define CIRCLE_N 18 // wrapped around coaster chotsky
+#define PLACARD_PIN 9 //
 // geometry
-#define PLACARD_N 18 // wrapped around middle chotsky
+#define PLACARD_N 18 // wrapped around Simon chotsky
 
 // 1x chotsky lighting
 #define MIDDLE_PIN 8 //
@@ -50,9 +50,7 @@
 
 // LED indicator to ack button presses
 #define LED_PIN 13
-// communications with Console module via Serial port
-#define LightComms Serial1
-#define LIGHT_COMMS_RATE 19200
+
 // LED brightness is not equivalent across colors.  Higher wavelengths are dimmed to balance.
 #define RED_MAX 255
 #define GRN_MAX 220

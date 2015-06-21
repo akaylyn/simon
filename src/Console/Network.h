@@ -7,10 +7,9 @@
 
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers.
+#include <EEPROM.h> // saving 
 // radio
 #include <SPI.h> // radio transmitter is a SPI device
-#include <EEPROM.h> // saving and loading radio settings
-#include <avr/eeprom.h>
 #include <RFM12B.h> // RFM12b radio transmitter module
 // Light module
 #include <EasyTransfer.h>

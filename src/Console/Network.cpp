@@ -16,26 +16,34 @@ void Network::begin(nodeID node) {
 
   // check the send time
   Serial << F("Network: system datagram size (bytes)=") << sizeof(this->state) << endl;
-  unsigned long tic = micros();
   // send.   match Network::update Send syntax exactly
   radio.Send(255, (const void*)(&this->state), sizeof(this->state), false, 0);
   radio.SendWait();
+  unsigned long tic = micros();
+  radio.Send(255, (const void*)(&this->state), sizeof(this->state), false, 0);
+  radio.SendWait();
   unsigned long toc = micros();
-  Serial << F("Network: system datagram requires ") << toc-tic << F("us to send.") << endl;
+  Serial << F("Network: system datagram requires ") << toc - tic << F("us to send.") << endl;
 
   // save this, bumped slighly and at least 5ms
-  this->packetSendInterval = max(5000UL, float(toc-tic)*1.1);
+//  this->packetSendInterval = max(5000UL, float(toc - tic) * 1.1);
+  this->packetSendInterval = float(toc - tic) * 1.1;
   Serial << F("Network: sending system datagram every ") << this->packetSendInterval << F("us.") << endl;
 
   this->resendCount = 10;
   this->sentCount = this->resendCount;
   Serial << F("Network: will resend new packets x") << this->resendCount << endl;
 
-  // write to EEPROM if there's a change.
+  // Get layout
   int addr = 69;
-  eeprom_read_block( (void*)&this->lightLayout, (void *)addr, sizeof(this->lightLayout) );
-  eeprom_read_block( (void*)&this->fireLayout, (void *)(addr+sizeof(this->lightLayout)), sizeof(this->fireLayout) );
-  this->layout( this->lightLayout, this->fireLayout ); // redundant, but I want the print
+  color lightLayout[N_COLORS] = {I_RED, I_GRN, I_BLU, I_YEL}, fireLayout[N_COLORS] = {I_RED, I_GRN, I_BLU, I_YEL};
+  for ( byte i = 0; i < N_COLORS; i++ ) {
+    lightLayout[i] = (color)EEPROM.read(addr+i);
+    fireLayout[i] = (color)EEPROM.read(addr+i+N_COLORS);
+  }
+  
+  // sanity check  
+  this->layout( lightLayout, fireLayout ); // redundant, but I want the print
 
   Serial << F("Network: setup complete.") << endl;
 }
@@ -43,38 +51,52 @@ void Network::begin(nodeID node) {
 void Network::layout(color lightLayout[N_COLORS], color fireLayout[N_COLORS]) {
   Serial << F("Network: layout:") << endl;
 
+  // write to EEPROM if there's a change.
+  int addr = 69;
+
   // store it
-  for( byte i=0; i<N_COLORS; i++ ) {
+  for ( byte i = 0; i < N_COLORS; i++ ) {
     this->lightLayout[i] = lightLayout[i];
     Serial << F(" Color ") << i << (" assigned to Tower ") << lightLayout[i] << endl;
 
+    if( EEPROM.read(addr+i) != (byte)lightLayout[i] ) {
+      Serial << F("  set EEPROM") << endl;
+      EEPROM.write(addr+i, (byte)lightLayout[i]);
+    } 
+    
     this->fireLayout[i] = fireLayout[i];
     Serial << F(" Fire ") << i << (" assigned to Tower ") << fireLayout[i] << endl;
-  }
 
-  // write to EEPROM if there's a change.
-  int addr = 69;
-  eeprom_update_block( (void*)&this->lightLayout, (void *)addr, sizeof(this->lightLayout) );
-  eeprom_update_block( (void*)&this->fireLayout, (void *)(addr+sizeof(this->lightLayout)), sizeof(this->fireLayout) );
+    if( EEPROM.read(addr+i+N_COLORS) != (byte)fireLayout[i] ) {
+      Serial << F("  set EEPROM") << endl;
+      EEPROM.write(addr+i+N_COLORS, (byte)fireLayout[i]);
+    } 
+  }
 
 }
 
 // resends and stuff
 void Network::update() {
+  // if the sent count exceeds resend count, exit
+  if ( this->sentCount >= this->resendCount ) return;
+
   // track send times
   static unsigned long lastSend = micros();
   unsigned long now = micros();
 
-  // if the resend interval has not elapsed, exit
-  if( now-lastSend < this->packetSendInterval ) return;
-
-  // if the sent count exceeds resend count, exit
-  if( this->sentCount >= this->resendCount ) return;
+  // if this is the first time we've sent, update the packet number
+  if ( this->sentCount == 0 ) {
+    this->state.packetNumber++;
+    // note that the timer check won't be made, so we could be partway through a send.
+  } else {
+    // if the resend interval has not elapsed, exit
+    if( now-lastSend < this->packetSendInterval ) return;
+  }
 
   // Radio: send. no ACK, no sleep.
   this->send();
+  
   this->sentCount++;
-
 
   // record last send time
   lastSend = now;
@@ -94,24 +116,22 @@ void Network::send(systemMode mode) {
   this->sentCount = 0;
 }
 void Network::send(animationInstruction &inst) {
-    this->state.animation = inst;
+  this->state.animation = inst;
+  this->sentCount = 0;
 }
 
 // internal dispatcher
 void Network::send() {
 
-  // increment counter
-  this->state.packetNumber++;
-
-  // Light: send.
+  // Light: send.  handled by dedicated UART hardwre, so will happen in the background.
   ET.sendData();
-
-//  radio.Send((byte)BROADCAST, (const void*)(&this->state), sizeof(this->state), false, 0);
 
   // apply physical Tower layout
   systemState towerState;
+  // copy out invariants
   towerState.packetNumber = this->state.packetNumber;
   towerState.mode = this->state.mode;
+  towerState.animation = this->state.animation;
 
   for( byte i=0; i<N_COLORS; i++ ) {
     if( this->lightLayout[i] != N_COLORS ) {
@@ -121,7 +141,7 @@ void Network::send() {
       // towers are handling multiple color instructions
       this->mergeColor(towerState.light[i]);
     }
-    if( this->fireLayout[i] != N_COLORS ) {
+    if ( this->fireLayout[i] != N_COLORS ) {
       towerState.fire[i] = this->state.fire[this->fireLayout[i]];
     } else {
       // towers are handling multiple fire instructions
@@ -129,17 +149,22 @@ void Network::send() {
     }
   }
 
-  // Radio: send.
   radio.Send((byte)BROADCAST, (const void*)(&towerState), sizeof(towerState), false, 0);
 }
 
 // we sum up the lighting instructions
 void Network::mergeColor(colorInstruction &inst) {
-  unsigned long red=0, green=0, blue=0;
-  for( byte i=0; i<N_COLORS; i++ ) {
+  unsigned long red = 0, green = 0, blue = 0;
+  for ( byte i = 0; i < N_COLORS; i++ ) {
+    // summation
     red += this->state.light[i].red;
     green += this->state.light[i].green;
     blue += this->state.light[i].blue;
+    
+    // maybe maxima would be more appropriate?
+//    red = max( red, this->state.light[i].red );
+//    green = max( green, this->state.light[i].green );
+//    blue = max( blue, this->state.light[i].blue );
   }
 
   inst.red = constrain(red, 0, 255);
@@ -149,10 +174,15 @@ void Network::mergeColor(colorInstruction &inst) {
 
 // we sum up the fire instructions
 void Network::mergeFire(fireInstruction &inst) {
-  unsigned long duration=0, effect=0;
-  for( byte i=0; i<N_COLORS; i++ ) {
+  unsigned long duration = 0, effect = 0;
+  for ( byte i = 0; i < N_COLORS; i++ ) {
+    // summation
     duration += this->state.fire[i].duration;
     effect += this->state.fire[i].effect;
+    
+    // maybe maxima would be more appropriate?
+//    duration = max( duration, this->state.fire[i].duration );
+//    effect = max( effect, this->state.fire[i].effect );  
   }
 
   inst.duration = constrain(duration, 0, 255);
@@ -178,12 +208,12 @@ nodeID Network::networkStart(nodeID node) {
     Serial << F(" Band: ") << band;
     Serial << endl;
 
-//    radio.Initialize(node, band, groupID, 0, 0x7F); // 38300 bps
+    //    radio.Initialize(node, band, groupID, 0, 0x7F); // 38300 bps
     radio.Initialize(node, band, groupID, 0, 0x02); // 115200 bps
 
     Serial << F("Network: RFM12b radio module startup complete. ") << endl;
 
-    return( (nodeID)node );
+    return ( (nodeID)node );
   } else {
     Serial << F("Network: writing EEPROM (bootstrapping).") << endl;
     // then EEPROM isn't configured correctly.

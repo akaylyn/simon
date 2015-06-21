@@ -2,7 +2,7 @@
 #define Animations_h
 
 #include <Streaming.h>
-#include <Adafruit_Neopixel.h>
+#include <Adafruit_NeoPixel.h>
 #include <Adafruit_NeoMatrix.h>
 #include "AnimationConfig.h"
 #include "Strip.h"

@@ -56,10 +56,10 @@ void playerFanfare(fanfare_t level) {
       trackLength = 20000UL;
       break;
     case LEVEL4:
+    case IDLE:
     case MAXOUT:
       trackLength = 30000UL;
       break;
-    case IDLE:
     case CONSOLATION:
       trackLength = 3000UL;
       break;

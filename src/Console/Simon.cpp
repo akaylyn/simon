@@ -23,7 +23,7 @@ Finite State Machine (FSM) Map:
 
 // Idle
 State idle = State(idleEnter, idleUpdate, idleExit);
-Metro idleBeforeFanfare(5UL * 60000UL); // if we're idle for this long, do a fanfare
+Metro idleBeforeFanfare(10UL * 60000UL); // if we're idle for this long, do a fanfare
 
 // Game
 State game = State(gameEnter, gameUpdate, gameExit);
