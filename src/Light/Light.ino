@@ -90,23 +90,29 @@ int gameplayCounter = 0;
 const int maxGameplayCounter = 100;
 
 void loop() {
-    if (fasterStripUpdateInterval.check()) {
-        // animation instructions
-        mapToAnimation(animator, inst);
+  if (fasterStripUpdateInterval.check()) {
+    // animation instructions
+    mapToAnimation(animator, inst);
 
-        fasterStripUpdateInterval.reset();
-    }
+    fasterStripUpdateInterval.reset();
 
-  static Metro quietUpdateInterval(10UL *1000UL); // after 10 second of not instructions, we should do something.
+    // MGD: added a manual animation on center coaster and placard
+    rainbowUpdate(cirL);
+    rainbowUpdate(placL);
+    // MGD: I assume there's a way to do something like this with the Animation.cpp... but I couldn't figure out how to do that.
+    //      maybe take the animations that are at the bottom of this .ino and transfer them as a "pallette" to work from? 
+  }
+
+  static Metro quietUpdateInterval(10UL * 1000UL); // after 10 second of not instructions, we should do something.
 
   //check and see if a data packet has come in.
   if (ET.receiveData()) {
 
     Serial << F("I");
 
-//    for( byte i=0; i<N_COLORS; i++ ) {
-//      Serial << F(" Color ") << i << F("; R:") << inst.light[i].red << F(" G:") << inst.light[i].green << F(" B:") << inst.light[i].blue << endl;
-//    }
+    //    for( byte i=0; i<N_COLORS; i++ ) {
+    //      Serial << F(" Color ") << i << F("; R:") << inst.light[i].red << F(" G:") << inst.light[i].green << F(" B:") << inst.light[i].blue << endl;
+    //    }
 
     // dispatch the requests
     setStripColor(redL, inst.light[I_RED]);
@@ -114,7 +120,7 @@ void loop() {
     setStripColor(bluL, inst.light[I_BLU]);
     setStripColor(yelL, inst.light[I_YEL]);
     // toggle LED to ACK new button press
-    static boolean ledStatus=false;
+    static boolean ledStatus = false;
     ledStatus = !ledStatus;
     digitalWrite(LED_PIN, ledStatus);
 
@@ -122,7 +128,7 @@ void loop() {
   }
 
   // when it's quiet, we need to do something with the LEDs
-  if( quietUpdateInterval.check() ) {
+  if ( quietUpdateInterval.check() ) {
     Serial << F("Quiet interval elapsed.") << endl;
     Serial << F("Free RAM=") << freeRam() << endl;
   }
@@ -297,6 +303,16 @@ void rainbow(Adafruit_NeoPixel &strip, uint8_t wait) {
     strip.show();
     delay(wait);
   }
+}
+void rainbowUpdate(Adafruit_NeoPixel &strip) {
+  static byte colorPos = 0;
+
+  for (int i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, Wheel(strip, (byte)((i + colorPos) % 255) ) );
+  }
+  strip.show();
+  colorPos++; // increment for next pass
+
 }
 
 // Slightly different, this makes the rainbow equally distributed throughout
