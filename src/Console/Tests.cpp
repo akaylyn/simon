@@ -226,6 +226,9 @@ void TestModes::layoutModeLoop(boolean performStartup) {
 // simply operate the Console in "bongoes" mode.  Will shoot fire
 void TestModes::bongoModeLoop(boolean performStartup) {
 
+  // track the last time we fired
+  static unsigned long lastFireTime;
+
   if( performStartup ) {
     Serial << "Starting up bongoMode" << endl;
     sound.stopAll();
@@ -234,10 +237,9 @@ void TestModes::bongoModeLoop(boolean performStartup) {
     //turn all of the lights off to start out with
     fire.clear();
     light.clear();
+    
+    lastFireTime = millis();
   }
-
-  // track the last time we fired
-  static unsigned long lastFireTime = millis();
 
   if ( touch.anyChanged() ) { 
     if ( touch.anyPressed()) {
@@ -275,7 +277,7 @@ void TestModes::proximityModeLoop(boolean performStartup) {
   static byte distanceThreshold = 200;
 
   // track the last time we fired
-  static unsigned long lastFireTime = millis();
+  static unsigned long lastFireTime;
 
   if( performStartup || restartTimer.check() ) {
     Serial << "Starting up proximityMode" << endl;
@@ -291,6 +293,7 @@ void TestModes::proximityModeLoop(boolean performStartup) {
     }
 
     restartTimer.reset();
+    lastFireTime = millis();
   }
 
   boolean showLightsNow = false;
