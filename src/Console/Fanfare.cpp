@@ -20,6 +20,25 @@ color incColor(color val) {
   }
   
   return I_RED;
+  
+  // MGD: alternately, this would work (byte cast, increment, modulo, color cast)
+//  return( (color) ((byte)val+1 % N_COLORS) );
+
+  // MGD, but I think you really want a clockwise or CCW loop around the towers:
+  //
+  // GRN > RED
+  //  ^     v
+  // YEL < BLU
+  //
+  // clockwise case, you want:
+  switch(val) {
+    case I_RED: return I_BLU;
+    case I_BLU: return I_YEL;
+    case I_YEL: return I_GRN;
+    case I_GRN: return I_RED;
+  }
+  return( I_RED ); // as a safety?  
+  
 }
 
 void playerFanfare(fanfare_t level) {
