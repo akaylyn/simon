@@ -104,20 +104,32 @@ void Network::update() {
 
 // makes the network do stuff with your stuff
 void Network::send(color position, colorInstruction &inst) {
-  this->state.light[position] = inst;
-  this->sentCount = 0;
+  // change on a delta
+  if ( memcmp((void*)(&inst), (void*)(&this->state.light[position]), sizeof(colorInstruction)) != 0 ) {
+    this->state.light[position] = inst;
+    this->sentCount = 0;
+  }
 }
 void Network::send(color position, fireInstruction &inst) {
-  this->state.fire[position] = inst;
-  this->sentCount = 0;
+  // change on a delta
+  if ( memcmp((void*)(&inst), (void*)(&this->state.fire[position]), sizeof(fireInstruction)) != 0 ) {
+    this->state.fire[position] = inst;
+    this->sentCount = 0;
+  }
 }
 void Network::send(systemMode mode) {
-  this->state.mode = (byte)mode;
-  this->sentCount = 0;
+  // change on a delta
+  if ( mode != (byte)state.mode ) {
+    this->state.mode = (byte)mode;
+    this->sentCount = 0;
+  }
 }
 void Network::send(animationInstruction &inst) {
-  this->state.animation = inst;
-  this->sentCount = 0;
+  // change on a delta
+  if ( memcmp((void*)(&inst), (void*)(&this->state.animation), sizeof(animationInstruction)) != 0 ) {
+    this->state.animation = inst;
+    this->sentCount = 0;
+  }
 }
 
 // internal dispatcher
