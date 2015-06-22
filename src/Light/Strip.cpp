@@ -183,17 +183,19 @@ void configureAnimations() {
 
 void mapToAnimation(ConcurrentAnimator animator, systemState state) {
     if (state.animation == A_None) {
-
+        Serial << "A_None" << endl;
     }
-    else if (state.animation == A_LaserWipe) {
+    if (state.animation == A_LaserWipe) {
         animator.animate(laserWipe, redButtonConfig);
         animator.animate(laserWipe, greenButtonConfig);
         animator.animate(laserWipe, blueButtonConfig);
         animator.animate(laserWipe, yellowButtonConfig);
+        Serial << "A_LaserWipe" << endl;
     }
-    else if (state.animation == A_ColorWipe) {
+    if (state.animation == A_ColorWipe) {
         animator.animate(colorWipe, placardConfig);
         animator.animate(colorWipe, circleConfig);
+        Serial << "A_ColorWipe" << endl;
     }
 }
 
