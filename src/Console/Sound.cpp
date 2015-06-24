@@ -40,10 +40,10 @@ void Sound::setLeveling(int nTones, int nTracks) {
   // basically, we're calibrating the tone gain based on the number of tones and tracks currently playing,
   // relative to the total gain that we want out of the system
   this->toneGain = TONE_GAIN - floor( 10.0*log10(float(nTones) + float(nTracks)*pow(10.0, float(TRACK_GAIN_RELATIVE_TO_TONE)/10.0)) );
-  this->trackGain = toneGain + TRACK_GAIN_RELATIVE_TO_TONE;
+  this->trackGain = this->toneGain + TRACK_GAIN_RELATIVE_TO_TONE;
   
   Serial << F("Sound::setLeveling: nTones=") << nTones << F(" with gain=") << this->toneGain;
-  Serial << F(" nTracks=") << nTracks << F(" with gain=") << trackGain << endl;
+  Serial << F(" nTracks=") << nTracks << F(" with gain=") << this->trackGain << endl;
 }
 
 int Sound::playWins(int track) {
@@ -149,10 +149,19 @@ void Sound::stopFailTone() {
 
 // Stop all tones track
 void Sound::stopTones() {
-  for( int ti=0; ti<N_TONES; ti++ ) {
-    // stop
-    wav.trackStop(trTones[ti]);
+  // get the array of currently playing tracks
+  int tr[14];
+  wav.getPlayingTracks(tr);
+  
+  // loop across and issue a stop command
+  for( byte i=0; i<14; i++ ) {
+    if( tr[i] > 0 && tr[i] <= N_TONES) wav.trackStop(tr[i]);
   }
+
+//  for( int ti=0; ti<N_TONES; ti++ ) {
+//    // stop
+//    wav.trackStop(trTones[ti]);
+//  }
 
 //  Serial << F("Sound::stopTones") << endl;
 }
@@ -162,8 +171,15 @@ void Sound::stopTones() {
 // Stop all track
 void Sound::stopAll() {
   // get the array of currently playing tracks
-//  int tr[14];
-//  wav.getPlayingTracks(tr);
+  int tr[14];
+  wav.getPlayingTracks(tr);
+  
+  // loop across and issue a stop command
+  for( byte i=0; i<14; i++ ) {
+    if( tr[i] > 0 ) wav.trackStop(tr[i]);
+  }
+  
+  // and, be damned sure
   // stop
   wav.stopAllTracks();
 

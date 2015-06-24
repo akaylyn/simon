@@ -50,7 +50,7 @@ Bounce systemReset = Bounce(RESET_PIN, DEBOUNCE_TIME);
 Bounce modeSwitch = Bounce(MODE_SWITCH_PIN, DEBOUNCE_TIME);
 
 // without comms for this duration, run a lighting test pattern
-#define IDLE_PERIOD 2000UL // ms
+#define IDLE_PERIOD 10000UL // ms
 
 void setup() {
   // put your setup code here, to run once:

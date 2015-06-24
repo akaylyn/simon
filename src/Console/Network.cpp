@@ -26,8 +26,8 @@ void Network::begin(nodeID node) {
   Serial << F("Network: system datagram requires ") << toc - tic << F("us to send.") << endl;
 
   // save this, bumped slighly and at least 5ms
-//  this->packetSendInterval = max(5000UL, float(toc - tic) * 1.1);
-  this->packetSendInterval = float(toc - tic) * 1.1;
+  this->packetSendInterval = max(5000UL, float(toc - tic) * 1.1);
+//  this->packetSendInterval = float(toc - tic) * 1.1;
   Serial << F("Network: sending system datagram every ") << this->packetSendInterval << F("us.") << endl;
 
   this->resendCount = 10;
@@ -84,13 +84,18 @@ void Network::update() {
   static unsigned long lastSend = micros();
   unsigned long now = micros();
 
+  // send on an interval
+  if( now-lastSend < this->packetSendInterval ) return;
+
   // if this is the first time we've sent, update the packet number
   if ( this->sentCount == 0 ) {
     this->state.packetNumber++;
-    // note that the timer check won't be made, so we could be partway through a send.
+    Serial << F("Network::update.  New packet # ") << this->state.packetNumber << endl;
+    for( int i=0; i<N_COLORS; i++ )
+      Serial << F("  color:" ) << i << F(" red:") << this->state.light[i].red << F(" green:") << this->state.light[i].green << F(" blue:") << this->state.light[i].blue << endl; 
+    
   } else {
-    // if the resend interval has not elapsed, exit
-    if( now-lastSend < this->packetSendInterval ) return;
+    Serial << F("Network::update.  resend # ") << this->sentCount << endl;
   }
 
   // Radio: send. no ACK, no sleep.
@@ -104,20 +109,32 @@ void Network::update() {
 
 // makes the network do stuff with your stuff
 void Network::send(color position, colorInstruction &inst) {
-  this->state.light[position] = inst;
-  this->sentCount = 0;
+  // change on a delta
+  if ( memcmp((void*)(&inst), (void*)(&this->state.light[position]), sizeof(colorInstruction)) != 0 ) {
+    this->state.light[position] = inst;
+    this->sentCount = 0;
+  }
 }
 void Network::send(color position, fireInstruction &inst) {
-  this->state.fire[position] = inst;
-  this->sentCount = 0;
+  // change on a delta
+  if ( memcmp((void*)(&inst), (void*)(&this->state.fire[position]), sizeof(fireInstruction)) != 0 ) {
+    this->state.fire[position] = inst;
+    this->sentCount = 0;
+  }
 }
 void Network::send(systemMode mode) {
-  this->state.mode = (byte)mode;
-  this->sentCount = 0;
+  // change on a delta
+  if ( mode != (byte)state.mode ) {
+    this->state.mode = (byte)mode;
+    this->sentCount = 0;
+  }
 }
 void Network::send(animationInstruction &inst) {
-  this->state.animation = inst;
-  this->sentCount = 0;
+  // change on a delta
+  if ( memcmp((void*)(&inst), (void*)(&this->state.animation), sizeof(animationInstruction)) != 0 ) {
+    this->state.animation = inst;
+    this->sentCount = 0;
+  }
 }
 
 // internal dispatcher
