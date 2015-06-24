@@ -182,9 +182,6 @@ void configureAnimations() {
 }
 
 void mapToAnimation(ConcurrentAnimator animator, systemState state) {
-    if (state.animation == A_None) {
-        Serial << "A_None" << endl;
-    }
     if (state.animation == A_LaserWipe) {
         animator.animate(laserWipe, redButtonConfig);
         animator.animate(laserWipe, greenButtonConfig);
