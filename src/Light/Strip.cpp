@@ -17,7 +17,6 @@ systemState inst;
 
 // strip around the inner rim
 //Adafruit_NeoPixel rimJob = Adafruit_NeoPixel(RIM_N, RIM_PIN, NEO_GRB + NEO_KHZ800);
-/*
 Adafruit_NeoMatrix rimJob = Adafruit_NeoMatrix(
         108, 1, 1, 3, RIM_PIN,
         NEO_MATRIX_BOTTOM + NEO_MATRIX_LEFT +
@@ -28,8 +27,7 @@ Adafruit_NeoMatrix rimJob = Adafruit_NeoMatrix(
         NEO_TILE_PROGRESSIVE,
         NEO_GRB + NEO_KHZ800
         );
-*/
-Adafruit_NeoPixel rimJob = Adafruit_NeoPixel(RIM_X*RIM_Y, RIM_PIN, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel rimJob = Adafruit_NeoPixel(RIM_X*RIM_Y, RIM_PIN, NEO_GRB + NEO_KHZ800);
 
 // strips around the buttons
 Adafruit_NeoPixel redL = Adafruit_NeoPixel(BUTTON_N, RED_PIN, NEO_GRB + NEO_KHZ800);
@@ -106,12 +104,12 @@ void configureAnimations() {
   rimJob.begin();
 
   rimConfig.name = "Outer rim";
-//  rimConfig.matrix = &rimJob;
+  rimConfig.matrix = &rimJob;
   rimConfig.strip = &rimJob;
   rimConfig.color = blue;
   rimConfig.ready = true;
   rimConfig.position = &rimPos;
-  rimConfig.timer = Metro(10);
+  rimConfig.timer = Metro(300);
 
   // Init neo pixel strips for the buttons
   redL.begin();
@@ -190,6 +188,13 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
         animator.animate(colorWipe, placardConfig);
         animator.animate(colorWipe, circleConfig);
         Serial << "A_ColorWipe" << endl;
+    }
+
+    if (state.animation == A_ProximityPulseMatrix) {
+      rimConfig.color.red = state.light[0].red;
+      rimConfig.color.green = state.light[0].green;
+      rimConfig.color.blue = state.light[0].blue;
+      animator.animate(proximityPulseMatrix, rimConfig);
     }
 }
 

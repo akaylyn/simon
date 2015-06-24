@@ -91,6 +91,7 @@ void setup() {
   // start
   configureAnimations();
 
+  /*
   // clear cycles
   for( int c=0; c<MAX_CYCLES; c++ ) {
     cycles[c].live=false;
@@ -102,6 +103,7 @@ void setup() {
   addCycle(BLU_X, ALL_Y, Blu);
   addCycle(YEL_X, ALL_Y, Yel);
   rimJob.show();
+  */
 
   Serial << F("Free RAM: ") << freeRam() << endl;
   Serial << F("Light: startup complete.") << endl;
@@ -136,10 +138,11 @@ void loop() {
     //      maybe take the animations that are at the bottom of this .ino and transfer them as a "pallette" to work from?
 
     // Tron light cycles on the rim.
-    fadeCycles();
+    /*fadeCycles();
     moveCycles();
 //    serialPrint();
     rimJob.show();
+    */
 
   }
 
@@ -169,15 +172,18 @@ void loop() {
     digitalWrite(LED_PIN, ledStatus);
 
     // dispatch the requests to the rim
+    /*
     if( inst.light[I_RED].red > 0 ) addCycle(RED_X, ALL_Y, Red);
     if( inst.light[I_GRN].green > 0 ) addCycle(GRN_X, ALL_Y, Grn);
     if( inst.light[I_BLU].blue > 0 ) addCycle(BLU_X, ALL_Y, Blu);
     if( inst.light[I_YEL].red > 0 && inst.light[I_YEL].green > 0 ) addCycle(YEL_X, ALL_Y, Yel);
+    */
 
     quietUpdateInterval.reset();
-    addCycles.reset();
+    //addCycles.reset();
   }
 
+  /*
   // when it's quiet, we need to do something with the LEDs
   if ( addCycles.check() ) {
     Serial << F("Quiet interval elapsed.") << endl;
@@ -190,8 +196,8 @@ void loop() {
       case 2: addCycle(BLU_X, ALL_Y, Blu); break;
       case 3: addCycle(YEL_X, ALL_Y, Yel); break;
     }
-
   }
+    */
 
   /*
 TODO: fix this and put it in a metro loop

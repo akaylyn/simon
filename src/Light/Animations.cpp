@@ -128,3 +128,32 @@ uint32_t Wheel(Adafruit_NeoPixel &strip, byte WheelPos) {
   }
 }
 
+// Proximity Pulse Matrix, used in Proximity Mode
+void proximityPulseMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
+  /*int* pos = (int*) posData;
+  int magnitude = (*pos);
+  */
+
+  int point = 0;
+
+  Serial << r << " " << g << " " << b << endl;
+  //(*pos) = next;
+  for (int i = magnitude; i < matrix.width(); i++) {
+
+    if (r < 85) {
+      matrix.drawPixel(point-magnitude, 1, matrix.Color(r,g,b));
+      matrix.drawPixel(point+magnitude, 1, matrix.Color(r,g,b));
+    }
+
+    if (85 < r < 170) {
+      matrix.drawPixel(i, 1, matrix.Color(r,g,b));
+    }
+
+    if (r > 170) {
+      matrix.drawPixel(i, 0, matrix.Color(r,g,b));
+    }
+  }
+  //magnitude = magnitude++;
+  //(*pos) = magnitude;
+}
+
