@@ -29,7 +29,7 @@
 #include "ConcurrentAnimator.h"
 #include "AnimateFunc.h"
 
-extern Adafruit_NeoMatrix rimJob;
+extern Adafruit_NeoPixel rimJob;
 extern Adafruit_NeoPixel redL;
 extern Adafruit_NeoPixel grnL;
 extern Adafruit_NeoPixel bluL;
@@ -41,10 +41,38 @@ extern EasyTransfer ET;
 extern systemState inst;
 extern ConcurrentAnimator animator;
 
+// tracks the cycles
+typedef struct {
+  boolean live; // live or dead
+  uint32_t x,y; // location
+  uint32_t color; // color of the cycle
+  byte movePref; // CW or CCW preference
+} cycle_t;
+
+#define MAX_CYCLES 20
+cycle_t cycles[MAX_CYCLES];
+
+#define CYCLE_DICK_MOVE_PERCENT 15 // chance that a cycle will throw some "zigs" in it's path around the rim
+#define CYCLE_TRAIL_LENGTH BLU_X-RED_X // a light cycle leaves a trail as long as 1/4 of the rim circumference
+
+#define ADD_INTERVAL 1000UL
+Metro addCycles(ADD_INTERVAL);
+
+// cycle colors
+const uint32_t Red = rimJob.Color(RED_MAX, LED_OFF, LED_OFF);
+const uint32_t Yel = rimJob.Color(RED_MAX, GRN_MAX, LED_OFF);
+const uint32_t Grn = rimJob.Color(LED_OFF, GRN_MAX, LED_OFF);
+const uint32_t Blu = rimJob.Color(LED_OFF, LED_OFF, BLU_MAX);
+const uint32_t Dead = rimJob.Color(LED_OFF, LED_OFF, LED_OFF);
+const uint32_t White = rimJob.Color(RED_MAX, GRN_MAX, BLU_MAX);
+
 void setup() {
   Serial.begin(115200);
 
   delay(500);
+
+  // random seed set from electrical noise on an analog pin.
+  randomSeed(analogRead(A5));
 
   Serial << F("Light startup.") << endl;
 
@@ -60,14 +88,20 @@ void setup() {
 
   pinMode(LED_PIN, OUTPUT); digitalWrite(LED_PIN, LOW);
 
-  Serial << F("RimJob: ") << RIM_N << F(" pixels in 4 segments of length ") << RIM_SEG_LENGTH << endl;
-  Serial << F("RimJob: YEL starts at: ") << YEL_SEG_START << endl;
-  Serial << F("RimJob: BLU starts at: ") << BLU_SEG_START << endl;
-  Serial << F("RimJob: RED starts at: ") << RED_SEG_START << endl;
-  Serial << F("RimJob: GRN starts at: ") << GRN_SEG_START << endl;
-
   // start
   configureAnimations();
+
+  // clear cycles
+  for( int c=0; c<MAX_CYCLES; c++ ) {
+    cycles[c].live=false;
+  }
+
+  rimJob.begin();
+  addCycle(RED_X, ALL_Y, Red);
+  addCycle(GRN_X, ALL_Y, Grn);
+  addCycle(BLU_X, ALL_Y, Blu);
+  addCycle(YEL_X, ALL_Y, Yel);
+  rimJob.show();
 
   Serial << F("Free RAM: ") << freeRam() << endl;
 
@@ -98,23 +132,34 @@ void loop() {
 
     // MGD: added a manual animation on center coaster and placard
     rainbowUpdate(cirL);
-    rainbowUpdate(placL);
+    rainbowUpdateReverse(placL);
     // MGD: I assume there's a way to do something like this with the Animation.cpp... but I couldn't figure out how to do that.
     //      maybe take the animations that are at the bottom of this .ino and transfer them as a "pallette" to work from? 
+
+    // Tron light cycles on the rim.    
+    fadeCycles();
+    moveCycles();
+//    serialPrint();
+    rimJob.show();
+
   }
 
   static Metro quietUpdateInterval(10UL * 1000UL); // after 10 second of not instructions, we should do something.
 
+  static byte lastPacketNumber=255;
   //check and see if a data packet has come in.
-  if (ET.receiveData()) {
+  if (ET.receiveData() && inst.packetNumber != lastPacketNumber) {
+    // track and apply deltas only
+    lastPacketNumber = inst.packetNumber;
+    
+    Serial << F("I. packetNumber") << lastPacketNumber << endl;
 
-    Serial << F("I");
-
+    
     //    for( byte i=0; i<N_COLORS; i++ ) {
     //      Serial << F(" Color ") << i << F("; R:") << inst.light[i].red << F(" G:") << inst.light[i].green << F(" B:") << inst.light[i].blue << endl;
     //    }
 
-    // dispatch the requests
+    // dispatch the requests to the buttons
     setStripColor(redL, inst.light[I_RED]);
     setStripColor(grnL, inst.light[I_GRN]);
     setStripColor(bluL, inst.light[I_BLU]);
@@ -124,13 +169,29 @@ void loop() {
     ledStatus = !ledStatus;
     digitalWrite(LED_PIN, ledStatus);
 
+    // dispatch the requests to the rim
+    if( inst.light[I_RED].red > 0 ) addCycle(RED_X, ALL_Y, Red);
+    if( inst.light[I_GRN].green > 0 ) addCycle(GRN_X, ALL_Y, Grn);
+    if( inst.light[I_BLU].blue > 0 ) addCycle(BLU_X, ALL_Y, Blu);
+    if( inst.light[I_YEL].red > 0 && inst.light[I_YEL].green > 0 ) addCycle(YEL_X, ALL_Y, Yel);
+
     quietUpdateInterval.reset();
+    addCycles.reset();
   }
 
   // when it's quiet, we need to do something with the LEDs
-  if ( quietUpdateInterval.check() ) {
+  if ( addCycles.check() ) {
     Serial << F("Quiet interval elapsed.") << endl;
     Serial << F("Free RAM=") << freeRam() << endl;
+
+    // add some light cycles    
+    switch( random(0,4) ) {
+      case 0: addCycle(RED_X, ALL_Y, Red); break;
+      case 1: addCycle(GRN_X, ALL_Y, Grn); break;
+      case 2: addCycle(BLU_X, ALL_Y, Blu); break;
+      case 3: addCycle(YEL_X, ALL_Y, Yel); break;
+    }
+
   }
 
   /*
@@ -157,132 +218,6 @@ int freeRam () {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
-// unpack and pack functions
-void extractColor(uint32_t c, uint8_t * cv) {
-  cv[0] = (c << 8 ) >> 24;
-  cv[1] = (c << 16) >> 24;
-  cv[2] = (c << 24) >> 24;
-}
-// apprently, the color handling is slightly different btw matrix and strip?
-uint32_t packColor(Adafruit_NeoPixel &strip, uint8_t * cv) {
-  return ( strip.Color(cv[0], cv[1], cv[2]) );
-}
-uint32_t packColor(Adafruit_NeoMatrix &matrix, uint8_t * cv) {
-  return ( matrix.Color(cv[0], cv[1], cv[2]) );
-}
-void printColor(uint32_t c) {
-  // pull out RGB elements
-  uint8_t cv[3];
-  extractColor(c, cv);
-  Serial << F(" R: ") << cv[0] << F(" G: ") << cv[1] << F(" B: ") << cv[2] << endl;
-}
-
-// adjust color with a decrement
-uint32_t adjustColor(uint32_t c, unsigned long ttl) {
-  // pull out RGB elements
-  uint8_t cv[3];
-  signed int cvl[3];
-  extractColor(c, cv);
-  int adj;
-
-  // for each color
-  for ( uint8_t i = 0; i < 3; i++ ) {
-
-    // try to smoothly drop the colors
-    if ( i == 0 ) adj = RED_MAX / (PIXEL_TTL / STRIP_UPDATE);
-    else if ( i == 1 ) adj = GRN_MAX / (PIXEL_TTL / STRIP_UPDATE);
-    else adj = BLU_MAX / (PIXEL_TTL / STRIP_UPDATE);
-
-    if ( cv[i] >= adj + LED_OFF ) { // unsiged stuff.  take care.
-      cv[i] = cv[i] - adj;
-    } else {
-      cv[i] = LED_OFF;
-    }
-    //    Serial << cv[i] << endl;
-  }
-
-  //  while(1);
-  // repack and return
-  return ( packColor(redL, cv) );
-}
-
-// merge colors with some kind of XOR
-uint32_t mergeColor(uint32_t c1, uint32_t c2) {
-  // use bitwise operations to get at packed color vector contents
-  const uint8_t bitIndex[3] = {8, 16, 24};
-  // store the color vector result
-  uint8_t c1v[3], c2v[3], cv[3];
-
-  // get the RGB components.
-  extractColor(c1, c1v);
-  extractColor(c2, c2v);
-
-  // for each color
-  for ( uint8_t i = 0; i < 3; i++ ) {
-    // xor by color channel
-    if ( c1v[i] > 0 && c2v[i] > 0 ) {
-      // alive in both cells, so drop this channel.
-      cv[i] = LED_OFF;
-    } else {
-      // dead in one, so sum them.  unsigned type is doing some funky stuff when >255.
-      cv[i] = max(c1v[i], c2v[i]);
-    }
-  }
-  return ( packColor(redL, cv) );
-}
-
-// updates the automata using a modified Rule 90
-void updateRule90(Adafruit_NeoPixel &strip, unsigned long ttl) {
-  // intialize first cell
-  uint32_t cs = strip.getPixelColor(0);
-  uint32_t ps = strip.getPixelColor(strip.numPixels() - 1);
-  uint32_t ns, color;
-  // store the color vector result
-  uint8_t cv[3];
-
-  // loop to update
-  for (uint16_t i = 0; i < strip.numPixels(); i++) {
-    // get next state
-    if (i < strip.numPixels() - 1) {
-      ns = strip.getPixelColor(i + 1);
-    }
-    else { // wrapping back around
-      ns = strip.getPixelColor(0);
-    }
-
-    // apply Rule 90
-    if ( ps == 0 ) {
-      color = adjustColor(ns, ttl);
-    } else if ( ns == 0 ) {
-      color = adjustColor(ps, ttl);
-    } else {
-      color = mergeColor(adjustColor(ps, ttl), adjustColor(ns, ttl));
-    }
-
-    // set the pixel
-    strip.setPixelColor(i, color);
-
-    // next iteration setting
-    ps = cs;
-    cs = ns;
-  }
-}
-
-void test(Adafruit_NeoPixel &strip) {
-  // Some example procedures showing how to display to the pixels:
-  colorWipe(strip, strip.Color(255, 0, 0), 50); // Red
-  colorWipe(strip, strip.Color(0, 255, 0), 50); // Green
-  colorWipe(strip, strip.Color(0, 0, 255), 50); // Blue
-
-  // Send a theater pixel chase in...
-  theaterChase(strip, strip.Color(127, 127, 127), 50); // White
-  theaterChase(strip, strip.Color(127,   0,   0), 50); // Red
-  theaterChase(strip, strip.Color(  0,   0, 127), 50); // Blue
-
-  rainbow(strip, 20);
-  rainbowCycle(strip, 20);
-  theaterChaseRainbow(strip, 50);
-}
 
 // Fill the dots one after the other with a color
 void colorWipe(Adafruit_NeoPixel &strip, uint32_t c, uint8_t wait) {
@@ -311,10 +246,17 @@ void rainbowUpdate(Adafruit_NeoPixel &strip) {
     strip.setPixelColor(i, Wheel(strip, (byte)((i + colorPos) % 255) ) );
   }
   strip.show();
-  colorPos++; // increment for next pass
-
+  colorPos+=random(1,5); // increment for next pass
 }
+void rainbowUpdateReverse(Adafruit_NeoPixel &strip) {
+  static byte colorPos = 0;
 
+  for (int i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, Wheel(strip, (byte)((i + colorPos) % 255) ) );
+  }
+  strip.show();
+  colorPos-=random(1,5); // increment for next pass
+}
 // Slightly different, this makes the rainbow equally distributed throughout
 void rainbowCycle(Adafruit_NeoPixel &strip, uint8_t wait) {
   uint16_t i, j;
@@ -344,6 +286,18 @@ void theaterChase(Adafruit_NeoPixel &strip, uint32_t c, uint8_t wait) {
       }
     }
   }
+}
+
+//Theatre-style crawling lights.
+void theaterUpdate(Adafruit_NeoPixel &strip) {
+  static byte colorPos = 0;  
+  
+  // turn them all off
+  for (int i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, Wheel(strip, colorPos));
+  }
+  
+  strip.show();
 }
 
 //Theatre-style crawling lights with rainbow effect
@@ -460,5 +414,164 @@ void setStripColor(Adafruit_NeoMatrix &matrix, uint32_t c) {
     matrix.setPixelColor(i, c);
   }
   matrix.show();
+}
+
+//***************** Tron light cycle code:
+
+
+void serialPrint() {
+  static unsigned long it=0;
+  Serial << endl << it << F(":") << endl;
+  for( int y=0; y<RIM_Y; y++) {
+    for( int x=0; x<RIM_X; x++) {
+      uint32_t c = rimJob.getPixelColor(getPixelN(x,y));
+      boolean isC = isCycle(x,y);
+      char p;
+      
+           if( isC && c==Red ) p = 'R';
+      else if( isC && c==Grn ) p = 'G';
+      else if( isC && c==Blu ) p = 'B';
+      else if( isC && c==Yel ) p = 'Y';
+      else if( isC ) p = '!'; // BAD: cycles have a color
+      else if( c==Red ) p = 'r';
+      else if( c==Grn ) p = 'g';
+      else if( c==Blu ) p = 'b';
+      else if( c==Yel ) p = 'y';
+      else if( c==Dead ) p = ' ';
+      else if( c==White ) p = '*';
+      else p = '.'; // faded/cycle trail
+      
+      Serial << p;
+    }
+    Serial << endl;
+  }
+   
+  it++;
+}
+
+// looks for active cycle at a pixel location
+boolean isCycle(int x, int y) {
+  for( int c=0; c<MAX_CYCLES; c++ ) {
+    if( cycles[c].live && cycles[c].x==x && cycles[c].y==y ) 
+      return( true );
+  }
+  return( false );
+}
+
+void addCycle(uint32_t x, uint32_t y, uint32_t color) {
+  
+  byte availableCycle=0;
+  while( cycles[availableCycle].live ) { 
+    availableCycle++;
+    if( availableCycle == MAX_CYCLES ) {
+      Serial << F("addCycle error.  no available cycle slots.  Halting!") << endl;
+      while(1);
+    }
+  }
+  
+  rimJob.setPixelColor(getPixelN(x,y), color);
+  
+  cycles[availableCycle].x = x;
+  cycles[availableCycle].y = y;
+  cycles[availableCycle].color = color;
+  cycles[availableCycle].live = true;
+  
+  static byte movePref = 0;
+  (++movePref) %= 2;
+  cycles[availableCycle].movePref = movePref; // likes to go CW or CCW, generally
+  
+}
+
+void fadeCycles() {
+  const int fadeAmount = 255 / (CYCLE_TRAIL_LENGTH);
+  
+  for( int p=0; p<rimJob.numPixels(); p++ ) {
+    uint32_t c = rimJob.getPixelColor(p);
+
+    // assuming RGB order.
+    byte red = constrain( (int)((c << 8) >> 24) - fadeAmount, 0, 255);
+    byte green = constrain( (int)((c << 16) >> 24) - fadeAmount, 0, 255);
+    byte blue = constrain( (int)((c << 24) >> 24) - fadeAmount, 0, 255);
+
+    rimJob.setPixelColor(p, red, green, blue);
+  }
+}
+
+void moveCycles() {
+  for( byte c=0; c<MAX_CYCLES; c++ ) {
+    if( cycles[c].live ) {    
+      moveThisCycle(c);
+     }
+  }
+}
+
+void moveThisCycle(byte c) {
+  int cw = (int)cycles[c].x+1;
+  if( cw<0 ) cw = RIM_X-1;
+  else if ( cw >= RIM_X) cw = 0;
+  
+  int ccw = (int)cycles[c].x-1;
+  if( ccw<0 ) ccw = RIM_X-1;
+  else if ( ccw >= RIM_X) ccw = 0;
+
+  uint32_t moveX[4] = {
+    cw, // CW. wrap.
+    ccw, // CCW. wrap
+    cycles[c].x, // DOWN
+    cycles[c].x, // UP  
+  };
+  uint32_t moveY[4] = {
+    cycles[c].y, // CW
+    cycles[c].y, // CCW
+    constrain(((int)cycles[c].y-1), 0, RIM_Y-1), // DOWN.  no wrap.
+    constrain(((int)cycles[c].y+1), 0, RIM_Y-1), // UP. no wrap.
+  };
+  
+  // drivin' and cryin'
+
+  // preference for moves
+  byte movePref[4];
+  byte r = random(0,100);
+  // add some randomness to there's "jogs" in the paths.
+  if( cycles[c].y == ALL_Y && r >= CYCLE_DICK_MOVE_PERCENT ) {
+    // if we're in the center, try CW/CCW frist
+    movePref[0]=cycles[c].movePref; // either CW or CCW.
+    movePref[1]= movePref[0]==0 ? 1 : 0;
+    // and only move UP or DOWN if we have to
+    movePref[2]=random(2,4); // either UP or DOWN.
+    movePref[3]= movePref[2]==2 ? 3 : 2;
+  } else {
+    // try to move UP or DOWN 
+    movePref[0]=random(2,4); // either UP or DOWN.
+    movePref[1]= movePref[0]==2 ? 3 : 2;
+    // and only move CW/CCW if we have to
+    movePref[2]=cycles[c].movePref; // either CW or CCW.
+    movePref[3]= movePref[2]==0 ? 1 : 0;
+  }
+    
+  // try some moves
+  for( byte m=0; m<4; m++ ) {
+    if( rimJob.getPixelColor(getPixelN(moveX[movePref[m]], moveY[movePref[m]])) == Dead ) {
+      // good.
+      cycles[c].x = moveX[movePref[m]];
+      cycles[c].y = moveY[movePref[m]];
+      
+      rimJob.setPixelColor(getPixelN(cycles[c].x,cycles[c].y), cycles[c].color);
+      
+      return;
+    }
+  }
+  // uh oh. smash!
+  cycles[c].live = false;
+  rimJob.setPixelColor(getPixelN(cycles[c].x,cycles[c].y), White);
+}
+
+// returns the i-th pixel mapped to x,y
+uint32_t getPixelN(uint32_t x, uint32_t y) {
+  if( x >= RIM_X || y >= RIM_Y ) {
+    Serial << F("getPixelN error: out of range.  x=") << x << F(" y=") << y << endl << F("Halting.") << endl;
+    while(1);
+  }
+  return( y*RIM_X + x ); // this could be right?
 }
 
