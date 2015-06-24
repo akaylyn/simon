@@ -48,7 +48,7 @@ typedef struct {
   byte movePref; // CW or CCW preference
 } cycle_t;
 
-#define MAX_CYCLES 20
+#define MAX_CYCLES 50
 cycle_t cycles[MAX_CYCLES];
 
 #define CYCLE_DICK_MOVE_PERCENT 15 // chance that a cycle will throw some "zigs" in it's path around the rim
@@ -168,12 +168,18 @@ void loop() {
     ledStatus = !ledStatus;
     digitalWrite(LED_PIN, ledStatus);
 
-    // dispatch the requests to the rim
-    if( inst.light[I_RED].red > 0 ) addCycle(RED_X, ALL_Y, Red);
-    if( inst.light[I_GRN].green > 0 ) addCycle(GRN_X, ALL_Y, Grn);
-    if( inst.light[I_BLU].blue > 0 ) addCycle(BLU_X, ALL_Y, Blu);
-    if( inst.light[I_YEL].red > 0 && inst.light[I_YEL].green > 0 ) addCycle(YEL_X, ALL_Y, Yel);
-
+    // dispatch the requests to the rim. number of cycles is proportional to the light level at each button
+    for( int i=0; i< inst.light[I_RED].red / 64; i++ ) addCycle(RED_X, ALL_Y, Red);
+    for( int i=0; i< inst.light[I_GRN].green / 64; i++ ) addCycle(GRN_X, ALL_Y, Grn);
+    for( int i=0; i< inst.light[I_BLU].blue / 64; i++ ) addCycle(BLU_X, ALL_Y, Blu);
+    if( inst.light[I_YEL].red > 64 && inst.light[I_YEL].green > 64 )
+      for( int i=0; i< (int)(inst.light[I_YEL].red+inst.light[I_YEL].green) / 128; i++ ) addCycle(YEL_X, ALL_Y, Yel);
+/*
+    if( inst.light[I_RED].red > 64 ) addCycle(RED_X, ALL_Y, Grn);
+    if( inst.light[I_GRN].green > 64 ) addCycle(GRN_X, ALL_Y, Grn);
+    if( inst.light[I_BLU].blue > 64 ) addCycle(BLU_X, ALL_Y, Blu);
+    if( inst.light[I_YEL].red > 64 && inst.light[I_YEL].green > 64 ) addCycle(YEL_X, ALL_Y, Yel);
+*/
     quietUpdateInterval.reset();
     addCycles.reset();
   }
@@ -183,6 +189,7 @@ void loop() {
     Serial << F("Quiet interval elapsed.") << endl;
     Serial << F("Free RAM=") << freeRam() << endl;
 
+/*
     // add some light cycles
     switch( random(0,4) ) {
       case 0: addCycle(RED_X, ALL_Y, Red); break;
@@ -190,6 +197,11 @@ void loop() {
       case 2: addCycle(BLU_X, ALL_Y, Blu); break;
       case 3: addCycle(YEL_X, ALL_Y, Yel); break;
     }
+    */
+    addCycle(RED_X, ALL_Y, Red);
+    addCycle(GRN_X, ALL_Y, Grn); 
+    addCycle(BLU_X, ALL_Y, Blu); 
+    addCycle(YEL_X, ALL_Y, Yel); 
 
   }
 
@@ -455,8 +467,9 @@ void addCycle(uint32_t x, uint32_t y, uint32_t color) {
 
   rimJob.setPixelColor(getPixelN(x,y), color);
 
-  cycles[availableCycle].x = x;
-  cycles[availableCycle].y = y;
+  // cycles don't start in exactly the same place; "thereabouts"
+  cycles[availableCycle].x = constrain((int)x + random(-5,6), 0, RIM_X);
+  cycles[availableCycle].y = constrain((int)y + random(-1,2), 0, RIM_Y);
   cycles[availableCycle].color = color;
   cycles[availableCycle].live = true;
 
