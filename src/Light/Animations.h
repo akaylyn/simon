@@ -10,11 +10,14 @@
 
 // Utilities
 void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b);
+uint32_t Wheel(Adafruit_NeoPixel &strip, byte WheelPos);
 
 // Animations designed for the NeoPixel Strips surrounding the buttons
 void laserWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
 void laserWipeEdge(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
 void colorWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
+void rainbowGlow(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
+
 
 // Animations designed for the NeoPixel Matrix wrapped around the inside of the console
 void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);

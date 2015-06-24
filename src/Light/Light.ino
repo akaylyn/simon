@@ -38,6 +38,7 @@ extern Metro fasterStripUpdateInterval;
 extern EasyTransfer ET;
 extern systemState inst;
 extern ConcurrentAnimator animator;
+extern AnimationConfig circleConfig;
 
 // tracks the cycles
 typedef struct {
@@ -126,9 +127,10 @@ void loop() {
     mapToAnimation(animator, inst);
 
     fasterStripUpdateInterval.reset();
+    animator.animate(rainbowGlow, circleConfig);
 
     // MGD: added a manual animation on center coaster and placard
-    rainbowUpdate(cirL);
+    //rainbowUpdate(cirL);
     rainbowUpdateReverse(placL);
     // MGD: I assume there's a way to do something like this with the Animation.cpp... but I couldn't figure out how to do that.
     //      maybe take the animations that are at the bottom of this .ino and transfer them as a "pallette" to work from?
@@ -312,21 +314,6 @@ void theaterChaseRainbow(Adafruit_NeoPixel &strip, uint8_t wait) {
         strip.setPixelColor(i + q, 0);      //turn every third pixel off
       }
     }
-  }
-}
-
-// Input a value 0 to 255 to get a color value.
-// The colours are a transition r - g - b - back to r.
-uint32_t Wheel(Adafruit_NeoPixel &strip, byte WheelPos) {
-  WheelPos = 255 - WheelPos;
-  if (WheelPos < 85) {
-    return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
-  } else if (WheelPos < 170) {
-    WheelPos -= 85;
-    return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
-  } else {
-    WheelPos -= 170;
-    return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
   }
 }
 

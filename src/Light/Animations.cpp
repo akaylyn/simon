@@ -8,19 +8,19 @@ void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b) {
 }
 
 void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
-    int* pos = (int*) posData;
-    int next = (*pos);
+  int* pos = (int*) posData;
+  int next = (*pos);
 
-    if (next > matrix.width()) {
-        next = 0;
-        setStripColor((Adafruit_NeoPixel&) matrix, LED_OFF, LED_OFF, LED_OFF);
-    } else {
-        ++next;
-    }
-    matrix.drawPixel(next, 0, matrix.Color(r,g,b));
-    matrix.drawPixel(next, 1, matrix.Color(r,g,b));
-    matrix.drawPixel(next, 2, matrix.Color(r,g,b));
-    (*pos) = next;
+  if (next > matrix.width()) {
+    next = 0;
+    setStripColor((Adafruit_NeoPixel&) matrix, LED_OFF, LED_OFF, LED_OFF);
+  } else {
+    ++next;
+  }
+  matrix.drawPixel(next, 0, matrix.Color(r,g,b));
+  matrix.drawPixel(next, 1, matrix.Color(r,g,b));
+  matrix.drawPixel(next, 2, matrix.Color(r,g,b));
+  (*pos) = next;
 }
 
 // Fill the dots one after the other with a color
@@ -97,5 +97,34 @@ void laserWipeEdge(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData)
   }
 
   // clear out the last color and set the next one
+}
+
+void rainbowGlow(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
+  //static byte colorPos = 0;
+  int* pos = (int*) posData;
+  int next = (*pos);
+
+  for (int i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, Wheel(strip, (byte)((i + next) % 255) ) );
+  }
+  //strip.show();
+
+  next+=random(1,5); // increment for next pass
+  (*pos) = next;
+}
+
+// Input a value 0 to 255 to get a color value.
+// The colours are a transition r - g - b - back to r.
+uint32_t Wheel(Adafruit_NeoPixel &strip, byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if (WheelPos < 85) {
+    return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else if (WheelPos < 170) {
+    WheelPos -= 85;
+    return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  } else {
+    WheelPos -= 170;
+    return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  }
 }
 
