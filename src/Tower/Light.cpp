@@ -25,7 +25,7 @@ void Light::perform(colorInstruction &inst) {
   
   // apply
   tank->writeRGB(rgb);
-  flood->setColor(inst); 
+//  flood->setColor(inst); 
 }
 
 void Light::update() {
