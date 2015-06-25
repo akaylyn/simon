@@ -3,44 +3,33 @@
 #include <Streaming.h>
 #include <Simon_Common.h> // I_RED, etc.
 
-#define K24_OFF          0xF740BF
-#define K24_ON           0xF7C03F
-
-#define K24_RED          0xF720DF
-#define K24_GRN          0xF7A05F
-#define K24_BLU          0xF7609F
-#define K24_YEL          0xF728D7
-#define K24_WHT          0xF7E01F
-
-#define K24_DOWN         0xF7807F
-#define K24_UP           0xF700FF
-
-#define K24_FLASH        0xF7D02F
-#define K24_STROBE       0xF7F00F
-#define K24_FADE         0xF7C837      
-#define K24_SMOOTH       0xF7E817
-
-#define K24_REPEAT       0xFFFFFF
-
-#define N_BRIGHT_STEPS   5
+#define N_CODE 3
+const unsigned long codeOff[N_CODE] =    {0xF740BF, 0xFF609F, 0xFFF807};
+const unsigned long codeOn[N_CODE] =     {0xF7C03F, 0xFFE01F, 0xFFB04F};
+const unsigned long codeRed[N_CODE] =    {0xF720DF, 0xFF906F, 0xFF9867}; // collision with codeUp!
+const unsigned long codeGreen[N_CODE] =  {0xF7A05F, 0xFF10EF, 0xFFD827};
+const unsigned long codeBlue[N_CODE] =   {0xF7609F, 0xFF50AF, 0xFF8877};
+const unsigned long codeYellow[N_CODE] = {0xF728D7, 0xFF8877, 0xFF38C7};
+const unsigned long codeWhite[N_CODE] =  {0xF7E01F, 0xFFD02F, 0xFFA857};
+const unsigned long codeDown[N_CODE] =   {0xF7807F, 0xFF20DF, 0xFFB847};
+const unsigned long codeUp[N_CODE] =     {0xF700FF, 0xFFA05F, 0xFF906F};
+const unsigned long codeFlash[N_CODE] =  {0xF7D02F, 0xFFF00F, 0xFFB24D};
+const unsigned long codeStrobe[N_CODE] = {0xF7F00F, 0xFFE817, 0xFF00FF};
+const unsigned long codeFade[N_CODE] =   {0xF7C837, 0xFFD827, 0xFF58A7}; // collision with codeGreen!
+const unsigned long codeSmooth[N_CODE] = {0xF7E817, 0xFFC837, 0xFF30CF};
 
 class Flood {
   public:
     void begin();
     
-    void setBright(byte level);
     void setColor(byte color);
-  
-    
-    void send(unsigned long data);
-    void sendMultiple(unsigned long data, byte repeats);
+      
+    void send(const unsigned long codes[]);
+  private:
+ 
+    byte currentColor;
     
     IRsend irsend;
-    
-  protected:
-    int currentColor;
-    int currentBright;    
-
 };
 
 Flood flood;
@@ -51,40 +40,44 @@ void setup()
   Serial.begin(115200);
   Serial << "Startup." << endl;
   
-  // shut it all the way down
-  flood.sendMultiple(K24_OFF, 4);
-  
-  flood.begin();
- 
+  flood.begin(); 
+
 }
 
 void loop() {
   
   Serial << F("Free RAM: ") << freeRam() << endl;
+  Serial << "On." << endl;
+  flood.send(codeOn);
  
-  static byte bright=0;
-  bright+=1;
-  if( bright> N_BRIGHT_STEPS) bright = 0;
-  
-  flood.setBright(bright);
-  
-  flood.setColor(I_RED); delay(1000);
-  flood.setColor(I_GRN); delay(1000);
-  flood.setColor(I_BLU); delay(1000);
-//  flood.setColor(I_YEL); delay(1000);
-//  flood.setColor(99); delay(1000);
+  Serial << "Red." << endl;
+  flood.setColor(I_RED); delay(5000);
+  Serial << "Green." << endl;
+  flood.setColor(I_GRN); delay(5000);
+  Serial << "Blue." << endl;
+  flood.setColor(I_BLU); delay(5000);
+  Serial << "Yellow." << endl;
+  flood.setColor(I_YEL); delay(5000);
+  Serial << "White." << endl;
+  flood.setColor(N_COLORS); delay(5000); // white
   
 }
 
 void Flood::begin() {
   // on
-  sendMultiple(K24_ON, 2);
-  
-  // gotta start somewhere
-  setColor(99);
-  currentBright = 0;
-  setBright(N_BRIGHT_STEPS);
-  
+  flood.send(codeOn);
+  flood.send(codeOn);
+
+  // very bright
+  flood.send(codeUp);
+  flood.send(codeUp);
+  flood.send(codeUp);
+  flood.send(codeUp);
+  flood.send(codeUp);
+  flood.send(codeUp);
+  flood.send(codeUp);
+  flood.send(codeUp);
+    
   Serial << F("Flood: on.") << endl;
 }
 
@@ -93,41 +86,27 @@ void Flood::setColor(byte color) {
   currentColor = color;
   
   switch( color ) {
-    case I_RED: send(K24_RED); break;
-    case I_GRN: send(K24_GRN); break;
-    case I_BLU: send(K24_BLU); break;
-    case I_YEL: send(K24_YEL); break;
-    default: send(K24_WHT); break;
+    case I_RED: send(codeRed); break;
+    case I_GRN: send(codeGreen); break;
+    case I_BLU: send(codeBlue); break;
+    case I_YEL: send(codeYellow); break;
+    default: send(codeWhite); break;
   }
       
 }
 
-void Flood::setBright(byte level) {
-  if( level > N_BRIGHT_STEPS ) level = N_BRIGHT_STEPS;
 
-  Serial << "Bright: " << level << endl;
-  
-  byte diff = abs(level-currentBright);
-  if( level > currentBright ) {
-    sendMultiple(K24_UP, diff);
-  } else if( level < currentBright) {
-    sendMultiple(K24_DOWN, diff);
-  }
-  // track
-  currentBright = level;
-}
-
-void Flood::send(unsigned long data) {
-  // simple wrapper
-  irsend.sendNEC(data, 32);
-}
-
-void Flood::sendMultiple(unsigned long data, byte repeats) {
-  send(data); 
-  for( byte i=1; i < repeats; i++ ) {
-    delay(8); // need a 8ms interval before resend
-    send(data); 
-//    send(K24_REPEAT);
+void Flood::send(const unsigned long codes[]) {
+  for( int c=N_CODE-1; c>=0; c-- ) {
+    Serial << "Send: " << _HEX(codes[c]) << endl;
+    
+    // simple wrapper
+    irsend.sendNEC(codes[c], 32);
+    for( byte i=1; i < 2; i++ ) {
+      delay(8); // need a 8ms interval before resend
+      irsend.sendNEC(codes[c], 32);
+    }
+    delay(20);
   }
 }
 

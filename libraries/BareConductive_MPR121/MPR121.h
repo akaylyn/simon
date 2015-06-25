@@ -167,7 +167,7 @@ struct MPR121_settings_t
         set_register(0x5A, ATO_CFGT, 0xB5);  // Target = 0.9*USL = 0xB5 @3.3V
         set_register(0x5A, ATO_CFG0, 0x0B);
         */
-		ACCR0(0xFF), // FF for autoreconfiguration or FE for no autoreconfiguration
+		ACCR0(0xFE), // FF for autoreconfiguration or FE for no autoreconfiguration
 		ACCR1(0x00),
 		USL(0xC9),
 		LSL(0x82),
