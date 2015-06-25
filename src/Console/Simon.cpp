@@ -104,7 +104,7 @@ void gameEnter() {
   light.clear();
   fire.clear();
 
-  sound.stopTones();
+  sound.stopAll();
 
   // delay after a player's last move
   waitDuration(800UL);

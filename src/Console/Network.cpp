@@ -95,7 +95,7 @@ void Network::update() {
       Serial << F("  color:" ) << i << F(" red:") << this->state.light[i].red << F(" green:") << this->state.light[i].green << F(" blue:") << this->state.light[i].blue << endl; 
     
   } else {
-    Serial << F("Network::update.  resend # ") << this->sentCount << endl;
+//    Serial << F("Network::update.  resend # ") << this->sentCount << endl;
   }
 
   // Radio: send. no ACK, no sleep.

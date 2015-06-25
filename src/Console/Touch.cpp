@@ -98,7 +98,7 @@ boolean Touch::changed(color index) {
   }
 
   // hard buttons
-  ret |= button[sensorIndex[index]]->update();
+//  ret |= button[sensorIndex[index]]->update();
 
   // return
   return ( ret );
@@ -121,9 +121,9 @@ boolean Touch::pressed(color index) {
 
   // hard buttons
   // call the updater for debouncing first.
-  boolean toss = button[sensorIndex[index]]->update();
+//  boolean toss = button[sensorIndex[index]]->update();
 
-  ret |= button[sensorIndex[index]]->read() == PRESSED_BUTTON;
+//  ret |= button[sensorIndex[index]]->read() == PRESSED_BUTTON;
 
   // return
   return ( ret );
