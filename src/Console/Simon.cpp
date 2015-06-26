@@ -41,7 +41,8 @@ Metro playerTimeout(3000UL);
 State fanfare = State(fanfareEnter, fanfareUpdate, fanfareExit);
 fanfare_t fanfareLevel;
 //int fanfareCorrectMapping[N_LEVELS] = { 8, 14, 20, 31 }; // stock simon numbers
-int fanfareCorrectMapping[N_LEVELS] = { 4, 7, 12, 18 }; // easier
+//int fanfareCorrectMapping[N_LEVELS] = { 4, 7, 12, 18 }; // easier
+int fanfareCorrectMapping[N_LEVELS] = { 2, 3, 4, 5 }; // test easy
 
 // Tests
 State test = State(testEnter, testUpdate, testExit);

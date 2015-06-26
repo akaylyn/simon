@@ -23,7 +23,7 @@ const int trTones[N_TONES] = {1, 2, 3, 4, 5}; // red, grn, blu, yel, wrong
 // must be in the range [1,999]
 //const int trWins[2] = {502, 511}; // store WINS in 100-299
 const int trWins[2] = {502, 511}; // store WINS in 100-299   512 is pure bass test
-const int trLose[2] = {300, 300}; // store LOSE in 300-499
+const int trLose[2] = {300, 302}; // store LOSE in 300-499
 const int trRock[2] = {102, 102}; // store ROCK in 500-699
 const int trBaff[2] = {700, 701}; // store BAFF in 700-999
 
