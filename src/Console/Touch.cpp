@@ -44,15 +44,17 @@ boolean Touch::begin(byte sensorIndex[N_COLORS]) {
     } 
     else {
       Serial << F("Touch: MPR121: initialized.") << endl;
-      
+/*
       // WARNING: MPR121.reset() blows the whole thing up.  Probably need to resend configuration after doing so?
-//     MPR121.reset();
+     MPR121.reset();
 //      Serial << F("Touch: MPR121: reset.") << endl;
       // NOT USING interrupt handler.  Polling mode only.
-//      MPR121.setInterruptPin(TOUCH_IRQ);
+      MPR121.setInterruptPin(TOUCH_IRQ);
+*/
 
+// Alan removed
       // enable 13-th virtual proximity electrode, tying electrodes 0..3 together.
-      MPR121.setProxMode(PROX0_3);
+      //MPR121.setProxMode(PROX0_3);
       Serial << F("Touch: MPR121 proximity enabled.") << endl;
 
       // initial data update
