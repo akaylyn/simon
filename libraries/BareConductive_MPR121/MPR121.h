@@ -115,65 +115,65 @@ struct MPR121_settings_t
 		NCLPROXR(0x00),
 		FDLPROXR(0x00),
 		MHDPROXF(0x01),
-		NHDPROXF(0x01),
-		NCLPROXF(0xFF),
-		FDLPROXF(0xFF),
-		NHDPROXT(0x00),
-		NCLPROXT(0x00),
-		FDLPROXT(0x00),
-		DTR(0x11),
-		AFE1(0xFF),
-		AFE2(0x38),
-		//ECR(0x8C), // default to fast baseline startup and 12 electrodes enabled, no prox
-       		 ECR(0x84), // only enable pins 0-3
-		//ECR(0xE4), // 5.11 in data sheet.  baseline tracking with 10 bits, 0-3 for prox, 0-3 active
+    NHDPROXF(0x01),
+    NCLPROXF(0xFF),
+    FDLPROXF(0xFF),
+    NHDPROXT(0x00),
+    NCLPROXT(0x00),
+    FDLPROXT(0x00),
+    DTR(0x11),
+    AFE1(0xFF),
+    AFE2(0x38),
+    //ECR(0x8C), // default to fast baseline startup and 12 electrodes enabled, no prox
+    ECR(0x84), // only enable pins 0-3
+    //ECR(0xE4), // 5.11 in data sheet.  baseline tracking with 10 bits, 0-3 for prox, 0-3 active
 
-        /**********************************************************************
-         * Auto Calibration Configuration
-         *
-         * does enabling only the pins in use make the autoconfig better/faster?
-         * it may or may not more accurately read touches through plastic
-         * it seems like it is better.
-         *
-         * adding copper tape to the ends of the pins provides enough sensitivity
-         * for detecting touches onto the foil (and through plastic)
-         *********************************************************************/
-        /* ACCR0 - Auto Configure Control Register
-         *  see the data sheet, page 17
-         *  FFI = 11 (same as AFE1.FFI, 0x5C)
-         *  BVA = 10 (same as ECR.CL, 0x5E)
-         */
-	
-		ACCR0(0xFA),
-		ACCR1(0x00),
-		USL(0xC9),
-		LSL(0x82),
-		TL(0xB5) {}
-	
-        // disabled mode
-        /*
-		ACCR0(0x00),
-		ACCR1(0x00),
-		USL(0x00),
-		LSL(0x00),
-		TL(0x00) {}
-        */
+    /**********************************************************************
+     * Auto Calibration Configuration
+     *
+     * does enabling only the pins in use make the autoconfig better/faster?
+     * it may or may not more accurately read touches through plastic
+     * it seems like it is better.
+     *
+     * adding copper tape to the ends of the pins provides enough sensitivity
+     * for detecting touches onto the foil (and through plastic)
+     *********************************************************************/
+    /* ACCR0 - Auto Configure Control Register
+     *  see the data sheet, page 17
+     *  FFI = 11 (same as AFE1.FFI, 0x5C)
+     *  BVA = 10 (same as ECR.CL, 0x5E)
+     */
 
-        /*
-        // Auto config options calibrated for 3.3V
-        // Section G - Set Auto Config and Auto Reconfig for prox sensing
-        set_register(0x5A, ATO_CFGU, 0xC9);  // USL = (Vdd-0.7)/vdd*256 = 0xC9 @3.3V
-        set_register(0x5A, ATO_CFGL, 0x82);  // LSL = 0.65*USL = 0x82 @3.3V
-        set_register(0x5A, ATO_CFGT, 0xB5);  // Target = 0.9*USL = 0xB5 @3.3V
-        set_register(0x5A, ATO_CFG0, 0x0B);
-        */
-/*
-		ACCR0(0xFE), // FF for autoreconfiguration or FE for no autoreconfiguration
-		ACCR1(0x00),
-		USL(0xC9),
-		LSL(0x82),
-		TL(0xB5) {}
-*/
+    ACCR0(0xFA),
+    ACCR1(0x00),
+    USL(0xC9),
+    LSL(0x82),
+    TL(0xB5) {}
+
+  // disabled mode
+  /*
+     ACCR0(0x00),
+     ACCR1(0x00),
+     USL(0x00),
+     LSL(0x00),
+     TL(0x00) {}
+     */
+
+  /*
+  // Auto config options calibrated for 3.3V
+  // Section G - Set Auto Config and Auto Reconfig for prox sensing
+  set_register(0x5A, ATO_CFGU, 0xC9);  // USL = (Vdd-0.7)/vdd*256 = 0xC9 @3.3V
+  set_register(0x5A, ATO_CFGL, 0x82);  // LSL = 0.65*USL = 0x82 @3.3V
+  set_register(0x5A, ATO_CFGT, 0xB5);  // Target = 0.9*USL = 0xB5 @3.3V
+  set_register(0x5A, ATO_CFG0, 0x0B);
+  */
+  /*
+     ACCR0(0xFE), // FF for autoreconfiguration or FE for no autoreconfiguration
+     ACCR1(0x00),
+     USL(0xC9),
+     LSL(0x82),
+     TL(0xB5) {}
+     */
 };
 
 // GPIO pin function constants

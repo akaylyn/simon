@@ -190,6 +190,8 @@ byte Touch::proximity() {
 void Touch::recalibrate() {
   MPR121.stop();
   MPR121.run();
+  byte touchMapToColor[N_COLORS] = {I_RED, I_GRN, I_BLU, I_YEL};
+  begin(touchMapToColor);
 }
 
 // snagged this from https://github.com/BareConductive/midi_theremin/blob/public/midi_theremin/midi_theremin.ino

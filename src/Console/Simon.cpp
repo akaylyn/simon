@@ -303,7 +303,7 @@ void waitAllReleased() {
   Metro wait(5000);
   wait.reset();
 
-  while (!wait.check() && touch.anyPressed() ) {
+  while (!wait.check() && touch.anyPressed()) {
     network.update();
 
     Serial << ".";
