@@ -41,8 +41,8 @@ Metro playerTimeout(3000UL);
 State fanfare = State(fanfareEnter, fanfareUpdate, fanfareExit);
 fanfare_t fanfareLevel;
 //int fanfareCorrectMapping[N_LEVELS] = { 8, 14, 20, 31 }; // stock simon numbers
-//int fanfareCorrectMapping[N_LEVELS] = { 4, 7, 12, 18 }; // easier
-int fanfareCorrectMapping[N_LEVELS] = { 2, 3, 4, 5 }; // test easy
+int fanfareCorrectMapping[N_LEVELS] = { 4, 6, 8, 12 }; // easier
+//int fanfareCorrectMapping[N_LEVELS] = { 2, 3, 4, 5 }; // test easy
 
 // Tests
 State test = State(testEnter, testUpdate, testExit);
@@ -274,9 +274,6 @@ void waitDuration(unsigned long duration) {
   while ( !wait.check() ) network.update();
 }
 
-void waitAllReleased() {
-  while ( touch.anyPressed() ) network.update();
-}
 
 // Not used, currently, but Mike would like to retain this code:
 
@@ -302,13 +299,22 @@ unsigned long trandom(unsigned long xmin, unsigned long xmode, unsigned long xma
   }
 }
 
-void waitForButtonsReleased() {
-  // wait for all of the buttons to be released.
-  while ( touch.anyPressed() ) {
-    network.update();
+void waitAllReleased() {
+  Metro wait(5000);
+  wait.reset();
+  
+    while (!wait.check() && touch.anyPressed() ) {
+      network.update();
+    
+      Serial << ".";
+      delay(33);
+   }
+
+  if (!touch.anyPressed()) {
+    Serial << "Recalibrating" << endl;
+    touch.recalibrate();
   }
 }
-
 void waitForTimer(unsigned long t) {
   Metro delayNow(t);
   delayNow.reset();
