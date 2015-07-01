@@ -302,13 +302,13 @@ unsigned long trandom(unsigned long xmin, unsigned long xmode, unsigned long xma
 void waitAllReleased() {
   Metro wait(5000);
   wait.reset();
-  
-    while (!wait.check() && touch.anyPressed() ) {
-      network.update();
-    
-      Serial << ".";
-      delay(33);
-   }
+
+  while (!wait.check() && touch.anyPressed() ) {
+    network.update();
+
+    Serial << ".";
+    delay(33);
+  }
 
   if (!touch.anyPressed()) {
     Serial << "Recalibrating" << endl;
