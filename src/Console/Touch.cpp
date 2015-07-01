@@ -14,7 +14,7 @@ boolean Touch::begin(byte sensorIndex[N_COLORS]) {
 
   // 0x5A is the MPR121 I2C address on the Bare Touch Board
   Wire.begin();
-  
+
   Serial << F("Touch: Wire begin.") << endl;
 
   boolean mprError = true;
@@ -41,7 +41,7 @@ boolean Touch::begin(byte sensorIndex[N_COLORS]) {
           Serial << F("MPR121: unknown error") << endl;
           break;
       }
-    } 
+    }
     else {
       Serial << F("Touch: MPR121: initialized.") << endl;
 /*
@@ -65,7 +65,7 @@ boolean Touch::begin(byte sensorIndex[N_COLORS]) {
       mprError = false;
     }
   }
-  
+
   Serial << F("Touch: setting up hard buttons.") << endl;
   pinMode(BUTTON_RED, INPUT_PULLUP);
   pinMode(BUTTON_GRN, INPUT_PULLUP);
@@ -159,21 +159,21 @@ byte Touch::distance(byte index) {
     sensorRead += MPR121.getFilteredData(index);
   }
   sensorRead /= 10;
-  
+
   // track sensor returns for 12 sensors and the virtual 13th.
   static int minRead[13] = { 350,350,350,350,350,350,350,350,350,350,350,350,350 }; // 300 seems to be the normal low end, but let's leave some room for drift
-  minRead[index] = min(minRead[index], sensorRead); 
+  minRead[index] = min(minRead[index], sensorRead);
 
   int delta = sensorRead - minRead[index];
-  
+
   // track deltas 12 sensors and the virtual 13th.
   static int maxDelta[13] = { 0,0,0,0,0,0,0,0,0,0,0,0,0 };
-  maxDelta[index] = max(maxDelta[index], delta); 
+  maxDelta[index] = max(maxDelta[index], delta);
 
   // nonlinear transform to get higher sensitivity at larger distances
   byte distance = fscale(0, maxDelta[index], 0, 255, delta, -3.0);
 //  Serial << F("Proximity: distance=") << distance << F(" delta=") << delta << F(" curr=") << sensorRead << F(" minR=") << minRead[sensorIndex] << F(" maxD=") << maxDelta[sensorIndex] << endl;
-  
+
   return( distance );
 
 }
@@ -185,6 +185,11 @@ byte Touch::distance(color index) {
 
 byte Touch::proximity() {
   return( distance(12) );
+}
+
+void Touch::recalibrate() {
+  MPR121.stop();
+  MPR121.run();
 }
 
 // snagged this from https://github.com/BareConductive/midi_theremin/blob/public/midi_theremin/midi_theremin.ino
