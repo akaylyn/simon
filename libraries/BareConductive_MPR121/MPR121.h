@@ -125,7 +125,8 @@ struct MPR121_settings_t
 		AFE1(0xFF),
 		AFE2(0x38),
 		//ECR(0x8C), // default to fast baseline startup and 12 electrodes enabled, no prox
-        ECR(0x84), // only enable pins 0-3
+		//ECR(0x84), // only enable pins 0-3
+                ECR(0xC4), // CL:11 baseline track, PROX:00 disabled, ELEC 0-3
 
 
         /**********************************************************************
@@ -143,8 +144,9 @@ struct MPR121_settings_t
          *  FFI = 11 (same as AFE1.FFI, 0x5C)
          *  BVA = 10 (same as ECR.CL, 0x5E)
          */
-		ACCR0(0xFA),
-		ACCR1(0x00),
+//		ACCR0(0xFA), // FFI:11, RETRY:11, BVA:10, ARE:1, ACE:0 // autoconfig off!
+		ACCR0(0xFB), // FFI:11, RETRY:11, BVA:10, ARE:1, ACE:1 // autoconfig on.
+		ACCR1(0x00), // SCTS: 0, OORIE:0, ARFIE:0, ACFIE:0
 		USL(0xC9),
 		LSL(0x82),
 		TL(0xB5) {}
