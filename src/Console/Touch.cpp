@@ -188,8 +188,11 @@ byte Touch::proximity() {
 }
 
 void Touch::recalibrate() {
+  unsigned long tic = millis();
   MPR121.stop();
   MPR121.run();
+  unsigned long toc = millis();
+  Serial << F("Recalibrate: duration=") << toc-tic << endl;
 }
 
 // snagged this from https://github.com/BareConductive/midi_theremin/blob/public/midi_theremin/midi_theremin.ino
