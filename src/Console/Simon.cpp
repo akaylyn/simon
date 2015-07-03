@@ -299,8 +299,8 @@ unsigned long trandom(unsigned long xmin, unsigned long xmode, unsigned long xma
   }
 }
 
-void waitAllReleased() {
-  Metro wait(5000);
+void waitAllReleasedOld() {
+  Metro wait(25000);
   wait.reset();
   
     while (!wait.check() && touch.anyPressed() ) {
@@ -315,6 +315,20 @@ void waitAllReleased() {
     touch.recalibrate();
   }
 }
+
+void waitAllReleased() {
+    int cnt = 0;
+    while (touch.anyPressed() ) {
+      network.update();
+      cnt++;
+      if (cnt > 100) {
+        Serial << ".";
+        cnt = 0;
+      }
+      delay(1);
+   }
+}
+
 void waitForTimer(unsigned long t) {
   Metro delayNow(t);
   delayNow.reset();

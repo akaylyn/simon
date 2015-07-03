@@ -8,7 +8,7 @@
  *  breakout boards.
  *
 */
-
+#include <Arduino.h>
 #include "Sensors.h"
 #include <Wire.h>
 

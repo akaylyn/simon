@@ -149,6 +149,8 @@ void Sound::stopFailTone() {
 
 // Stop all tones track
 void Sound::stopTones() {
+  // Alan: changed
+  /*
   // get the array of currently playing tracks
   int tr[14];
   wav.getPlayingTracks(tr);
@@ -157,11 +159,11 @@ void Sound::stopTones() {
   for( byte i=0; i<14; i++ ) {
     if( tr[i] > 0 && tr[i] <= N_TONES) wav.trackStop(tr[i]);
   }
-
-//  for( int ti=0; ti<N_TONES; ti++ ) {
-//    // stop
-//    wav.trackStop(trTones[ti]);
-//  }
+*/
+  for( int ti=0; ti<N_TONES; ti++ ) {
+    // stop
+    wav.trackStop(trTones[ti]);
+  }
 
 //  Serial << F("Sound::stopTones") << endl;
 }
@@ -170,6 +172,8 @@ void Sound::stopTones() {
 
 // Stop all track
 void Sound::stopAll() {
+  // Alan: commented out to test
+  /*
   // get the array of currently playing tracks
   int tr[14];
   wav.getPlayingTracks(tr);
@@ -178,7 +182,7 @@ void Sound::stopAll() {
   for( byte i=0; i<14; i++ ) {
     if( tr[i] > 0 ) wav.trackStop(tr[i]);
   }
-  
+  */
   // and, be damned sure
   // stop
   wav.stopAllTracks();

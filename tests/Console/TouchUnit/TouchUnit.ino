@@ -1,5 +1,6 @@
 // The IDE requires all libraries to be #include’d in the main (.ino) file.  Clutter.
 // included in several places.
+#include <Arduino.h>
 #include <Streaming.h> // <<-style printing
 #include <Metro.h> // timers
 // wiring connections
