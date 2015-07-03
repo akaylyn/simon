@@ -129,7 +129,7 @@ struct MPR121_settings_t
 //                ECR(0xC4), // CL:11 baseline track, PROX:00 disabled, ELEC 0-3
 //                ECR(0xC4), // CL:11 baseline track, PROX:00 disabled, ELEC 0-3
 
-                ECR(0x04), // CL:01 baseline track off, PROX:00 disabled, ELEC 0-3
+                ECR(0x44), // CL:01 baseline track off, PROX:00 disabled, ELEC 0-3
 
 
         /**********************************************************************
