@@ -127,9 +127,9 @@ struct MPR121_settings_t
 		//ECR(0x8C), // default to fast baseline startup and 12 electrodes enabled, no prox
 		//ECR(0x84), // only enable pins 0-3
 //                ECR(0xC4), // CL:11 baseline track, PROX:00 disabled, ELEC 0-3
-//                ECR(0xC4), // CL:11 baseline track, PROX:00 disabled, ELEC 0-3
+                ECR(0xC4), // CL:11 baseline track, PROX:00 disabled, ELEC 0-3
 
-                ECR(0x44), // CL:01 baseline track off, PROX:00 disabled, ELEC 0-3
+//               ECR(0x44), // CL:01 baseline track off, PROX:00 disabled, ELEC 0-3
 
 
         /**********************************************************************
