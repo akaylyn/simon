@@ -7,6 +7,7 @@
  */
 
 #include <IRremote.h>
+#include <Streaming.h>
 
 int RECV_PIN = 11;
 
@@ -22,8 +23,11 @@ void setup()
 
 void loop() {
   if (irrecv.decode(&results)) {
-    Serial.println(results.value, HEX);
+    Serial << "Key (0x" << _HEX((results.value << 16) >> 24) << ") ";
+    Serial << "Address (0x" << _HEX(results.value >> 16) << ") ";
+    Serial << "Code (0x" << _HEX(results.value) << ") ";
+    Serial << "Raw length(" << results.rawlen << ") ";
+    Serial << endl;
     irrecv.resume(); // Receive the next value
   }
-  delay(100);
 }

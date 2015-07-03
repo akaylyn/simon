@@ -1,7 +1,8 @@
 // need to strike RobotIRRemote directory in Arduino IDE libraries folder.  Name collision!
-#include <IRremote.h>
+#include <SoftwareSerial.h>
 #include <Streaming.h>
 #include <Simon_Common.h> // I_RED, etc.
+#include <Metro.h>
 
 class IRlight {
   public:
@@ -27,7 +28,7 @@ class IRlight {
     
 };
   
-IRsend irsend;
+SoftwareSerial IRsend(8, 7);
 
 IRlight flood; // Loftek (50W) and off-brand (10W) floods, and RGB strip lighting.
 IRlight miniSubs; // cute little CR2032s
@@ -39,6 +40,8 @@ void setup()
 {
   Serial.begin(115200);
   Serial << "Startup." << endl;
+  
+  IRsend.begin(9600);
 
   // minisubs 
   miniSubs.begin(0x01FE, 1, 0x48, 0x58, 0x48, 0x48, 0x20, 0xA0, 0x60, 0x50, 0x30, 0xC0, 0xC0, 0xC0, 0xC0); 
@@ -107,9 +110,9 @@ void loop() {
   setColor(color);
   delay(3000);
    
-  Serial << "Fade" << endl;
-  setFade();
-  delay(3000);
+//  Serial << "Fade" << endl;
+//  setFade();
+//  delay(3000);
   
   (++color) %= 5;
   
@@ -176,17 +179,24 @@ void IRlight::fade() { send(this->fadeC); }
 void IRlight::smooth() { send(this->smoothC); }
 
 void IRlight::send(byte code) {
-  unsigned long msg = generateCode(code);
-  Serial << "Send: " << _HEX(msg);
-  unsigned long tic, toc;
+
+  static Metro sendInterval(100UL); // ms
+  
+  while( !sendInterval.check() ); // wait for last send to cle
+  
+  Serial << "sending at " << millis() << endl;
   
   for( byte i=0; i<sendCount; i++ ) {
-    tic = millis();
-    irsend.sendNEC(msg, 32);
-    toc = millis();
-    delay(100UL - (toc-tic));
+  
+    Serial << _HEX(0xCC) << " " << _HEX(lowByte(this->addressC)) << " " << _HEX(highByte(this->addressC)) << " " << _HEX(code) << endl;
+    
+    IRsend.write(0xCC);
+    IRsend.write(lowByte(this->addressC));
+    IRsend.write(highByte(this->addressC));
+    IRsend.write(code);
+  
+    sendInterval.reset();  
   }
-  Serial << " " << toc-tic << " ms. x" << sendCount << endl;
 
 }
 
