@@ -127,10 +127,10 @@ struct MPR121_settings_t
 
 		// MGD tinkering to allow the baseline to drift during Touched mode more
 // this setting is too fast.
-//		FDLT(0x01), // real fast change.  a really held button registers release in ~7s.
+		FDLT(0x01), // real fast change.  a really held button registers release in ~7s.
 
 // this feels pretty good, but still a fast change.  Too fast, and a release will be prematurely triggered.
-		FDLT(0x0F), // slower change.  a really held button registers release in ~7s.
+//		FDLT(0x0F), // slower change.  
 
 		// MGD: these are the same thing, but for Proximity mode, which we're 
 		// not using.  Ignore.
