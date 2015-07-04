@@ -8,9 +8,6 @@
 
 #include <Arduino.h>
 
-//------ sizes, indexing and inter-unit data structure definitions.
-#include <Simon_Common.h>
-
 //----- capsense touch: soft capsense buttons
 #include <MPR121.h> // MPR121 capsense board
 // Walkthrough: https://learn.adafruit.com/adafruit-mpr121-12-key-capacitive-touch-sensor-breakout-tutorial/wiring
@@ -39,6 +36,7 @@
 #define BUTTON_RED 7 // can move, digital
 
 #include <Streaming.h> // <<-style printing
+#include "Common.h"
 
 class Touch {
   public:

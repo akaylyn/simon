@@ -99,17 +99,41 @@ struct MPR121_settings_t
 		RTHRESH(19),
 		INTERRUPT(4), 	// note that this is not a hardware interrupt, just the digital
 						// pin that the MPR121 ~INT pin is connected to
-		MHDR(0x3F),
-		NHDR(0x3F),
-		NCLR(0x05),
-		FDLR(0x00),
-		MHDF(0x01),
-		NHDF(0x3F),
-		NCLF(0x10),
-		FDLF(0x03),
-		NHDT(0x01),
-		NCLT(0x01),
-		FDLT(0xFF),
+
+		// MGD: baseline filtering.  Section 5.5 of data sheet.
+		// see AN3891.pdf for a detailed discussion.
+		// MGD these control baseline filtering operations during rising values
+		// It appears that the baseline can drift up very quickly.
+		MHDR(0x3F), // 63.  very large.
+		NHDR(0x3F), // 63.  very large.
+		NCLR(0x05), // 5.
+		FDLR(0x00), // 0.
+		// MGD these control baseline filtering operations during falling values
+		MHDF(0x01), // 1.  very small.
+		NHDF(0x3F), // 63. very large.
+		NCLF(0x10), // 16. 
+		FDLF(0x03), // 3.
+		// MGD these control baseline filtering operations during Touched.
+		// no maximum half-delta in Touched mode.
+		// does appear to allow changes, but over a very long interval.
+		NHDT(0x01), // 1. very small.
+		NCLT(0x01), // 1. very small
+
+// MGD: NEED TO LET THE BASELINE DRIFT DURING TOUCHED MODE
+// SEE AN3891.pdf
+
+// this setting prevents any drift in the baseline value
+//		FDLT(0xFF), // 255.  huge.
+
+		// MGD tinkering to allow the baseline to drift during Touched mode more
+// this setting is too fast.
+//		FDLT(0x01), // real fast change.  a really held button registers release in ~7s.
+
+// this feels pretty good, but still a fast change.  Too fast, and a release will be prematurely triggered.
+		FDLT(0x0F), // slower change.  a really held button registers release in ~7s.
+
+		// MGD: these are the same thing, but for Proximity mode, which we're 
+		// not using.  Ignore.
 		MHDPROXR(0x0F),
 		NHDPROXR(0x0F),
 		NCLPROXR(0x00),
@@ -121,15 +145,16 @@ struct MPR121_settings_t
 		NHDPROXT(0x00),
 		NCLPROXT(0x00),
 		FDLPROXT(0x00),
+
 		DTR(0x11),
 		AFE1(0xFF),
 		AFE2(0x38),
 		//ECR(0x8C), // default to fast baseline startup and 12 electrodes enabled, no prox
 		//ECR(0x84), // only enable pins 0-3
-//                ECR(0xC4), // CL:11 baseline track, PROX:00 disabled, ELEC 0-3
+		//ECR(0xC4), // CL:11 baseline track, PROX:00 disabled, ELEC 0-3
+		//ECR(0x44), // CL:01 baseline track off, PROX:00 disabled, ELEC 0-3
                 ECR(0xC4), // CL:11 baseline track, PROX:00 disabled, ELEC 0-3
 
-//               ECR(0x44), // CL:01 baseline track off, PROX:00 disabled, ELEC 0-3
 
 
         /**********************************************************************
@@ -145,14 +170,18 @@ struct MPR121_settings_t
         /* ACCR0 - Auto Configure Control Register
          *  see the data sheet, page 17
          *  FFI = 11 (same as AFE1.FFI, 0x5C)
-         *  BVA = 10 (same as ECR.CL, 0x5E)
+         *  BVA = 11 (same as ECR.CL, 0x5E)
          */
 //		ACCR0(0xFA), // FFI:11, RETRY:11, BVA:10, ARE:1, ACE:0 // autoconfig off!
-		ACCR0(0xFB), // FFI:11, RETRY:11, BVA:10, ARE:1, ACE:1 // autoconfig on.
+//		ACCR0(0xFB), // FFI:11, RETRY:11, BVA:10, ARE:1, ACE:1 // autoconfig on.
+		ACCR0(0xFF), // FFI:11, RETRY:11, BVA:11, ARE:1, ACE:1 
+		// NOTE: BVA in ACCR0 must match CL in ECR
+
 		ACCR1(0x00), // SCTS: 0, OORIE:0, ARFIE:0, ACFIE:0
-		USL(0xC9),
-		LSL(0x82),
-		TL(0xB5) {}
+
+		USL(0xC9), // upper side limit= 201<<2
+		LSL(0x82), // lower side limit= 130<<2
+		TL(0xB5) {} // target level= 181<<2
 
         // disabled mode
         /*
