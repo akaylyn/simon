@@ -228,7 +228,9 @@ void TestModes::bongoModeLoop(boolean performStartup) {
 
   // track the last time we fired
   static unsigned long lastFireTime;
-
+  static unsigned long touchEndTime;
+  static boolean inTouch = false;
+  
   if( performStartup ) {
     Serial << "Starting up bongoMode" << endl;
     sound.stopAll();
@@ -242,6 +244,7 @@ void TestModes::bongoModeLoop(boolean performStartup) {
   }
 
   if ( touch.anyChanged() ) { 
+    
     if ( touch.anyPressed()) {
       // if anything's pressed, pack the instructions
       color pressed = touch.whatPressed();
@@ -255,11 +258,35 @@ void TestModes::bongoModeLoop(boolean performStartup) {
       byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 50UL, 250UL) / 10;
       fire.setFire(pressed, fireLevel, gatlingGun);
       lastFireTime = millis();
+
+      if (inTouch) {
+        if (millis() > touchEndTime) {
+          Serial << "Button stuck1" << endl;
+          touch.recalibrate();
+          inTouch = false;
+          light.clear(); // clear lights
+          fire.clear(); // clear fire
+          sound.stopTones(); // stop tones
+        }
+      } else {
+        inTouch = true;
+        touchEndTime = millis() + 3000UL;
+      }      
     } else {
       light.clear(); // clear lights
       fire.clear(); // clear fire
       sound.stopTones(); // stop tones
+      inTouch = false;
     }
+  } else {
+      if (inTouch && millis() > touchEndTime) {
+          Serial << "Button stuck1" << endl;
+          touch.recalibrate();
+          inTouch = false;
+          light.clear(); // clear lights
+          fire.clear(); // clear fire
+          sound.stopTones(); // stop tones
+      }
   }
 
 

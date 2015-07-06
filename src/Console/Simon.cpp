@@ -317,15 +317,27 @@ void waitAllReleasedOld() {
 }
 
 void waitAllReleased() {
+    Serial << "WaitAll" << endl;
+    
+    unsigned long etime = millis() + 4000UL;
+    
     int cnt = 0;
+    boolean timedOut = false;
+    
     while (touch.anyPressed() ) {
       network.update();
       cnt++;
-      if (cnt > 100) {
+      if (cnt > 10) {
         Serial << ".";
         cnt = 0;
       }
-      delay(1);
+      delay(1);      
+      if (millis() > etime) {
+        Serial << "Timed out in waitAllReleased";
+        timedOut = true;
+        touch.recalibrate();
+        break;
+      }
    }
 }
 

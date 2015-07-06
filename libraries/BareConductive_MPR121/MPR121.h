@@ -127,10 +127,10 @@ struct MPR121_settings_t
 
 		// MGD tinkering to allow the baseline to drift during Touched mode more
 // this setting is too fast.
-		FDLT(0x01), // real fast change.  a really held button registers release in ~7s.
+//		FDLT(0x01), // real fast change.  a really held button registers release in ~7s.
 
 // this feels pretty good, but still a fast change.  Too fast, and a release will be prematurely triggered.
-//		FDLT(0x0F), // slower change.  
+		FDLT(0x0F), // slower change.  
 
 		// MGD: these are the same thing, but for Proximity mode, which we're 
 		// not using.  Ignore.
@@ -146,7 +146,9 @@ struct MPR121_settings_t
 		NCLPROXT(0x00),
 		FDLPROXT(0x00),
 
-		DTR(0x11),
+		//DTR(0x11),  // 2 touch, 2 release debounce
+		//DTR(0x22),  // 3 touch, 3 release debounce
+		DTR(0x33),  // 3 touch, 3 release debounce
 		AFE1(0xFF),
 		AFE2(0x38),
 		//ECR(0x8C), // default to fast baseline startup and 12 electrodes enabled, no prox
