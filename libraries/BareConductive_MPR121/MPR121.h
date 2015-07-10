@@ -104,13 +104,13 @@ struct MPR121_settings_t
     // see AN3891.pdf for a detailed discussion.
     // MGD these control baseline filtering operations during rising values
     // It appears that the baseline can drift up very quickly.
-    MHDR(0x3F), // 63.  very large.
-    NHDR(0x3F), // 63.  very large.
+    MHDR(0x3C), // 63.  very large.
+    NHDR(0x2F), // 63.  very large.
     NCLR(0x05), // 5.
     FDLR(0x00), // 0.
     // MGD these control baseline filtering operations during falling values
     MHDF(0x01), // 1.  very small.
-    NHDF(0x3F), // 63. very large.
+    NHDF(0x2F), // 63. very large.
     NCLF(0x10), // 16.
     FDLF(0x03), // 3.
     // MGD these control baseline filtering operations during Touched.
