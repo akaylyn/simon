@@ -102,22 +102,41 @@ struct MPR121_settings_t
 
     // MGD: baseline filtering.  Section 5.5 of data sheet.
     // see AN3891.pdf for a detailed discussion.
+    //
+    // Max Half Delta (MHD)
+    // largets magnitude of varation to pass through the 3rd filter
+    //
+    // Noise Half Delta (NHD)
+    // determines the incremental change during non-noise drift
+    //
+    // Noise Count Limit (NCL)
+    // number of samples >MHD necessary before detecting non-noise
+    //
+    // Filter Delay Limit (FDL)
+    // rate of operation of the filter (larger = slower)
+    //
     // MGD these control baseline filtering operations during rising values
-    // It appears that the baseline can drift up very quickly.
-    MHDR(0x3C), // 63.  very large.
-    NHDR(0x2F), // 63.  very large.
-    NCLR(0x05), // 5.
-    FDLR(0x00), // 0.
-    // MGD these control baseline filtering operations during falling values
-    MHDF(0x01), // 1.  very small.
-    NHDF(0x2F), // 63. very large.
-    NCLF(0x10), // 16.
-    FDLF(0x03), // 3.
+    MHDR(0x2D),
+    NHDR(0x3F),
+    NCLR(0x01),
+    FDLR(0x0C),
+
     // MGD these control baseline filtering operations during Touched.
-    // no maximum half-delta in Touched mode.
-    // does appear to allow changes, but over a very long interval.
-    NHDT(0x01), // 1. very small.
-    NCLT(0x01), // 1. very small
+    // A NHDT setting of 10 allows the baseline to fall at an interval of 10 while the button is pressed
+    // Sensor 3 (Yellow) has issues recovering after being pressed, so increasing the number helps adjust on release
+    // It does not affect the other well-functioning buttons
+    // However, it does mean that once the baseline matches the data, the sensor stops detecting a press
+    NHDT(0x0F),
+    NCLT(0x01),
+
+    // MGD these control baseline filtering operations during falling values
+    // Since a touch can only be in the decreasing direction, it is usually best to set the decreasing filter to be slower than the increasing one.
+    // This allows for automatic recovery from a bad baseline reading
+    MHDF(0x05),
+    NHDF(0x3F),
+    NCLF(0x0A),
+    FDLF(0x01),
+
 
     // MGD: NEED TO LET THE BASELINE DRIFT DURING TOUCHED MODE
     // SEE AN3891.pdf
