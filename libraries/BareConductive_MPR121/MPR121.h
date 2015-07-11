@@ -99,17 +99,60 @@ struct MPR121_settings_t
     RTHRESH(19),
     INTERRUPT(4), 	// note that this is not a hardware interrupt, just the digital
     // pin that the MPR121 ~INT pin is connected to
-    MHDR(0x3F),
+
+    // MGD: baseline filtering.  Section 5.5 of data sheet.
+    // see AN3891.pdf for a detailed discussion.
+    //
+    // Max Half Delta (MHD)
+    // largets magnitude of varation to pass through the 3rd filter
+    //
+    // Noise Half Delta (NHD)
+    // determines the incremental change during non-noise drift
+    //
+    // Noise Count Limit (NCL)
+    // number of samples >MHD necessary before detecting non-noise
+    //
+    // Filter Delay Limit (FDL)
+    // rate of operation of the filter (larger = slower)
+    //
+    // MGD these control baseline filtering operations during rising values
+    MHDR(0x2D),
     NHDR(0x3F),
-    NCLR(0x05),
-    FDLR(0x00),
-    MHDF(0x01),
-    NHDF(0x3F),
-    NCLF(0x10),
-    FDLF(0x03),
-    NHDT(0x01),
+    NCLR(0x01),
+    FDLR(0x0C),
+
+    // MGD these control baseline filtering operations during Touched.
+    // A NHDT setting of 10 allows the baseline to fall at an interval of 10 while the button is pressed
+    // Sensor 3 (Yellow) has issues recovering after being pressed, so increasing the number helps adjust on release
+    // It does not affect the other well-functioning buttons
+    // However, it does mean that once the baseline matches the data, the sensor stops detecting a press
+    NHDT(0x0F),
     NCLT(0x01),
-    FDLT(0xFF),
+
+    // MGD these control baseline filtering operations during falling values
+    // Since a touch can only be in the decreasing direction, it is usually best to set the decreasing filter to be slower than the increasing one.
+    // This allows for automatic recovery from a bad baseline reading
+    MHDF(0x05),
+    NHDF(0x3F),
+    NCLF(0x0A),
+    FDLF(0x01),
+
+
+    // MGD: NEED TO LET THE BASELINE DRIFT DURING TOUCHED MODE
+    // SEE AN3891.pdf
+
+    // this setting prevents any drift in the baseline value
+    //		FDLT(0xFF), // 255.  huge.
+
+    // MGD tinkering to allow the baseline to drift during Touched mode more
+    // this setting is too fast.
+    //		FDLT(0x01), // real fast change.  a really held button registers release in ~7s.
+
+    // this feels pretty good, but still a fast change.  Too fast, and a release will be prematurely triggered.
+    FDLT(0x0F), // slower change.
+
+    // MGD: these are the same thing, but for Proximity mode, which we're
+    // not using.  Ignore.
     MHDPROXR(0x0F),
     NHDPROXR(0x0F),
     NCLPROXR(0x00),
