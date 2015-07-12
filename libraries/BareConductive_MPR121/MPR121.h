@@ -126,7 +126,7 @@ struct MPR121_settings_t
     // Sensor 3 (Yellow) has issues recovering after being pressed, so increasing the number helps adjust on release
     // It does not affect the other well-functioning buttons
     // However, it does mean that once the baseline matches the data, the sensor stops detecting a press
-    NHDT(0x0A),
+    NHDT(0x04),
     NCLT(0x01),
 
     // MGD: NEED TO LET THE BASELINE DRIFT DURING TOUCHED MODE
