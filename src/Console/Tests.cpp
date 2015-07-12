@@ -10,7 +10,7 @@ boolean TestModes::update() {
   if( sensor.modeChange() || modeChange ) {
     (++currentMode) %= N_systemMode; // wrap
 
-//    Serial << "CURRENT MODE: " << currentMode << endl;
+    //    Serial << "CURRENT MODE: " << currentMode << endl;
     // Tell the tower's we're in a new mode
     network.send((systemMode)currentMode);
 
@@ -61,11 +61,8 @@ boolean TestModes::update() {
   return(false);
 }
 
-/*
-  This mode is to be used for sudden whiteouts, when we need safety lighting, and we need to dump the propane.
-
-  Press any button and hold it to dump propane.  When the button is not pressed, bright white light is on.
-*/
+// This mode is to be used for sudden whiteouts, when we need safety lighting, and we need to dump the propane.
+// Press any button and hold it to dump propane.  When the button is not pressed, bright white light is on.
 void TestModes::whiteoutModeLoop(boolean performStartup) {
   static Metro nextStepTimer(400UL);
 
@@ -226,6 +223,15 @@ void TestModes::layoutModeLoop(boolean performStartup) {
 // simply operate the Console in "bongoes" mode.  Will shoot fire
 void TestModes::bongoModeLoop(boolean performStartup) {
 
+  bool DEBUG = true;
+  if (DEBUG) {
+    static Metro timer(500UL);
+    while (timer.check()) {
+      touch.printElectrodeAndBaselineData();
+      timer.reset();
+    }
+  }
+
   // track the last time we fired
   static unsigned long lastFireTime;
 
@@ -332,9 +338,9 @@ void TestModes::proximityModeLoop(boolean performStartup) {
 }
 
 /*
-  This mode lets the user step each tower through the primary colors, white, and off.  It's usefull for debugging issues with the LED strands
-  Pressing any button advances the associated tower to the next color in the sequence.
-*/
+   This mode lets the user step each tower through the primary colors, white, and off.  It's usefull for debugging issues with the LED strands
+   Pressing any button advances the associated tower to the next color in the sequence.
+   */
 void TestModes::lightsTestModeLoop(boolean performStartup) {
 
   colorInstruction colorSequence[] = { cOff, cRed, cGreen, cBlue, cWhite };
@@ -369,11 +375,11 @@ void TestModes::lightsTestModeLoop(boolean performStartup) {
 }
 
 /*
-  This mode lets the user test the solenoids/fire of each tower individually.
-  Pressing a button "arms" that tower.  Pressing the button again while the tower is armed will fire maximum fire out of the tower.
-  Towers automatically disarm after two seconds.
-  Only one tower can be armed at one.
-*/
+   This mode lets the user test the solenoids/fire of each tower individually.
+   Pressing a button "arms" that tower.  Pressing the button again while the tower is armed will fire maximum fire out of the tower.
+   Towers automatically disarm after two seconds.
+   Only one tower can be armed at one.
+   */
 
 #define FIRE_TEST_ARMED_TIMEOUT_MILLIS 2 * 1000
 void TestModes::fireTestModeLoop(boolean performStartup) {
