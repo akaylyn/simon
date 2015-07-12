@@ -13,25 +13,6 @@ byte tower, tower2 = I_RED;
 
 color incColor(color val) {
   switch(val) {
-    case I_RED: return I_GRN;
-    case I_GRN: return I_BLU;
-    case I_BLU: return I_YEL;
-    case I_YEL: return I_RED;
-  }
-  
-  return I_RED;
-  
-  // MGD: alternately, this would work (byte cast, increment, modulo, color cast)
-//  return( (color) ((byte)val+1 % N_COLORS) );
-
-  // MGD, but I think you really want a clockwise or CCW loop around the towers:
-  //
-  // GRN > RED
-  //  ^     v
-  // YEL < BLU
-  //
-  // clockwise case, you want:
-  switch(val) {
     case I_RED: return I_BLU;
     case I_BLU: return I_YEL;
     case I_YEL: return I_GRN;
@@ -39,6 +20,77 @@ color incColor(color val) {
   }
   return( I_RED ); // as a safety?  
   
+  // MGD: alternately, this would work (byte cast, increment, modulo, color cast)
+//  return( (color) ((byte)val+1 % N_COLORS) );
+
+}
+
+void loseFanfare() {
+    int track = sound.playLose();
+    unsigned long trackLength = 3000UL;
+    unsigned long currTime = millis();
+    unsigned long startTime = millis();
+    
+    Serial << "Playing lose";
+/*
+    fire.setFire(I_RED,5,veryLean);
+    fire.setFire(I_GRN,5,veryLean);
+    
+      while((currTime - startTime) < trackLength) {
+          currTime = millis();
+          network.update();
+          delay(1);
+      }
+    Serial << "Done losing" << endl;
+    
+*/    
+    byte fireChance = 20;  // n chance in 100 of a tower shooting a fireball
+    
+    color fireTower = I_RED;
+    
+
+    // A lone small fireball as consolation on n towers
+    int fireballs = 0;
+    byte num = random(0,4);
+    
+    switch(num) {
+      case 0:
+      case 1:
+        fire.setFire(I_RED,5,veryRich);
+        break;
+      case 2:
+      case 3:
+        fire.setFire(I_RED,5,veryRich);
+        fire.setFire(I_GRN,5,veryRich);
+        break;
+    }
+    
+    unsigned long lastBlink = currTime;
+    byte blinkState = 0;    
+    while((currTime - startTime) < trackLength) {
+      currTime = millis();
+      
+      if (currTime - lastBlink > 500) {
+        lastBlink = currTime;
+        if (blinkState == 0) {
+           blinkState = 1;
+           light.setLight(I_RED, 255, 0 , 0);
+           light.setLight(I_GRN, 255, 0 , 0);
+           light.setLight(I_BLU, 255, 0 , 0);
+           light.setLight(I_YEL, 255, 0 , 0);
+        } else {
+          blinkState = 0;
+           light.setLight(I_RED, 255, 0 , 0);
+           light.setLight(I_GRN, 255, 0 , 0);
+           light.setLight(I_BLU, 255, 0 , 0);
+           light.setLight(I_YEL, 255, 0 , 0);
+           fire.clear();
+        }
+      }
+      network.update();
+    }
+
+    sound.fadeTrack(track);
 }
 
 void playerFanfare(fanfare_t level) {
@@ -49,7 +101,7 @@ void playerFanfare(fanfare_t level) {
     return;
   }
 
-  Serial << F("Gameplay: Player fanfare, fanfareLevel: ") << level << endl;
+  Serial << F("Gameplay: Player fanfare, fanfareLevel: ") << level << " consol: " << CONSOLATION << endl;
   //Metro fanfareDuration(FANFARE_DURATION_PER_CORRECT * currentLength);
 
   // make sweet fire/light/music.
@@ -57,10 +109,10 @@ void playerFanfare(fanfare_t level) {
   int track;
   
   if (level == CONSOLATION) {
-    track = sound.playWins();
-  } else {
-    track = sound.playLose();
+    loseFanfare();
+    return;
   }
+  track = sound.playWins();
   
   light.clear();
   fire.clear();
@@ -95,23 +147,24 @@ void playerFanfare(fanfare_t level) {
   }
   
   unsigned long startTime = millis() - 1;
-   Metro winTime(trackLength);  // TODO: How do we know the length in ms of the track?
+   Metro winTime(trackLength);  // Tracks are ~30s in length
    winTime.reset();
 
    unsigned long beatInterval = 333;  // 180 BPM max
    byte beatChance = 80;  // chance in 100 a beat triggers a fire.  Makes the anim for a specific track different each time
    byte airChance = 10;  // n in 10- chance of air effect
-   byte lightMoveChance = 20;  // n in 100 chance of the light moving on a beat
+   byte lightMoveChance = 50;  // n in 100 chance of the light moving on a beat
    byte minFirePerFireball = 50;  // min fire level(ms) per fireball
    byte maxFirePerFireball = 200;  // max fire level(ms) per fireball
+   float fireBudgetFactor = 8.0;  // Divisor of track length we throw fire.  Tune this to throw less fire
    
    unsigned long beatEndTime = millis();  // time left for beat effect
    unsigned long beatWaitTime = millis();
    unsigned long currTime;
    int fireballs = 0;
    unsigned long firepower = 1;
-   float threshold = 1.0;
-   unsigned long budget = (unsigned long) ((float)trackLength / 6.0);
+   float threshold = 1.5; // initial threshold is likely to throw a fireball
+   unsigned long budget = (unsigned long) ((float)trackLength / fireBudgetFactor);
    float bt = (float) trackLength / budget;
    byte active;
 
@@ -140,13 +193,14 @@ void playerFanfare(fanfare_t level) {
        waitDuration(10UL);
      }
 
-    for (byte i = 0; i < NUM_FREQUENCY_BANDS; i++) {
+    // Lights will queue changes based on activity level across all non bass bands
+     
+    for (byte i = 2; i < NUM_FREQUENCY_BANDS; i++) {
       if ( mic.getBeat(i) ) {
         active++;
       }
     }
 
-    // Lights will queue changes based on activity level across all bands
     if (active > 0) {
       switch (active) {
       case 0:
@@ -165,7 +219,7 @@ void playerFanfare(fanfare_t level) {
         light.setLight(lightTower, 0, 0, 255);
         break;
       default:
-        light.setLight(lightTower, 255, 255, 255);
+        light.setLight(lightTower, 255, 255, 0);
         active = 0;
         break;
       }
@@ -181,8 +235,10 @@ void playerFanfare(fanfare_t level) {
          if (random(0,100) <= beatChance) {
            Serial << "Fire" << endl;
            hearBeat = true;
-           byte fireLevel = minFirePerFireball / 10 + random(0,maxFirePerFireball / 10);
+           //byte fireLevel = minFirePerFireball / 10 + random(0,maxFirePerFireball / 10);
+           byte fireLevel = fscale(0, 100, minFirePerFireball / 10, maxFirePerFireball / 10, random(100), -6.0);
            unsigned long fireMs = fireLevel * 10; // each level is 10ms
+           Serial << " fireLevel: " << fireMs;
            
            flameEffect airEffect = veryRich;
 

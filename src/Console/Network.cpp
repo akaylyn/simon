@@ -90,12 +90,13 @@ void Network::update() {
   // if this is the first time we've sent, update the packet number
   if ( this->sentCount == 0 ) {
     this->state.packetNumber++;
+    /*
     Serial << F("Network::update.  New packet # ") << this->state.packetNumber << endl;
     for( int i=0; i<N_COLORS; i++ )
       Serial << F("  color:" ) << i << F(" red:") << this->state.light[i].red << F(" green:") << this->state.light[i].green << F(" blue:") << this->state.light[i].blue << endl; 
-    
+    */
   } else {
-    Serial << F("Network::update.  resend # ") << this->sentCount << endl;
+//    Serial << F("Network::update.  resend # ") << this->sentCount << endl;
   }
 
   // Radio: send. no ACK, no sleep.

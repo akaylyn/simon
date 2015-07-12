@@ -48,7 +48,7 @@ typedef struct {
   byte movePref; // CW or CCW preference
 } cycle_t;
 
-#define MAX_CYCLES 20
+#define MAX_CYCLES 50
 cycle_t cycles[MAX_CYCLES];
 
 #define CYCLE_DICK_MOVE_PERCENT 15 // chance that a cycle will throw some "zigs" in it's path around the rim
@@ -94,7 +94,7 @@ void setup() {
   /*
   // clear cycles
   for( int c=0; c<MAX_CYCLES; c++ ) {
-    cycles[c].live=false;
+  cycles[c].live=false;
   }
 
   rimJob.begin();
@@ -131,25 +131,12 @@ void loop() {
     fasterStripUpdateInterval.reset();
     animator.animate(rainbowGlow, circleConfig);
 
-    // MGD: added a manual animation on center coaster and placard
-    //rainbowUpdate(cirL);
     rainbowUpdateReverse(placL);
-    // MGD: I assume there's a way to do something like this with the Animation.cpp... but I couldn't figure out how to do that.
-    //      maybe take the animations that are at the bottom of this .ino and transfer them as a "pallette" to work from?
-
-    // Tron light cycles on the rim.
-    /*fadeCycles();
-    moveCycles();
-//    serialPrint();
-    rimJob.show();
-    */
-
   }
 
   static Metro quietUpdateInterval(10UL * 1000UL); // after 10 second of not instructions, we should do something.
-
   static byte lastPacketNumber=255;
-  //check and see if a data packet has come in.
+
   if (ET.receiveData() && inst.packetNumber != lastPacketNumber) {
     // track and apply deltas only
     lastPacketNumber = inst.packetNumber;
@@ -166,55 +153,13 @@ void loop() {
     setStripColor(grnL, inst.light[I_GRN]);
     setStripColor(bluL, inst.light[I_BLU]);
     setStripColor(yelL, inst.light[I_YEL]);
+
     // toggle LED to ACK new button press
     static boolean ledStatus = false;
     ledStatus = !ledStatus;
     digitalWrite(LED_PIN, ledStatus);
-
-    // dispatch the requests to the rim
-    /*
-    if( inst.light[I_RED].red > 0 ) addCycle(RED_X, ALL_Y, Red);
-    if( inst.light[I_GRN].green > 0 ) addCycle(GRN_X, ALL_Y, Grn);
-    if( inst.light[I_BLU].blue > 0 ) addCycle(BLU_X, ALL_Y, Blu);
-    if( inst.light[I_YEL].red > 0 && inst.light[I_YEL].green > 0 ) addCycle(YEL_X, ALL_Y, Yel);
-    */
-
     quietUpdateInterval.reset();
-    //addCycles.reset();
   }
-
-  /*
-  // when it's quiet, we need to do something with the LEDs
-  if ( addCycles.check() ) {
-    Serial << F("Quiet interval elapsed.") << endl;
-    Serial << F("Free RAM=") << freeRam() << endl;
-
-    // add some light cycles
-    switch( random(0,4) ) {
-      case 0: addCycle(RED_X, ALL_Y, Red); break;
-      case 1: addCycle(GRN_X, ALL_Y, Grn); break;
-      case 2: addCycle(BLU_X, ALL_Y, Blu); break;
-      case 3: addCycle(YEL_X, ALL_Y, Yel); break;
-    }
-  }
-    */
-
-  /*
-TODO: fix this and put it in a metro loop
-  // compute the next step and flag for show.
-  updateRule90(rimJob, PIXEL_TTL); rimUpdated = true;
-
-  // if we wanted the buttons to animate differently than the rim, this would be the place to do it.
-  updateRule90(redL, PIXEL_TTL); redUpdated = true;
-  updateRule90(grnL, PIXEL_TTL); grnUpdated = true;
-  updateRule90(bluL, PIXEL_TTL); bluUpdated = true;
-  updateRule90(yelL, PIXEL_TTL); yelUpdated = true;
-
-  // if we wanted the middle chotsky to animate differently than the rim, this would be the place to do it.
-  updateRule90(midL, PIXEL_TTL); midUpdated = true;
-  */
-
-
 }
 
 int freeRam () {
@@ -418,7 +363,7 @@ void serialPrint() {
       boolean isC = isCycle(x,y);
       char p;
 
-           if( isC && c==Red ) p = 'R';
+      if( isC && c==Red ) p = 'R';
       else if( isC && c==Grn ) p = 'G';
       else if( isC && c==Blu ) p = 'B';
       else if( isC && c==Yel ) p = 'Y';
@@ -461,8 +406,9 @@ void addCycle(uint32_t x, uint32_t y, uint32_t color) {
 
   rimJob.setPixelColor(getPixelN(x,y), color);
 
-  cycles[availableCycle].x = x;
-  cycles[availableCycle].y = y;
+  // cycles don't start in exactly the same place; "thereabouts"
+  cycles[availableCycle].x = constrain((int)x + random(-5,6), 0, RIM_X);
+  cycles[availableCycle].y = constrain((int)y + random(-1,2), 0, RIM_Y);
   cycles[availableCycle].color = color;
   cycles[availableCycle].live = true;
 
@@ -491,7 +437,7 @@ void moveCycles() {
   for( byte c=0; c<MAX_CYCLES; c++ ) {
     if( cycles[c].live ) {
       moveThisCycle(c);
-     }
+    }
   }
 }
 
