@@ -26,6 +26,7 @@
 #include <MPR121.h>
 #include <Wire.h>
 #include <Streaming.h>
+#include <Metro.h>
 
 #define numElectrodes 4
 
@@ -53,20 +54,20 @@ void setup()
 
 void loop()
 {
-  static Metro timer(750UL);
+  static Metro timer(500UL);
   while (timer.check()) {
     printTouchData();
     timer.reset();
   }
   // error checking
-  if( MPR121.getError() != NO_ERROR ) {
+  if(MPR121.getError() != NO_ERROR) {
     parseError();
   };
 
   // check buttons
   for(int i=0; i<numElectrodes; i++){
-    if( MPR121.isNewTouch(i) ) Serial << i << " pressed." << endl;
-    if( MPR121.isNewRelease(i) ) Serial << i << " released." << endl;
+    if(MPR121.isNewTouch(i)) Serial   << "+ " << i << " pressed." << endl;
+    if(MPR121.isNewRelease(i)) Serial << "- " << i << " released." << endl;
   }
 
   // update data
@@ -87,7 +88,7 @@ void printTouchData() {
   uint16_t data1 = (((uint16_t)MPR121.getRegister(0x07))<<8) | MPR121.getRegister(0x06);
   uint16_t data2 = (((uint16_t)MPR121.getRegister(0x09))<<8) | MPR121.getRegister(0x08);
   uint16_t data3 = (((uint16_t)MPR121.getRegister(0x0B))<<8) | MPR121.getRegister(0x0A);
-  //Serial << count << ", 0, " << base0 << ", " << data0 << endl;
+  Serial << count << ",                         0, " << base0 << ", " << data0 << endl;
   //Serial << count << ", 1, " << base1 << ", " << data1 << endl;
   //Serial << count << ", 2, " << base2 << ", " << data2 << endl;
   Serial << count << ",                         3, " << base3 << ", " << data3 << endl;
