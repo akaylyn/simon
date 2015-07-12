@@ -10,6 +10,10 @@
 
 // Utilities
 void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b);
+void setStripColor(Adafruit_NeoPixel &strip, uint32_t c);
+void setStripColor(Adafruit_NeoPixel &strip, colorInstruction &inst);
+void setStripColor(Adafruit_NeoMatrix &matrix, uint32_t c);
+
 uint32_t Wheel(Adafruit_NeoPixel &strip, byte WheelPos);
 
 // Animations designed for the NeoPixel Strips surrounding the buttons
