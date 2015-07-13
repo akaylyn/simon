@@ -195,6 +195,7 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
   }
 
   if (state.animation == A_ProximityPulseMatrix) {
+    rimConfig.position = &proxPulsePos;
     rimConfig.color.red = state.light[0].red;
     rimConfig.color.green = state.light[1].green;
     rimConfig.color.blue = state.light[2].blue;
