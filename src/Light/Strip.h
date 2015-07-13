@@ -22,7 +22,7 @@
 #define RIM_PIN 3 // wire to rim DI pin.  Include a 330 Ohm resistor in series.
 // geometry
 #define RIM_X 107
-#define RIM_Y 3 
+#define RIM_Y 3
 #define RED_X 7
 #define BLU_X 34 // delta 27
 #define YEL_X 61 // delta 27
@@ -56,7 +56,7 @@
 
 // update the automata on the rim at this interval
 #define STRIP_UPDATE 20UL
-#define FASTER_STIRP_UPDATE 30UL
+#define FASTER_STIRP_UPDATE 10UL
 
 // count memory usage for LEDs, which is reported at startup.
 #define TOTAL_LED_MEM (RIM_X*RIM_Y + BUTTON_N*4 + CIRCLE_N + PLACARD_N)*3

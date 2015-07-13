@@ -61,10 +61,6 @@ void setup() {
 void loop() {
   if (fasterStripUpdateInterval.check()) {
     mapToAnimation(animator, inst);
-
-    animator.animate(rainbowGlow, circleConfig);
-    animator.animate(rainbowGlow, placardConfig);
-
     fasterStripUpdateInterval.reset();
   }
 
@@ -75,7 +71,7 @@ void loop() {
     // track and apply deltas only
     lastPacketNumber = inst.packetNumber;
 
-    Serial << F("I. packetNumber") << lastPacketNumber << endl;
+    //Serial << F("I. packetNumber") << lastPacketNumber << endl;
 
     //    for( byte i=0; i<N_COLORS; i++ ) {
     //      Serial << F(" Color ") << i << F("; R:") << inst.light[i].red << F(" G:") << inst.light[i].green << F(" B:") << inst.light[i].blue << endl;

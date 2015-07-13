@@ -28,8 +28,14 @@ void proximityPulseMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void 
 
 // Position information needed for the LaserWipe animation
 struct LaserWipePosition {
-    int prev;
-    int dir; // direction
+  int prev;
+  int dir; // direction
+};
+
+struct ProxPulsePosition {
+  int magnitude;
+  int prev;
+  int tailLength;
 };
 
 #endif

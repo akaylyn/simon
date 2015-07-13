@@ -49,13 +49,11 @@ void colorWipe(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
 
   if (next > strip.numPixels()) {
     next = 0;
-    setStripColor(strip, LED_OFF, LED_OFF, LED_OFF);
   } else {
     ++next;
   }
 
   strip.setPixelColor(next, strip.Color(r, g, b));
-  Serial << F("Set pixel: ") << next << endl;
   (*pos) = next;
 }
 
@@ -148,36 +146,37 @@ uint32_t Wheel(Adafruit_NeoPixel &strip, byte WheelPos) {
 
 // Proximity Pulse Matrix, used in Proximity Mode
 void proximityPulseMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
+  ProxPulsePosition* pos = static_cast<ProxPulsePosition*>(posData);
 
-/*
-  int* pos = (int*) posData;
-  int magnitude = (*pos);
+  uint32_t ledOff = matrix.Color(LED_OFF, LED_OFF, LED_OFF);
+  int maxTailLength = 10;
 
-
-  int point = 0;
-
-  Serial << r << " " << g << " " << b << endl;
-  //(*pos) = next;
-  for (int i = 0; i < matrix.width(); i++) {
-
-    if (r < 85) {
-      matrix.drawPixel(point-magnitude, 1, matrix.Color(r,g,b));
-      matrix.drawPixel(point+magnitude, 1, matrix.Color(r,g,b));
-    }
-
-    if (85 < r < 170) {
-      matrix.drawPixel(i, 1, matrix.Color(r,g,b));
-    }
-
-    if (r > 170) {
-      matrix.drawPixel(i, 0, matrix.Color(r,g,b));
+  // clear
+  if (pos->magnitude < 25) {
+    if (pos->tailLength > maxTailLength) {
+      int end = pos->prev - maxTailLength;
+      if (pos->prev == 0 || pos->prev < maxTailLength) {
+        end = matrix.width() + end;
+      }
+      matrix.drawPixel(end, 0, ledOff);
+      matrix.drawPixel(end, 1, ledOff);
+      matrix.drawPixel(end, 2, ledOff);
     }
   }
-  //magnitude = magnitude++;
-  //(*pos) = magnitude;
-  */
-}
 
+  pos->prev += 1;
+  pos->tailLength+=1;
+
+  if (pos->prev > matrix.width()) {
+    pos->prev = 0;
+  }
+
+  matrix.drawPixel(pos->prev, 0, matrix.Color(r,g,b));
+  matrix.drawPixel(pos->prev, 1, matrix.Color(r,g,b));
+  matrix.drawPixel(pos->prev, 2, matrix.Color(r,g,b));
+
+  //Serial << r << " " << g << " " << b << " " << pos->magnitude << " " << pos->prev << endl;
+}
 
 /*
 // Fill the dots one after the other with a color

@@ -16,9 +16,8 @@ systemState inst;
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 
 // strip around the inner rim
-//Adafruit_NeoPixel rimJob = Adafruit_NeoPixel(RIM_N, RIM_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoMatrix rimJob = Adafruit_NeoMatrix(
-        108, 1, 1, 3, RIM_PIN,
+        107, 1, 1, 3, RIM_PIN,
         NEO_MATRIX_BOTTOM + NEO_MATRIX_LEFT +
         NEO_MATRIX_ROWS +
         NEO_MATRIX_PROGRESSIVE +
@@ -27,7 +26,6 @@ Adafruit_NeoMatrix rimJob = Adafruit_NeoMatrix(
         NEO_TILE_PROGRESSIVE,
         NEO_GRB + NEO_KHZ800
         );
-//Adafruit_NeoPixel rimJob = Adafruit_NeoPixel(RIM_X*RIM_Y, RIM_PIN, NEO_GRB + NEO_KHZ800);
 
 // strips around the buttons
 Adafruit_NeoPixel redL = Adafruit_NeoPixel(BUTTON_N, RED_PIN, NEO_GRB + NEO_KHZ800);
@@ -80,6 +78,7 @@ LaserWipePosition yellowLaserPos;
 int rimPos = 0;
 int placPos = 0;
 int circPos = 0;
+ProxPulsePosition proxPulsePos;
 
 void configureAnimations() {
 
@@ -108,8 +107,8 @@ void configureAnimations() {
   rimConfig.strip = &rimJob;
   rimConfig.color = blue;
   rimConfig.ready = true;
-  rimConfig.position = &rimPos;
-  rimConfig.timer = Metro(300);
+  rimConfig.position = &proxPulsePos;
+  rimConfig.timer = Metro(30UL);
 
   // Init neo pixel strips for the buttons
   redL.begin();
@@ -182,19 +181,31 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
         animator.animate(laserWipe, greenButtonConfig);
         animator.animate(laserWipe, blueButtonConfig);
         animator.animate(laserWipe, yellowButtonConfig);
-        Serial << "A_LaserWipe" << endl;
+        animator.animate(proximityPulseMatrix, rimConfig);
     }
+
     if (state.animation == A_ColorWipe) {
         animator.animate(colorWipe, placardConfig);
         animator.animate(colorWipe, circleConfig);
-        Serial << "A_ColorWipe" << endl;
     }
 
     if (state.animation == A_ProximityPulseMatrix) {
       rimConfig.color.red = state.light[0].red;
-      rimConfig.color.green = state.light[0].green;
-      rimConfig.color.blue = state.light[0].blue;
+      rimConfig.color.green = state.light[1].green;
+      rimConfig.color.blue = state.light[2].blue;
+      proxPulsePos.magnitude = state.light[3].red;
+      rimConfig.timer.interval(proxPulsePos.magnitude);
+
       animator.animate(proximityPulseMatrix, rimConfig);
+      RgbColor inverse;
+      inverse.red = rimConfig.color.green;
+      inverse.green = rimConfig.color.blue;
+      inverse.blue = rimConfig.color.red;
+
+      circleConfig.color = inverse;
+      placardConfig.color = inverse;
+      animator.animate(colorWipe, placardConfig);
+      animator.animate(colorWipe, circleConfig);
     }
 }
 
