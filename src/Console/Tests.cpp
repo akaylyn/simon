@@ -71,6 +71,8 @@ void TestModes::whiteoutModeLoop(boolean performStartup) {
   static int step = 0;
   static boolean fireIsOn = false;
 
+  light.animate(A_NoRim);
+
   if( performStartup ) {
     Serial << "Starting up whiteout mode!" << endl;
     sound.stopAll();

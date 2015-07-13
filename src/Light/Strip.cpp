@@ -235,6 +235,10 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
     clearAllStrips();
   }
 
+  if (state.animation == A_NoRim) {
+    setStripColor(rimJob, LED_OFF, LED_OFF, LED_OFF);
+  }
+
 }
 
 void clearAllStrips() {

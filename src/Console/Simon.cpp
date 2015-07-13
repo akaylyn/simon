@@ -112,7 +112,6 @@ void gameEnter() {
 }
 void gameUpdate() {
 
-  light.animate(A_Gameplay);
   // check to see if we've maxed out
   if ( gameCurrent + 1 == gameMaxSequenceLength ) {
     // holy crap.  someone's good with a pen and paper.

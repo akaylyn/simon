@@ -196,8 +196,6 @@ void idleMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) 
 }
 
 void twinkleRand(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
-  // set background
-  //	 stripSet(bg,0);
   for (uint16_t i = 0; i < strip.numPixels(); i++) {
     strip.setPixelColor(i, strip.Color(r, g, b));
   }
