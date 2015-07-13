@@ -63,7 +63,7 @@
 
 void configureAnimations();
 void mapToAnimation(ConcurrentAnimator, systemState);
-void clearAll();
+void clearAllStrips();
 
 #endif
 

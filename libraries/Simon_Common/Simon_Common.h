@@ -85,9 +85,10 @@ typedef struct {
 
 enum animationInstruction {
   A_None,
-  A_RandomStrip,
-  A_RandomMatrix,
+  A_Clear,
   A_Idle,
+  A_Gameplay,
+  A_GameplayPressed,
 
   // Strip animations
   A_LaserWipe,

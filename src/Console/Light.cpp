@@ -38,6 +38,7 @@ void Light::clear() {
     this->setLight((color)i, inst);
   }
 
+  animate(A_Clear);
   animate(A_None);
 }
 

@@ -17,15 +17,15 @@ systemState inst;
 
 // strip around the inner rim
 Adafruit_NeoMatrix rimJob = Adafruit_NeoMatrix(
-        107, 1, 1, 3, RIM_PIN,
-        NEO_MATRIX_BOTTOM + NEO_MATRIX_LEFT +
-        NEO_MATRIX_ROWS +
-        NEO_MATRIX_PROGRESSIVE +
-        NEO_TILE_BOTTOM + NEO_TILE_LEFT +
-        NEO_TILE_ROWS +
-        NEO_TILE_PROGRESSIVE,
-        NEO_GRB + NEO_KHZ800
-        );
+    107, 1, 1, 3, RIM_PIN,
+    NEO_MATRIX_BOTTOM + NEO_MATRIX_LEFT +
+    NEO_MATRIX_ROWS +
+    NEO_MATRIX_PROGRESSIVE +
+    NEO_TILE_BOTTOM + NEO_TILE_LEFT +
+    NEO_TILE_ROWS +
+    NEO_TILE_PROGRESSIVE,
+    NEO_GRB + NEO_KHZ800
+    );
 
 // strips around the buttons
 Adafruit_NeoPixel redL = Adafruit_NeoPixel(BUTTON_N, RED_PIN, NEO_GRB + NEO_KHZ800);
@@ -79,6 +79,8 @@ int rimPos = 0;
 int placPos = 0;
 int circPos = 0;
 ProxPulsePosition proxPulsePos;
+ProxPulsePosition gameplayPos;
+ProxPulsePosition idlePos;
 
 void configureAnimations() {
 
@@ -164,7 +166,7 @@ void configureAnimations() {
   placardConfig.position = &placPos;
   placardConfig.timer = Metro(1000);
 
-  clearAll();
+  clearAllStrips();
 }
 
 void mapToAnimation(ConcurrentAnimator animator, systemState state) {
@@ -176,6 +178,7 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
   }
 
   if (state.animation == A_Idle) {
+    rimConfig.position = &idlePos;
     animator.animate(twinkleRand, redButtonConfig);
     animator.animate(twinkleRand, greenButtonConfig);
     animator.animate(twinkleRand, blueButtonConfig);
@@ -209,9 +212,32 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
     animator.animate(colorWipe, placardConfig);
     animator.animate(colorWipe, circleConfig);
   }
+
+  if (state.animation == A_Gameplay) {
+    rimConfig.position = &gameplayPos;
+    rimConfig.color.red = state.light[0].red;
+    rimConfig.color.green = state.light[1].green;
+    rimConfig.color.blue = state.light[2].blue;
+    proxPulsePos.magnitude = state.light[3].red;
+    animator.animate(gameplayMatrix, rimConfig);
+  }
+
+  if (state.animation == A_GameplayPressed) {
+    rimConfig.position = &gameplayPos;
+    rimConfig.color.red = state.light[0].red;
+    rimConfig.color.green = state.light[1].green;
+    rimConfig.color.blue = state.light[2].blue;
+    proxPulsePos.magnitude = state.light[3].red;
+    animator.animate(gameplayMatrix, rimConfig);
+  }
+
+  if (state.animation == A_Clear) {
+    clearAllStrips();
+  }
+
 }
 
-void clearAll() {
+void clearAllStrips() {
   // Clear all strips
   setStripColor(redL, LED_OFF, LED_OFF, LED_OFF);
   setStripColor(grnL, LED_OFF, LED_OFF, LED_OFF);

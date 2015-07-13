@@ -204,6 +204,42 @@ void twinkleRand(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
   strip.setPixelColor(random(strip.numPixels()), random(255));
 }
 
+// Gameplay animation
+void gameplayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
+  matrix.setBrightness(50);
+
+  ProxPulsePosition* pos = static_cast<ProxPulsePosition*>(posData);
+
+  uint32_t ledOff = matrix.Color(LED_OFF, LED_OFF, LED_OFF);
+  int maxTailLength = 10;
+
+  // clear
+  if (pos->magnitude < 25) {
+    if (pos->tailLength > maxTailLength) {
+      int end = pos->prev - maxTailLength;
+      if (pos->prev == 0 || pos->prev < maxTailLength) {
+        end = matrix.width() + end;
+      }
+      matrix.drawPixel(end, 0, ledOff);
+      matrix.drawPixel(end, 1, ledOff);
+      matrix.drawPixel(end, 2, ledOff);
+    }
+  }
+
+  pos->prev += 1;
+  pos->tailLength+=1;
+
+  if (pos->prev > matrix.width()) {
+    pos->prev = 0;
+  }
+
+  matrix.drawPixel(pos->prev, 0, matrix.Color(r,g,b));
+  matrix.drawPixel(pos->prev, 1, matrix.Color(r,g,b));
+  matrix.drawPixel(pos->prev, 2, matrix.Color(r,g,b));
+
+  //Serial << r << " " << g << " " << b << " " << pos->magnitude << " " << pos->prev << endl;
+}
+
 /*
 // Fill the dots one after the other with a color
 void colorWipe(Adafruit_NeoPixel &strip, uint32_t c, uint8_t wait) {

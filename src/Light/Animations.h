@@ -27,6 +27,7 @@ void twinkleRand(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
 void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
 void proximityPulseMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
 void idleMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
+void gameplayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
 
 // Position information needed for the LaserWipe animation
 struct LaserWipePosition {

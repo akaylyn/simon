@@ -111,6 +111,8 @@ void gameEnter() {
   waitDuration(800UL);
 }
 void gameUpdate() {
+
+  light.animate(A_Gameplay);
   // check to see if we've maxed out
   if ( gameCurrent + 1 == gameMaxSequenceLength ) {
     // holy crap.  someone's good with a pen and paper.
@@ -172,6 +174,7 @@ void playerUpdate() {
 
   // wait for button press.
   if ( touch.anyPressed() ) {
+
     // you could, in theory, press all the buttons simultaneously to get it right...
     // but humans aren't that fast, so this is an alien/Ninja/godling detector.
     color button = touch.whatPressed();
@@ -180,6 +183,7 @@ void playerUpdate() {
     // light the correct button
     colorInstruction c = cMap[gameSequence[playerCurrent]];
     light.setLight(gameSequence[playerCurrent], c);
+    light.animate(A_GameplayPressed);
 
     // sound
     if ( correct ) {

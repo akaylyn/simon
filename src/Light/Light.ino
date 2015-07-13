@@ -60,6 +60,7 @@ void setup() {
 
 void loop() {
   if (fasterStripUpdateInterval.check()) {
+    Serial << inst.animation << endl;
     mapToAnimation(animator, inst);
     fasterStripUpdateInterval.reset();
   }
