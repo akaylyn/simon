@@ -69,7 +69,7 @@ void idleEnter() {
 
 }
 void idleUpdate() {
-  light.animate(A_LaserWipe);
+  light.animate(A_Idle);
   // check buttons for game play start
   if ( touch.anyPressed() ) {
     // going to start a game

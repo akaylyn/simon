@@ -87,6 +87,7 @@ enum animationInstruction {
   A_None,
   A_RandomStrip,
   A_RandomMatrix,
+  A_Idle,
 
   // Strip animations
   A_LaserWipe,

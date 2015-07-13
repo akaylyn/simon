@@ -164,7 +164,54 @@ void configureAnimations() {
   placardConfig.position = &placPos;
   placardConfig.timer = Metro(1000);
 
+  clearAll();
+}
 
+void mapToAnimation(ConcurrentAnimator animator, systemState state) {
+  if (state.animation == A_LaserWipe) {
+    animator.animate(laserWipe, redButtonConfig);
+    animator.animate(laserWipe, greenButtonConfig);
+    animator.animate(laserWipe, blueButtonConfig);
+    animator.animate(laserWipe, yellowButtonConfig);
+  }
+
+  if (state.animation == A_Idle) {
+    animator.animate(twinkleRand, redButtonConfig);
+    animator.animate(twinkleRand, greenButtonConfig);
+    animator.animate(twinkleRand, blueButtonConfig);
+    animator.animate(twinkleRand, yellowButtonConfig);
+    rimConfig.timer.interval(50UL);
+    animator.animate(idleMatrix, rimConfig);
+    animator.animate(rainbowGlow, placardConfig);
+    animator.animate(rainbowGlow, circleConfig);
+  }
+
+  if (state.animation == A_ColorWipe) {
+    animator.animate(colorWipe, placardConfig);
+    animator.animate(colorWipe, circleConfig);
+  }
+
+  if (state.animation == A_ProximityPulseMatrix) {
+    rimConfig.color.red = state.light[0].red;
+    rimConfig.color.green = state.light[1].green;
+    rimConfig.color.blue = state.light[2].blue;
+    proxPulsePos.magnitude = state.light[3].red;
+    rimConfig.timer.interval(proxPulsePos.magnitude);
+
+    animator.animate(proximityPulseMatrix, rimConfig);
+    RgbColor inverse;
+    inverse.red = rimConfig.color.green;
+    inverse.green = rimConfig.color.blue;
+    inverse.blue = rimConfig.color.red;
+
+    circleConfig.color = inverse;
+    placardConfig.color = inverse;
+    animator.animate(colorWipe, placardConfig);
+    animator.animate(colorWipe, circleConfig);
+  }
+}
+
+void clearAll() {
   // Clear all strips
   setStripColor(redL, LED_OFF, LED_OFF, LED_OFF);
   setStripColor(grnL, LED_OFF, LED_OFF, LED_OFF);
@@ -173,39 +220,5 @@ void configureAnimations() {
   setStripColor(placL, LED_OFF, LED_OFF, LED_OFF);
   setStripColor(cirL, LED_OFF, LED_OFF, LED_OFF);
   setStripColor(rimJob, LED_OFF, LED_OFF, LED_OFF);
-}
-
-void mapToAnimation(ConcurrentAnimator animator, systemState state) {
-    if (state.animation == A_LaserWipe) {
-        animator.animate(laserWipe, redButtonConfig);
-        animator.animate(laserWipe, greenButtonConfig);
-        animator.animate(laserWipe, blueButtonConfig);
-        animator.animate(laserWipe, yellowButtonConfig);
-        animator.animate(proximityPulseMatrix, rimConfig);
-    }
-
-    if (state.animation == A_ColorWipe) {
-        animator.animate(colorWipe, placardConfig);
-        animator.animate(colorWipe, circleConfig);
-    }
-
-    if (state.animation == A_ProximityPulseMatrix) {
-      rimConfig.color.red = state.light[0].red;
-      rimConfig.color.green = state.light[1].green;
-      rimConfig.color.blue = state.light[2].blue;
-      proxPulsePos.magnitude = state.light[3].red;
-      rimConfig.timer.interval(proxPulsePos.magnitude);
-
-      animator.animate(proximityPulseMatrix, rimConfig);
-      RgbColor inverse;
-      inverse.red = rimConfig.color.green;
-      inverse.green = rimConfig.color.blue;
-      inverse.blue = rimConfig.color.red;
-
-      circleConfig.color = inverse;
-      placardConfig.color = inverse;
-      animator.animate(colorWipe, placardConfig);
-      animator.animate(colorWipe, circleConfig);
-    }
 }
 

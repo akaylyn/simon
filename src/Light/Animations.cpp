@@ -178,6 +178,32 @@ void proximityPulseMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void 
   //Serial << r << " " << g << " " << b << " " << pos->magnitude << " " << pos->prev << endl;
 }
 
+// Gameplay idle mode
+void idleMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
+  ProxPulsePosition* pos = static_cast<ProxPulsePosition*>(posData);
+  if (pos->prev == 3) pos->prev = 0;
+  if (pos->magnitude == 0) pos->magnitude = 255;
+
+  matrix.setBrightness(100);
+
+  uint32_t randomColor = random(255);
+  for (int i = 0; i < matrix.width(); i++) {
+    matrix.drawPixel(i, pos->prev, Wheel(matrix, randomColor));
+  }
+
+  pos->prev += 1;
+  pos->magnitude -= 1;
+}
+
+void twinkleRand(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
+  // set background
+  //	 stripSet(bg,0);
+  for (uint16_t i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, strip.Color(r, g, b));
+  }
+  strip.setPixelColor(random(strip.numPixels()), random(255));
+}
+
 /*
 // Fill the dots one after the other with a color
 void colorWipe(Adafruit_NeoPixel &strip, uint32_t c, uint8_t wait) {
