@@ -43,5 +43,11 @@ struct ProxPulsePosition {
   int tailLength;
 };
 
+struct GameplayPosition {
+  int prev;
+  int yellow;
+  GameplayPosition* decayPos;
+};
+
 #endif
 

@@ -14,6 +14,7 @@ void setStripColor(Adafruit_NeoPixel &strip, uint32_t c) {
   strip.show();
 }
 void setStripColor(Adafruit_NeoPixel &strip, colorInstruction &inst) {
+  strip.setBrightness(255);
   setStripColor(strip, strip.Color(inst.red, inst.green, inst.blue) );
 }
 
@@ -202,45 +203,46 @@ void twinkleRand(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
   strip.setPixelColor(random(strip.numPixels()), random(255));
 }
 
-
-static int gameplayMaxWidth = 13;
+/*****************************************************************************/
+// Gameplay animation
+static int gameplayMaxWidth = 15;
 static int RedMidPoint = 7;
 static int BlueMidPoint = 34;
 static int YellowMidPoint = 61;
 static int GreenMidPoint = 88;
-// Gameplay animation
 void gameplayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
   matrix.setBrightness(50);
-
   uint32_t ledOff = matrix.Color(LED_OFF, LED_OFF, LED_OFF);
-  ProxPulsePosition* pos = static_cast<ProxPulsePosition*>(posData);
-  Serial << r << " " << g << " " << b << " " << pos->magnitude << " " << pos->prev << endl;
-  // pos->prev, pos->tailLength, pos->magnitude
+  GameplayPosition* pos = static_cast<GameplayPosition*>(posData);
 
-  if (pos->prev >= gameplayMaxWidth) {
+  Serial << r << " " << g << " " << b << " " << pos->yellow << endl;
+
+  if (pos->prev > gameplayMaxWidth) {
     pos->prev = 0;
   }
-
   if (r == 255) { // 7
     gameplayFillFromMiddle(matrix, RedMidPoint, pos->prev, matrix.Color(255, 0, 0));
     pos->prev += 1;
   }
-  if (b == 255) { // 34
+  else if (b == 255) { // 34
     gameplayFillFromMiddle(matrix, BlueMidPoint, pos->prev, matrix.Color(0, 0, 255));
     pos->prev += 1;
   }
-  if (pos->magnitude == 255) { // 61
+  else if (pos->yellow == 255) { // 61
     gameplayFillFromMiddle(matrix, YellowMidPoint, pos->prev, matrix.Color(255, 255, 0));
     pos->prev += 1;
   }
-  if (g == 255) { // 88
+  else if (g == 255) { // 88
     gameplayFillFromMiddle(matrix, GreenMidPoint, pos->prev, matrix.Color(0, 255, 0));
     pos->prev += 1;
+  } else {
+    pos->prev = 0;
+    gameplayDecayMatrix(matrix, r, g, b, pos->decayPos);
   }
 }
 
 void gameplayDecayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
-  ProxPulsePosition* pos = static_cast<ProxPulsePosition*>(posData);
+  GameplayPosition* pos = static_cast<GameplayPosition*>(posData);
   uint32_t ledOff = matrix.Color(LED_OFF, LED_OFF, LED_OFF);
 
   if (pos->prev == 0) {
@@ -256,13 +258,18 @@ void gameplayDecayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *
 }
 
 void gameplayFillFromMiddle(Adafruit_NeoMatrix &matrix, int center, int prev, uint16_t color) {
+  int left = center-prev;
+  int right = center+prev;
+
+  if (left < 0)
+    left = matrix.width() + left;
+
   for (int height = 0; height < 3; height++) {
-    matrix.drawPixel(center-prev, height, color);
+    matrix.drawPixel(left, height, color);
     matrix.drawPixel(center, height, color);
-    matrix.drawPixel(center+prev, height, color);
+    matrix.drawPixel(right, height, color);
   }
 }
-
 
 /*
 // Fill the dots one after the other with a color

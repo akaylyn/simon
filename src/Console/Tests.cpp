@@ -250,6 +250,7 @@ void TestModes::bongoModeLoop(boolean performStartup) {
   }
 
   if ( touch.anyChanged() ) {
+    light.animate(A_GameplayPressed);
     if ( touch.anyPressed()) {
       // if anything's pressed, pack the instructions
       color pressed = touch.whatPressed();
@@ -258,7 +259,6 @@ void TestModes::bongoModeLoop(boolean performStartup) {
 
       colorInstruction c = cMap[pressed];
       light.setLight(pressed, c);
-      light.animate(A_GameplayPressed);
 
       // only allow full-on every 10s.
       byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 50UL, 250UL) / 10;
@@ -268,7 +268,6 @@ void TestModes::bongoModeLoop(boolean performStartup) {
       light.clearButtons(); // clear lights
       fire.clear(); // clear fire
       sound.stopTones(); // stop tones
-      light.animate(A_GameplayDecay);
     }
   }
 }

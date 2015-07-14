@@ -79,9 +79,9 @@ int rimPos = 0;
 int placPos = 0;
 int circPos = 0;
 ProxPulsePosition proxPulsePos;
-ProxPulsePosition gameplayPos;
-ProxPulsePosition gameplayDecayPos;
 ProxPulsePosition idlePos;
+GameplayPosition gameplayPos;
+GameplayPosition gameplayDecayPos;
 
 void configureAnimations() {
 
@@ -112,6 +112,7 @@ void configureAnimations() {
   rimConfig.ready = true;
   rimConfig.position = &proxPulsePos;
   rimConfig.timer = Metro(30UL);
+  gameplayPos.decayPos = &gameplayDecayPos;
 
   // Init neo pixel strips for the buttons
   redL.begin();
@@ -215,19 +216,28 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
     animator.animate(colorWipe, circleConfig);
   }
 
+  Serial << state.animation << endl;
+
   if (state.animation == A_Gameplay) {
+    redL.setBrightness(40);
+    grnL.setBrightness(40);
+    bluL.setBrightness(40);
+    yelL.setBrightness(40);
+
+    setStripColor(redL, BTN_COLOR_RED);
+    setStripColor(grnL, BTN_COLOR_GREEN);
+    setStripColor(bluL, BTN_COLOR_BLUE);
+    setStripColor(yelL, BTN_COLOR_YELLOW);
   }
 
   if (state.animation == A_GameplayPressed) {
-    //static int last;
     rimConfig.position = &gameplayPos;
-    rimConfig.timer.interval(50UL);
+    rimConfig.timer.interval(20UL);
     rimConfig.color.red = state.light[0].red;
     rimConfig.color.green = state.light[1].green;
     rimConfig.color.blue = state.light[2].blue;
-    gameplayPos.magnitude = state.light[3].red;
+    gameplayPos.yellow = state.light[3].red;
 
-    //if (rimConfig.color.red == 255 && last == I_RED)
     animator.animate(gameplayMatrix, rimConfig);
   }
   if (state.animation == A_GameplayDecay) {
