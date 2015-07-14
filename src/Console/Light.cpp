@@ -27,6 +27,12 @@ void Light::setLight(color position, byte red, byte green, byte blue) {
 }
 
 void Light::clear() {
+  clearButtons();
+  animate(A_Clear);
+  animate(A_None);
+}
+
+void Light::clearButtons() {
   colorInstruction inst;
   inst.red = 0;
   inst.green = 0;
@@ -37,9 +43,6 @@ void Light::clear() {
     // show it
     this->setLight((color)i, inst);
   }
-
-  animate(A_Clear);
-  animate(A_None);
 }
 
 void Light::setLight(color position, colorInstruction &inst) {

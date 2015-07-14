@@ -225,7 +225,7 @@ void TestModes::layoutModeLoop(boolean performStartup) {
 // simply operate the Console in "bongoes" mode.  Will shoot fire
 void TestModes::bongoModeLoop(boolean performStartup) {
 
-  bool DEBUG = true;
+  bool DEBUG = false;
   if (DEBUG) {
     static Metro timer(500UL);
     while (timer.check()) {
@@ -258,19 +258,19 @@ void TestModes::bongoModeLoop(boolean performStartup) {
 
       colorInstruction c = cMap[pressed];
       light.setLight(pressed, c);
+      light.animate(A_GameplayPressed);
 
       // only allow full-on every 10s.
       byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 50UL, 250UL) / 10;
       fire.setFire(pressed, fireLevel, gatlingGun);
       lastFireTime = millis();
     } else {
-      light.clear(); // clear lights
+      light.clearButtons(); // clear lights
       fire.clear(); // clear fire
       sound.stopTones(); // stop tones
+      light.animate(A_GameplayDecay);
     }
   }
-
-
 }
 
 // uses the MPR121 device to adjust lights and sound based on Player 1's proximity to sensors

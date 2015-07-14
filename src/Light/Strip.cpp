@@ -80,6 +80,7 @@ int placPos = 0;
 int circPos = 0;
 ProxPulsePosition proxPulsePos;
 ProxPulsePosition gameplayPos;
+ProxPulsePosition gameplayDecayPos;
 ProxPulsePosition idlePos;
 
 void configureAnimations() {
@@ -215,21 +216,24 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
   }
 
   if (state.animation == A_Gameplay) {
-    rimConfig.position = &gameplayPos;
-    rimConfig.color.red = state.light[0].red;
-    rimConfig.color.green = state.light[1].green;
-    rimConfig.color.blue = state.light[2].blue;
-    proxPulsePos.magnitude = state.light[3].red;
-    animator.animate(gameplayMatrix, rimConfig);
   }
 
   if (state.animation == A_GameplayPressed) {
+    //static int last;
     rimConfig.position = &gameplayPos;
+    rimConfig.timer.interval(50UL);
     rimConfig.color.red = state.light[0].red;
     rimConfig.color.green = state.light[1].green;
     rimConfig.color.blue = state.light[2].blue;
-    proxPulsePos.magnitude = state.light[3].red;
+    gameplayPos.magnitude = state.light[3].red;
+
+    //if (rimConfig.color.red == 255 && last == I_RED)
     animator.animate(gameplayMatrix, rimConfig);
+  }
+  if (state.animation == A_GameplayDecay) {
+    rimConfig.position = &gameplayDecayPos;
+    rimConfig.timer.interval(20UL);
+    animator.animate(gameplayDecayMatrix, rimConfig);
   }
 
   if (state.animation == A_Clear) {

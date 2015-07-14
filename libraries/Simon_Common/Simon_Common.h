@@ -89,6 +89,7 @@ enum animationInstruction {
   A_Idle,
   A_Gameplay,
   A_GameplayPressed,
+  A_GameplayDecay,
   A_NoRim,
 
   // Strip animations

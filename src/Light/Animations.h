@@ -13,6 +13,7 @@ void setStripColor(Adafruit_NeoPixel &strip, int r, int g, int b);
 void setStripColor(Adafruit_NeoPixel &strip, uint32_t c);
 void setStripColor(Adafruit_NeoPixel &strip, colorInstruction &inst);
 void setStripColor(Adafruit_NeoMatrix &matrix, uint32_t c);
+void gameplayFillFromMiddle(Adafruit_NeoMatrix &matrix, int center, int prev, uint16_t color);
 
 uint32_t Wheel(Adafruit_NeoPixel &strip, byte WheelPos);
 
@@ -28,6 +29,7 @@ void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posD
 void proximityPulseMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
 void idleMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
 void gameplayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
+void gameplayDecayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
 
 // Position information needed for the LaserWipe animation
 struct LaserWipePosition {

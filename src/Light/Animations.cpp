@@ -202,110 +202,136 @@ void twinkleRand(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
   strip.setPixelColor(random(strip.numPixels()), random(255));
 }
 
+
+static int gameplayMaxWidth = 13;
+static int RedMidPoint = 7;
+static int BlueMidPoint = 34;
+static int YellowMidPoint = 61;
+static int GreenMidPoint = 88;
 // Gameplay animation
 void gameplayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
   matrix.setBrightness(50);
 
-  ProxPulsePosition* pos = static_cast<ProxPulsePosition*>(posData);
-
   uint32_t ledOff = matrix.Color(LED_OFF, LED_OFF, LED_OFF);
-  int maxTailLength = 10;
+  ProxPulsePosition* pos = static_cast<ProxPulsePosition*>(posData);
+  Serial << r << " " << g << " " << b << " " << pos->magnitude << " " << pos->prev << endl;
+  // pos->prev, pos->tailLength, pos->magnitude
 
-  // clear
-  if (pos->magnitude < 25) {
-    if (pos->tailLength > maxTailLength) {
-      int end = pos->prev - maxTailLength;
-      if (pos->prev == 0 || pos->prev < maxTailLength) {
-        end = matrix.width() + end;
-      }
-      matrix.drawPixel(end, 0, ledOff);
-      matrix.drawPixel(end, 1, ledOff);
-      matrix.drawPixel(end, 2, ledOff);
-    }
-  }
-
-  pos->prev += 1;
-  pos->tailLength+=1;
-
-  if (pos->prev > matrix.width()) {
+  if (pos->prev >= gameplayMaxWidth) {
     pos->prev = 0;
   }
 
-  matrix.drawPixel(pos->prev, 0, matrix.Color(r,g,b));
-  matrix.drawPixel(pos->prev, 1, matrix.Color(r,g,b));
-  matrix.drawPixel(pos->prev, 2, matrix.Color(r,g,b));
-
-  //Serial << r << " " << g << " " << b << " " << pos->magnitude << " " << pos->prev << endl;
+  if (r == 255) { // 7
+    gameplayFillFromMiddle(matrix, RedMidPoint, pos->prev, matrix.Color(255, 0, 0));
+    pos->prev += 1;
+  }
+  if (b == 255) { // 34
+    gameplayFillFromMiddle(matrix, BlueMidPoint, pos->prev, matrix.Color(0, 0, 255));
+    pos->prev += 1;
+  }
+  if (pos->magnitude == 255) { // 61
+    gameplayFillFromMiddle(matrix, YellowMidPoint, pos->prev, matrix.Color(255, 255, 0));
+    pos->prev += 1;
+  }
+  if (g == 255) { // 88
+    gameplayFillFromMiddle(matrix, GreenMidPoint, pos->prev, matrix.Color(0, 255, 0));
+    pos->prev += 1;
+  }
 }
+
+void gameplayDecayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
+  ProxPulsePosition* pos = static_cast<ProxPulsePosition*>(posData);
+  uint32_t ledOff = matrix.Color(LED_OFF, LED_OFF, LED_OFF);
+
+  if (pos->prev == 0) {
+    pos->prev = gameplayMaxWidth;
+  }
+
+  gameplayFillFromMiddle(matrix, GreenMidPoint, pos->prev, ledOff);
+  gameplayFillFromMiddle(matrix, RedMidPoint, pos->prev, ledOff);
+  gameplayFillFromMiddle(matrix, BlueMidPoint, pos->prev, ledOff);
+  gameplayFillFromMiddle(matrix, YellowMidPoint, pos->prev, ledOff);
+
+  pos->prev -= 1;
+}
+
+void gameplayFillFromMiddle(Adafruit_NeoMatrix &matrix, int center, int prev, uint16_t color) {
+  for (int height = 0; height < 3; height++) {
+    matrix.drawPixel(center-prev, height, color);
+    matrix.drawPixel(center, height, color);
+    matrix.drawPixel(center+prev, height, color);
+  }
+}
+
 
 /*
 // Fill the dots one after the other with a color
 void colorWipe(Adafruit_NeoPixel &strip, uint32_t c, uint8_t wait) {
-  for (uint16_t i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, c);
-    strip.show();
-    delay(wait);
-  }
+for (uint16_t i = 0; i < strip.numPixels(); i++) {
+strip.setPixelColor(i, c);
+strip.show();
+delay(wait);
+}
 }
 
 void rainbow(Adafruit_NeoPixel &strip, uint8_t wait) {
-  uint16_t i, j;
+uint16_t i, j;
 
-  for (j = 0; j < 256; j++) {
-    for (i = 0; i < strip.numPixels(); i++) {
-      strip.setPixelColor(i, Wheel(strip, (i + j) & 255));
-    }
-    strip.show();
-    delay(wait);
-  }
+for (j = 0; j < 256; j++) {
+for (i = 0; i < strip.numPixels(); i++) {
+strip.setPixelColor(i, Wheel(strip, (i + j) & 255));
+}
+strip.show();
+delay(wait);
+}
 }
 void rainbowUpdate(Adafruit_NeoPixel &strip) {
-  static byte colorPos = 0;
+static byte colorPos = 0;
 
-  for (int i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, Wheel(strip, (byte)((i + colorPos) % 255) ) );
-  }
-  strip.show();
-  colorPos+=random(1,5); // increment for next pass
+for (int i = 0; i < strip.numPixels(); i++) {
+strip.setPixelColor(i, Wheel(strip, (byte)((i + colorPos) % 255) ) );
+}
+strip.show();
+colorPos+=random(1,5); // increment for next pass
 }
 void rainbowUpdateReverse(Adafruit_NeoPixel &strip) {
-  static byte colorPos = 0;
+static byte colorPos = 0;
 
-  for (int i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, Wheel(strip, (byte)((i + colorPos) % 255) ) );
-  }
-  strip.show();
-  colorPos-=random(1,5); // increment for next pass
+for (int i = 0; i < strip.numPixels(); i++) {
+strip.setPixelColor(i, Wheel(strip, (byte)((i + colorPos) % 255) ) );
+}
+strip.show();
+colorPos-=random(1,5); // increment for next pass
 }
 // Slightly different, this makes the rainbow equally distributed throughout
 void rainbowCycle(Adafruit_NeoPixel &strip, uint8_t wait) {
-  uint16_t i, j;
+uint16_t i, j;
 
-  for (j = 0; j < 256 * 5; j++) { // 5 cycles of all colors on wheel
-    for (i = 0; i < strip.numPixels(); i++) {
-      strip.setPixelColor(i, Wheel(strip, ((i * 256 / strip.numPixels()) + j) & 255));
-    }
-    strip.show();
-    delay(wait);
-  }
+for (j = 0; j < 256 * 5; j++) { // 5 cycles of all colors on wheel
+for (i = 0; i < strip.numPixels(); i++) {
+strip.setPixelColor(i, Wheel(strip, ((i * 256 / strip.numPixels()) + j) & 255));
+}
+strip.show();
+delay(wait);
+}
 }
 
 //Theatre-style crawling lights.
 void theaterChase(Adafruit_NeoPixel &strip, uint32_t c, uint8_t wait) {
-  for (int j = 0; j < 10; j++) { //do 10 cycles of chasing
-    for (int q = 0; q < 3; q++) {
-      for (int i = 0; i < strip.numPixels(); i = i + 3) {
-        strip.setPixelColor(i + q, c);  //turn every third pixel on
-      }
-      strip.show();
+for (int j = 0; j < 10; j++) { //do 10 cycles of chasing
+for (int q = 0; q < 3; q++) {
+for (int i = 0; i < strip.numPixels(); i = i + 3) {
+strip.setPixelColor(i + q, c);  //turn every third pixel on
+}
+strip.show();
 
-      delay(wait);
+delay(wait);
 
-      for (int i = 0; i < strip.numPixels(); i = i + 3) {
-        strip.setPixelColor(i + q, 0);      //turn every third pixel off
-      }
-    }
-  }
+for (int i = 0; i < strip.numPixels(); i = i + 3) {
+strip.setPixelColor(i + q, 0);      //turn every third pixel off
+}
+}
+}
 }
 
 //Theatre-style crawling lights.
