@@ -197,8 +197,11 @@ byte Touch::proximity() {
 }
 
 void Touch::recalibrate() {
+  unsigned long tic = micros();
   MPR121.stop();
   MPR121.run();
+  unsigned long toc = micros();
+  Serial << F("Recalibrate: duration=") << toc-tic << endl;
 }
 
 void Touch::printBaseline() {

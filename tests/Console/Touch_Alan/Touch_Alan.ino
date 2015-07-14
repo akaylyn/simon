@@ -5,9 +5,12 @@
 #include <MPR121.h> // MPR121 capsense board
 #include <Wire.h> // capsense is an I2C device
 #include <Bounce.h> // with debounce routine.
+#include <EasyTransfer.h> // used for sending message to the sound module
+#include <wavTrigger.h> // sound board
 
 #include "Common.h"
 #include "Touch.h"
+#include "Sound.h" // Sound subunit.  Responsible for UX (music) output.
 
 void setup() {
   Serial.begin(115200);
@@ -17,6 +20,9 @@ void setup() {
 
   touch.recalibrate();
   
+  sound.begin(); //
+  sound.setLeveling(1, 0); // 1x tone and 1x track
+
   delay(1000);  
   Serial << "Touch Unit Test" << endl;
 
@@ -31,6 +37,7 @@ void loop() {
   if (touch.anyPressed()) {
     MPR121.updateAll();
     color button = touch.whatPressed();
+    sound.playTone(button);
     Serial << "Got Press: " << button << " filter: " << MPR121.getFilteredData(button);
     
     while(touch.anyPressed()) {
@@ -45,13 +52,17 @@ void loop() {
       }
     }
     
+    sound.stopTone(button);
+    
     Serial << " Released" << endl;
   }
   
   baselineCount++;
-  if (baselineCount == 100) {
+  if (baselineCount == 200) {
     touch.printBaseline();
     baselineCount = 0;
+    touch.recalibrate();
+    
   }
   
   delay(1);
