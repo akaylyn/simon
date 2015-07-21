@@ -40,7 +40,7 @@ Metro playerTimeout(3000UL);
 // Fanfare
 State fanfare = State(fanfareEnter, fanfareUpdate, fanfareExit);
 fanfare_t fanfareLevel;
-int fanfareCorrectMapping[N_LEVELS] = { 6, 9, 12, 15 };  // test difficulty for critical
+int fanfareCorrectMapping[N_LEVELS] = { 6, 10, 14, 18 };  // test difficulty for critical
 //int fanfareCorrectMapping[N_LEVELS] = { 8, 14, 20, 31 }; // stock simon numbers
 //int fanfareCorrectMapping[N_LEVELS] = { 4, 7, 12, 18 }; // easier
 //int fanfareCorrectMapping[N_LEVELS] = { 2, 3, 4, 5 }; // test easy
@@ -78,7 +78,7 @@ void idleUpdate() {
 
     sound.stopAll();
     sound.setLeveling(1, 1); // 1x tone and 1x track
-    rockTrack = sound.playRock(501);
+    //rockTrack = sound.playRock(501);
 
     // let's play a game
     simon.transitionTo(game);

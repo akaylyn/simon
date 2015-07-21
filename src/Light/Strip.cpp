@@ -216,8 +216,6 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
     animator.animate(colorWipe, circleConfig);
   }
 
-  Serial << state.animation << endl;
-
   if (state.animation == A_Gameplay) {
     redL.setBrightness(40);
     grnL.setBrightness(40);
