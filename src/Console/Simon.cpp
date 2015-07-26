@@ -40,9 +40,10 @@ Metro playerTimeout(3000UL);
 // Fanfare
 State fanfare = State(fanfareEnter, fanfareUpdate, fanfareExit);
 fanfare_t fanfareLevel;
+int fanfareCorrectMapping[N_LEVELS] = { 6, 10, 14, 18 };  // test difficulty for critical
 //int fanfareCorrectMapping[N_LEVELS] = { 8, 14, 20, 31 }; // stock simon numbers
 //int fanfareCorrectMapping[N_LEVELS] = { 4, 7, 12, 18 }; // easier
-int fanfareCorrectMapping[N_LEVELS] = { 2, 3, 4, 5 }; // test easy
+//int fanfareCorrectMapping[N_LEVELS] = { 2, 3, 4, 5 }; // test easy
 
 // Tests
 State test = State(testEnter, testUpdate, testExit);
@@ -69,7 +70,7 @@ void idleEnter() {
 
 }
 void idleUpdate() {
-  light.animate(A_LaserWipe);
+  light.animate(A_Idle);
   // check buttons for game play start
   if ( touch.anyPressed() ) {
     // going to start a game
@@ -77,7 +78,7 @@ void idleUpdate() {
 
     sound.stopAll();
     sound.setLeveling(1, 1); // 1x tone and 1x track
-    rockTrack = sound.playRock(501);
+    //rockTrack = sound.playRock(501);
 
     // let's play a game
     simon.transitionTo(game);
@@ -111,6 +112,8 @@ void gameEnter() {
   waitDuration(800UL);
 }
 void gameUpdate() {
+  light.animate(A_GameplayDecay);
+
   // check to see if we've maxed out
   if ( gameCurrent + 1 == gameMaxSequenceLength ) {
     // holy crap.  someone's good with a pen and paper.
@@ -172,6 +175,7 @@ void playerUpdate() {
 
   // wait for button press.
   if ( touch.anyPressed() ) {
+
     // you could, in theory, press all the buttons simultaneously to get it right...
     // but humans aren't that fast, so this is an alien/Ninja/godling detector.
     color button = touch.whatPressed();
@@ -180,6 +184,7 @@ void playerUpdate() {
     // light the correct button
     colorInstruction c = cMap[gameSequence[playerCurrent]];
     light.setLight(gameSequence[playerCurrent], c);
+    light.animate(A_GameplayPressed);
 
     // sound
     if ( correct ) {

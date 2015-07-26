@@ -32,6 +32,7 @@ class Light {
     void setLight(color position, colorInstruction &inst);
     void animate(animationInstruction animation);
     void stopAnimation();
+    void clearButtons();
 
     void clear(); // clear
 

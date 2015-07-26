@@ -30,7 +30,7 @@ void Network::begin(nodeID node) {
 //  this->packetSendInterval = float(toc - tic) * 1.1;
   Serial << F("Network: sending system datagram every ") << this->packetSendInterval << F("us.") << endl;
 
-  this->resendCount = 10;
+  this->resendCount = 5;
   this->sentCount = this->resendCount;
   Serial << F("Network: will resend new packets x") << this->resendCount << endl;
 

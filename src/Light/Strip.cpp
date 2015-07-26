@@ -16,20 +16,16 @@ systemState inst;
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 
 // strip around the inner rim
-//Adafruit_NeoPixel rimJob = Adafruit_NeoPixel(RIM_N, RIM_PIN, NEO_GRB + NEO_KHZ800);
-/*
 Adafruit_NeoMatrix rimJob = Adafruit_NeoMatrix(
-        108, 1, 1, 3, RIM_PIN,
-        NEO_MATRIX_BOTTOM + NEO_MATRIX_LEFT +
-        NEO_MATRIX_ROWS +
-        NEO_MATRIX_PROGRESSIVE +
-        NEO_TILE_BOTTOM + NEO_TILE_LEFT +
-        NEO_TILE_ROWS +
-        NEO_TILE_PROGRESSIVE,
-        NEO_GRB + NEO_KHZ800
-        );
-*/
-Adafruit_NeoPixel rimJob = Adafruit_NeoPixel(RIM_X*RIM_Y, RIM_PIN, NEO_GRB + NEO_KHZ800);
+    107, 1, 1, 3, RIM_PIN,
+    NEO_MATRIX_BOTTOM + NEO_MATRIX_LEFT +
+    NEO_MATRIX_ROWS +
+    NEO_MATRIX_PROGRESSIVE +
+    NEO_TILE_BOTTOM + NEO_TILE_LEFT +
+    NEO_TILE_ROWS +
+    NEO_TILE_PROGRESSIVE,
+    NEO_GRB + NEO_KHZ800
+    );
 
 // strips around the buttons
 Adafruit_NeoPixel redL = Adafruit_NeoPixel(BUTTON_N, RED_PIN, NEO_GRB + NEO_KHZ800);
@@ -82,6 +78,10 @@ LaserWipePosition yellowLaserPos;
 int rimPos = 0;
 int placPos = 0;
 int circPos = 0;
+ProxPulsePosition proxPulsePos;
+ProxPulsePosition idlePos;
+GameplayPosition gameplayPos;
+GameplayPosition gameplayDecayPos;
 
 void configureAnimations() {
 
@@ -106,12 +106,13 @@ void configureAnimations() {
   rimJob.begin();
 
   rimConfig.name = "Outer rim";
-//  rimConfig.matrix = &rimJob;
+  rimConfig.matrix = &rimJob;
   rimConfig.strip = &rimJob;
   rimConfig.color = blue;
   rimConfig.ready = true;
-  rimConfig.position = &rimPos;
-  rimConfig.timer = Metro(10);
+  rimConfig.position = &proxPulsePos;
+  rimConfig.timer = Metro(30UL);
+  gameplayPos.decayPos = &gameplayDecayPos;
 
   // Init neo pixel strips for the buttons
   redL.begin();
@@ -167,7 +168,93 @@ void configureAnimations() {
   placardConfig.position = &placPos;
   placardConfig.timer = Metro(1000);
 
+  clearAllStrips();
+}
 
+void mapToAnimation(ConcurrentAnimator animator, systemState state) {
+  if (state.animation == A_LaserWipe) {
+    animator.animate(laserWipe, redButtonConfig);
+    animator.animate(laserWipe, greenButtonConfig);
+    animator.animate(laserWipe, blueButtonConfig);
+    animator.animate(laserWipe, yellowButtonConfig);
+  }
+
+  if (state.animation == A_Idle) {
+    rimConfig.position = &idlePos;
+    animator.animate(twinkleRand, redButtonConfig);
+    animator.animate(twinkleRand, greenButtonConfig);
+    animator.animate(twinkleRand, blueButtonConfig);
+    animator.animate(twinkleRand, yellowButtonConfig);
+    rimConfig.timer.interval(50UL);
+    animator.animate(idleMatrix, rimConfig);
+    animator.animate(rainbowGlow, placardConfig);
+    animator.animate(rainbowGlow, circleConfig);
+  }
+
+  if (state.animation == A_ColorWipe) {
+    animator.animate(colorWipe, placardConfig);
+    animator.animate(colorWipe, circleConfig);
+  }
+
+  if (state.animation == A_ProximityPulseMatrix) {
+    rimConfig.position = &proxPulsePos;
+    rimConfig.color.red = state.light[0].red;
+    rimConfig.color.green = state.light[1].green;
+    rimConfig.color.blue = state.light[2].blue;
+    proxPulsePos.magnitude = state.light[3].red;
+    rimConfig.timer.interval(proxPulsePos.magnitude);
+
+    animator.animate(proximityPulseMatrix, rimConfig);
+    RgbColor inverse;
+    inverse.red = rimConfig.color.green;
+    inverse.green = rimConfig.color.blue;
+    inverse.blue = rimConfig.color.red;
+
+    circleConfig.color = inverse;
+    placardConfig.color = inverse;
+    animator.animate(colorWipe, placardConfig);
+    animator.animate(colorWipe, circleConfig);
+  }
+
+  if (state.animation == A_Gameplay) {
+    redL.setBrightness(40);
+    grnL.setBrightness(40);
+    bluL.setBrightness(40);
+    yelL.setBrightness(40);
+
+    setStripColor(redL, BTN_COLOR_RED);
+    setStripColor(grnL, BTN_COLOR_GREEN);
+    setStripColor(bluL, BTN_COLOR_BLUE);
+    setStripColor(yelL, BTN_COLOR_YELLOW);
+  }
+
+  if (state.animation == A_GameplayPressed) {
+    rimConfig.position = &gameplayPos;
+    rimConfig.timer.interval(20UL);
+    rimConfig.color.red = state.light[0].red;
+    rimConfig.color.green = state.light[1].green;
+    rimConfig.color.blue = state.light[2].blue;
+    gameplayPos.yellow = state.light[3].red;
+
+    animator.animate(gameplayMatrix, rimConfig);
+  }
+  if (state.animation == A_GameplayDecay) {
+    rimConfig.position = &gameplayDecayPos;
+    rimConfig.timer.interval(20UL);
+    animator.animate(gameplayDecayMatrix, rimConfig);
+  }
+
+  if (state.animation == A_Clear) {
+    clearAllStrips();
+  }
+
+  if (state.animation == A_NoRim) {
+    setStripColor(rimJob, LED_OFF, LED_OFF, LED_OFF);
+  }
+
+}
+
+void clearAllStrips() {
   // Clear all strips
   setStripColor(redL, LED_OFF, LED_OFF, LED_OFF);
   setStripColor(grnL, LED_OFF, LED_OFF, LED_OFF);
@@ -176,20 +263,5 @@ void configureAnimations() {
   setStripColor(placL, LED_OFF, LED_OFF, LED_OFF);
   setStripColor(cirL, LED_OFF, LED_OFF, LED_OFF);
   setStripColor(rimJob, LED_OFF, LED_OFF, LED_OFF);
-}
-
-void mapToAnimation(ConcurrentAnimator animator, systemState state) {
-    if (state.animation == A_LaserWipe) {
-        animator.animate(laserWipe, redButtonConfig);
-        animator.animate(laserWipe, greenButtonConfig);
-        animator.animate(laserWipe, blueButtonConfig);
-        animator.animate(laserWipe, yellowButtonConfig);
-        Serial << "A_LaserWipe" << endl;
-    }
-    if (state.animation == A_ColorWipe) {
-        animator.animate(colorWipe, placardConfig);
-        animator.animate(colorWipe, circleConfig);
-        Serial << "A_ColorWipe" << endl;
-    }
 }
 

@@ -42,17 +42,17 @@ const unsigned long delayAirTime = 50UL;
 enum flameEffect {
   // no air.  just straight propane.
   veryRich=0, // "very rich"
-  
+
   // add some air to 1/3rd of the flame time; not notably different for small (<100ms) flames
   kickStart,  // toss in some air at the beginning
   kickMiddle,  // toss in some air in the middle
   kickEnd,  // toss in some air at the end
-  
+
   // add air throughout flame time
   gatlingGun, // staccato bursts of air throughout
   randomly, // air tossed in throughout in a random pattern
   veryLean, // as much air as as we can before getting "too lean"
-  
+
   N_flameEffects  // use this to size arrays appropriately
 };
 
@@ -73,7 +73,7 @@ enum color {
   I_GRN,   // upper left
   I_BLU,   // lower right
   I_YEL,   // lower left
-  
+
   N_COLORS // use this to size arrays appropriately
 };
 
@@ -85,8 +85,12 @@ typedef struct {
 
 enum animationInstruction {
   A_None,
-  A_RandomStrip,
-  A_RandomMatrix,
+  A_Clear,
+  A_Idle,
+  A_Gameplay,
+  A_GameplayPressed,
+  A_GameplayDecay,
+  A_NoRim,
 
   // Strip animations
   A_LaserWipe,
@@ -94,6 +98,7 @@ enum animationInstruction {
 
   // Rim/matrix animations
   A_ColorWipeMatrix,
+  A_ProximityPulseMatrix,
 
   N_Animations
 };
@@ -111,17 +116,17 @@ const colorInstruction cMap[N_COLORS] = {cRed, cGreen, cBlue, cYellow};
 //**** System Modes
 
 enum systemMode {
-  GAMEPLAY=0, 
+  GAMEPLAY=0,
   WHITEOUT,
   BONGO,
   PROXIMITY,
   FIRE,
   LIGHTS,
   LAYOUT,
-  
+
   EXTERN, // for other projects driving Simon
-  
-  N_systemMode // 
+
+  N_systemMode //
 };
 
 //**** Tie everything together for total system state send
