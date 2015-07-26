@@ -14,6 +14,7 @@
 #include <EEPROM.h> // saving settings
 #include <EasyTransfer.h> // used for sending message to the sound module
 #include <wavTrigger.h> // sound board
+#include <LiquidCrystal_I2C.h> // LCD
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
@@ -34,6 +35,9 @@
 #include "Fire.h" // Fire subunit.  Responsible for UX output on remote Towers (fire)
 #include "Light.h" // Light subunit.  Responsible for UX output local Console (light) and remote Towers (light/fire)
 #include "Sound.h" // Sound subunit.  Responsible for UX (music) output.
+
+// LCD
+LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
 
 void setup() {
   // put your setup code here, to run once:
@@ -60,7 +64,13 @@ void setup() {
   fire.begin(); //
   light.begin(); //  
   sound.begin(); //
-     
+  
+  // LCD
+  lcd.begin(20,4); // initialize the lcd 
+  lcd.backlight(); // backlight, always
+  lcd.home ();                   // go home
+  lcd.print("    Simon v2 LCD    ");  
+
   Serial << F("Network: free RAM: ") << freeRam() << endl;
 
   Serial << F("STARTUP: complete.") << endl;
@@ -73,6 +83,11 @@ void loop() {
   
   // perform Tower resends; you should do this always if you want meaningful synchronization with Towers
   network.update();
+  
+  // MGD new buttons
+  if( touch.startPressed() ) Serial << F("Touch: start pressed") << endl;
+  if( touch.leftPressed() ) Serial << F("Touch: left pressed") << endl;
+  if( touch.rightPressed() ) Serial << F("Touch: right pressed") << endl;
 
 }
 

@@ -18,7 +18,7 @@
 #define TOUCH_SCL 21 // Wire SCL
 #define TOUCH_SDA 20 // Wire SDA
 #define TOUCH_IRQ 3 // int.1, D3; but could move if we don't implement an interrupt
-#define NUM_ELECTRODES 4
+#define NUM_ELECTRODES 7
 #define MPR121_I2CADDR_DEFAULT 0x5A
 
 //----- manual buttons: hard buttons on a PCB.
@@ -60,6 +60,11 @@ class Touch {
 
     // debugging tool: prints sensor baseline and electrode information
     void printElectrodeAndBaselineData();
+    
+    // MGD new buttons
+    boolean startPressed();
+    boolean leftPressed();
+    boolean rightPressed();
 
   private:
     // update function; returns true if there's a state change

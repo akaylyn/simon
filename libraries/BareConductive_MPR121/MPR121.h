@@ -166,9 +166,18 @@ struct MPR121_settings_t
     DTR(0x11),
     AFE1(0xFF),
     AFE2(0x38),
+
     //ECR(0x8C), // default to fast baseline startup and 12 electrodes enabled, no prox
-    ECR(0x84), // only enable pins 0-3
+    //ECR(0x84), // only enable pins 0-3
     //ECR(0xE4), // 5.11 in data sheet.  baseline tracking with 10 bits, 0-3 for prox, 0-3 active
+
+    // MGD added three more electrodes. 0-6 enabled.
+    // CL: 11 -> baseline with best initial value
+    // ELEPROX_EN: 00 -> proximity disabled
+    // ELE_EN: 0111 -> 0-6 enabled.
+    // ECR = 11000111
+    ECR(0xC7),
+
 
     /**********************************************************************
      * Auto Calibration Configuration
@@ -186,7 +195,8 @@ struct MPR121_settings_t
      *  BVA = 10 (same as ECR.CL, 0x5E)
      */
 
-    ACCR0(0xFA),
+//    ACCR0(0xFA),
+    ACCR0(0xFF),
     ACCR1(0x00),
     USL(0xC9),
     LSL(0x82),

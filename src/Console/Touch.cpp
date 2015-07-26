@@ -146,6 +146,23 @@ color Touch::whatPressed() {
   return(N_COLORS);
 }
 
+// MGD new buttons
+boolean Touch::startPressed() {
+  // capsense
+  MPR121.updateTouchData();
+  return( MPR121.getTouchData(4) );
+}
+boolean Touch::rightPressed() {
+  // capsense
+  MPR121.updateTouchData();
+  return( MPR121.getTouchData(5) );
+}
+boolean Touch::leftPressed() {
+  // capsense
+  MPR121.updateTouchData();
+  return( MPR121.getTouchData(6) );
+}
+
 // returns "distance" an object is to the sensor, scaled [0, 255]
 // realistically, we see distance readings in [0,50], so scaling to a byte is reasonable
 // for distance/proximity, see http://cache.freescale.com/files/sensors/doc/app_note/AN3893.pdf
