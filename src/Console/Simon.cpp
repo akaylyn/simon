@@ -68,6 +68,8 @@ void idleEnter() {
 
   idleBeforeFanfare.reset();
 
+  scoreboard.resetCurrScore();
+
 }
 void idleUpdate() {
   light.animate(A_Idle);
@@ -192,12 +194,14 @@ void playerUpdate() {
       sound.playTone(gameSequence[playerCurrent]);
       // got one more
       playerCurrent++;
+      scoreboard.saveCurrScore(playerCurrent);
     } else {
       // also light the (wrong) button they pressed
       colorInstruction c = cMap[button];
       light.setLight(button, c);
       // wrong tone
       sound.playFailTone();
+      scoreboard.saveHighScore();
     }
 
     // hold it while we're mashing

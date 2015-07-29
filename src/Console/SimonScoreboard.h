@@ -15,7 +15,7 @@ class SimonScoreboard {
     void begin();
     void resetCurrScore();
     void saveHighScore();
-    void incrementCurrScore();
+    void saveCurrScore(int playerCurrent);
   private:
     uint32_t highScore;
     uint32_t currScore;

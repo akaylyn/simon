@@ -9,6 +9,9 @@ void SimonScoreboard::begin() {
   lcd.home();                   // go home
   lcd.print("    Simon v2 LCD    ");
 
+  highScore = EEPROM.read(EEPROM_ADDR);
+  displayHighScore();
+
 }
 
 void SimonScoreboard::saveHighScore() {
@@ -24,8 +27,10 @@ void SimonScoreboard::resetCurrScore() {
   displayCurrScore();
 }
 
-void SimonScoreboard::incrementCurrScore() {
-  currScore += 1;
+void SimonScoreboard::saveCurrScore(int playerCurrent) {
+  if (playerCurrent > currScore) {
+    currScore = playerCurrent;
+  }
   displayCurrScore();
 
 }
