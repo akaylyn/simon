@@ -91,6 +91,7 @@ enum animationInstruction {
   A_GameplayPressed,
   A_GameplayDecay,
   A_NoRim,
+  A_TronCycles,
 
   // Strip animations
   A_LaserWipe,

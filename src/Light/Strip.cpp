@@ -27,6 +27,9 @@ Adafruit_NeoMatrix rimJob = Adafruit_NeoMatrix(
     NEO_GRB + NEO_KHZ800
     );
 
+// I don't know if this is valid; RIM_PIN is already assigned for the actual matrix above
+Adafruit_NeoPixel rimJobStrip = Adafruit_NeoPixel(RIM_X*RIM_Y, RIM_PIN, NEO_GRB + NEO_KHZ800);
+
 // strips around the buttons
 Adafruit_NeoPixel redL = Adafruit_NeoPixel(BUTTON_N, RED_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel grnL = Adafruit_NeoPixel(BUTTON_N, GRN_PIN, NEO_GRB + NEO_KHZ800);
@@ -63,6 +66,7 @@ AnimationConfig blueButtonConfig;
 AnimationConfig yellowButtonConfig;
 AnimationConfig circleConfig;
 AnimationConfig placardConfig;
+AnimationConfig rimConfigStrip;
 
 // Colors
 RgbColor red;
@@ -242,6 +246,10 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
     rimConfig.position = &gameplayDecayPos;
     rimConfig.timer.interval(20UL);
     animator.animate(gameplayDecayMatrix, rimConfig);
+  }
+
+  if (state.animation == A_TronCycles) {
+    animator.Animation(tronLightCycles, rimConfigStrip);
   }
 
   if (state.animation == A_Clear) {
