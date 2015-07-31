@@ -2,7 +2,7 @@
 #include <Streaming.h>
 #include <Metro.h>
 
-SoftwareSerial IRsend(8, 7);
+SoftwareSerial IRsend(8, 7); // Pin 7 to ST3795 RXD (pin 3)
 
 uint16_t addressC = 0x00F7;
 byte redC = 0x20;
@@ -22,9 +22,9 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly: 
   send(redC);
-  delay(5000);
+  delay(1000);
   send(grnC);
-  delay(5000);
+  delay(1000);
   
   
 }
