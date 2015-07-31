@@ -6,7 +6,7 @@
 #include <MPR121.h> // MPR121 capsense board
 #include <Wire.h> // capsense is an I2C device
 #include <Bounce.h> // with debounce routine.
-#include <EEPROM.h> // saving 
+#include <EEPROM.h> // saving
 #include <FiniteStateMachine.h> // using a FSM to run the game
 #include <LED.h> // led control abstraction
 #include <SPI.h> // radio transmitter is a SPI device
@@ -36,13 +36,13 @@
 #include "Light.h" // Light subunit.  Responsible for UX output local Console (light) and remote Towers (light/fire)
 #include "Sound.h" // Sound subunit.  Responsible for UX (music) output.
 
-// LCD
-LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
+//------ LCD Scoreboard
+#include "SimonScoreboard.h"
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  
+
 //  Serial << F("SETUP: pausing 500ms after REBOOT") << endl;
 //  delay(500);
 
@@ -50,26 +50,21 @@ void setup() {
   randomSeed(analogRead(A5));
 
   // start each unit
-  
+
   //------ Input units.
   byte touchMapToColor[N_COLORS] = {I_RED, I_GRN, I_BLU, I_YEL};
   touch.begin(touchMapToColor);
   sensor.begin();
   mic.begin();
-  
+
   //------ Network
   network.begin();
 
   //------ Output units.
   fire.begin(); //
-  light.begin(); //  
+  light.begin(); //
   sound.begin(); //
-  
-  // LCD
-  lcd.begin(20,4); // initialize the lcd 
-  lcd.backlight(); // backlight, always
-  lcd.home ();                   // go home
-  lcd.print("    Simon v2 LCD    ");  
+  scoreboard.begin();
 
   Serial << F("Network: free RAM: ") << freeRam() << endl;
 
@@ -79,11 +74,11 @@ void setup() {
 // main loop for the core.
 void loop() {
   // calls the FSM to handle the state of the system
-  simon.update(); 
-  
+  simon.update();
+
   // perform Tower resends; you should do this always if you want meaningful synchronization with Towers
   network.update();
-  
+
   // MGD new buttons
   if( touch.startPressed() ) Serial << F("Touch: start pressed") << endl;
   if( touch.leftPressed() ) Serial << F("Touch: left pressed") << endl;

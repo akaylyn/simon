@@ -21,6 +21,7 @@
 #include "Network.h"
 #include "Tests.h"
 #include "Sensor.h"
+#include "SimonScoreboard.h"
 
 /*************************************
 
