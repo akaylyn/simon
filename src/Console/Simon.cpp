@@ -93,6 +93,8 @@ void idleUpdate() {
     // run tests
     simon.transitionTo(test);
   }
+  
+  scoreboard.showBackerMessages();
 }
 void idleExit() {
 }

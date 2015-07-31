@@ -8,7 +8,8 @@
 #include <Simon_Common.h>
 #include <LiquidCrystal_I2C.h>
 #include <EEPROM.h>
-
+#include <avr/pgmspace.h> // PROGMEM
+#include <Metro.h>
 
 class SimonScoreboard {
   public:
@@ -16,6 +17,9 @@ class SimonScoreboard {
     void resetCurrScore();
     void saveHighScore();
     void saveCurrScore(int playerCurrent);
+    
+    void showBackerMessages();
+    
   private:
     uint32_t highScore;
     uint32_t currScore;

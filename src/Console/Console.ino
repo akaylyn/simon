@@ -15,6 +15,7 @@
 #include <EasyTransfer.h> // used for sending message to the sound module
 #include <wavTrigger.h> // sound board
 #include <LiquidCrystal_I2C.h> // LCD
+#include <avr/pgmspace.h> // PROGMEM
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
