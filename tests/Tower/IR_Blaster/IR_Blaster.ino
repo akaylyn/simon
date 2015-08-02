@@ -1,7 +1,14 @@
 // need to strike RobotIRRemote directory in Arduino IDE libraries folder.  Name collision!
-#include <IRremote.h>
+#include <IRremote.h> // IR connected to pin 3
 #include <Streaming.h>
+#include <Metro.h>
 #include <Simon_Common.h> // I_RED, etc.
+#include <EasyTransfer.h> // rx, tx
+#include <SoftwareSerial.h> // 
+
+SoftwareSerial SSerial(A2, A3); // 
+EasyTransfer ET; 
+colorInstruction lastColorInst, newColorInst;
 
 class IRlight {
   public:
@@ -40,6 +47,12 @@ void setup()
   Serial.begin(115200);
   Serial << "Startup." << endl;
 
+  SSerial.begin(9600);
+  ET.begin(details(newColorInst), &SSerial);
+
+  // LED for notable sending
+  pinMode(13, OUTPUT);
+
   // minisubs 
   miniSubs.begin(0x01FE, 1, 0x48, 0x58, 0x48, 0x48, 0x20, 0xA0, 0x60, 0x50, 0x30, 0xC0, 0xC0, 0xC0, 0xC0); 
   // no up and down
@@ -71,48 +84,54 @@ void setup()
   Serial << F("Free RAM: ") << freeRam() << endl;
 }
 
-/*
-
-obey address codes: strips, small floods, minisubs
-DON'T obey address codes: pack subs, big floods
-
-*/
-
-
+// first: obey address codes: strips, small floods, minisubs
+// last: DON'T obey address codes: pack subs, big floods
 void setColor(byte color) {
-  miniSubs.color(color); 
-  packSubs.color(color); 
-  flood.color(color); 
-}
+  Serial << F("Instruction, color: ") << color << endl;
 
+  if( !ET.receiveData() ) miniSubs.color(color); 
+  if( !ET.receiveData() ) packSubs.color(color); 
+  if( !ET.receiveData() ) flood.color(color); 
+}
 void setFade() {
-  miniSubs.fade(); 
-  packSubs.fade();
-  flood.fade(); 
-}
+  Serial << F("Instruction, fade.")<< endl;
 
+  if( !ET.receiveData() ) miniSubs.fade(); 
+  if( !ET.receiveData() ) packSubs.fade();
+  if( !ET.receiveData() ) flood.fade(); 
+}
 void setOn() {
-  miniSubs.on(); 
-  packSubs.on(); 
-  flood.on(); 
-}
+  Serial << F("Instruction, on.")<< endl;
 
+  if( !ET.receiveData() ) miniSubs.on(); 
+  if( !ET.receiveData() ) packSubs.on(); 
+  if( !ET.receiveData() ) flood.on(); 
+}
+void setOff() {
+  Serial << F("Instruction, off.")<< endl;
+
+  if( !ET.receiveData() ) miniSubs.off(); 
+  if( !ET.receiveData() ) packSubs.off(); 
+  if( !ET.receiveData() ) flood.off(); 
+}
 
 void loop() {
   
-  const char *c[]={"Red","Green","Blue","Yellow","White"};
-  static byte color = 0;
-  
-  Serial << c[color] << endl;
-  setColor(color);
-  delay(3000);
-   
-  Serial << "Fade" << endl;
-  setFade();
-  delay(3000);
-  
-  (++color) %= 5;
-  
+ // check SSerial
+  if( ET.receiveData() ) {
+    // have data.  is it different than last?
+    if( memcmp((void*)(&newColorInst), (void*)(&lastColorInst), sizeof(colorInstruction)) != 0 ) {
+      if( newColorInst.red > 0 && newColorInst.green > 0 && newColorInst.blue > 0 ) setColor(4); // white
+      else if( newColorInst.red > 0 && newColorInst.green > 0 ) setColor(I_YEL);
+      else if( newColorInst.red > 0 ) setColor(I_RED);
+      else if( newColorInst.green > 0 ) setColor(I_GRN);
+      else if( newColorInst.blue > 0 ) setColor(I_BLU);
+      else setOff();
+      
+      lastColorInst = newColorInst;
+    }    
+  } 
+
 }
 
 void IRlight::begin(uint16_t address, byte sendCount,
@@ -147,12 +166,13 @@ void IRlight::begin(uint16_t address, byte sendCount,
 
 void IRlight::color(byte color) {
   
+  // turn on.
+  if( !this->isOn ) this->on();
+
   if( this->isOn && color == currentColor ) return; // no need.
   
   // track
   currentColor = color;
-  
-//  if( !this->isOn ) this->on();
   
   switch( color ) {
     case I_RED: send(redC); break;
@@ -160,14 +180,12 @@ void IRlight::color(byte color) {
     case I_BLU: send(blueC); break;
     case I_YEL: send(yellowC); break;
     default: send(whiteC); break;
-  }
-  
-//  delay(100);
-      
+  } 
+
 }
 
-void IRlight::on() { send(this->onC); this->isOn=true; }
-void IRlight::off() { send(this->offC); this->isOn=false; }
+void IRlight::on() { if( !this->isOn ) send(this->onC); this->isOn=true; }
+void IRlight::off() { if( this->isOn ) send(this->offC); this->isOn=false; }
 void IRlight::up() { send(this->upC); }
 void IRlight::down() { send(this->downC); }
 void IRlight::flash() { send(this->flashC); }
@@ -182,7 +200,9 @@ void IRlight::send(byte code) {
   
   for( byte i=0; i<sendCount; i++ ) {
     tic = millis();
+    digitalWrite(13, HIGH);
     irsend.sendNEC(msg, 32);
+    digitalWrite(13, LOW);
     toc = millis();
     delay(100UL - (toc-tic));
   }

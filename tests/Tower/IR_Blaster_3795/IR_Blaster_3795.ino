@@ -28,7 +28,7 @@ class IRlight {
     
 };
   
-SoftwareSerial IRsend(8, 7);
+SoftwareSerial IRsend(8, 7); // pin 7 to ST3795 pin 3
 
 IRlight flood; // Loftek (50W) and off-brand (10W) floods, and RGB strip lighting.
 IRlight miniSubs; // cute little CR2032s
@@ -83,20 +83,20 @@ DON'T obey address codes: pack subs, big floods
 
 
 void setColor(byte color) {
-  miniSubs.color(color); 
-  packSubs.color(color); 
+//  miniSubs.color(color); 
+//  packSubs.color(color); 
   flood.color(color); 
 }
 
 void setFade() {
-  miniSubs.fade(); 
-  packSubs.fade();
+//  miniSubs.fade(); 
+//  packSubs.fade();
   flood.fade(); 
 }
 
 void setOn() {
-  miniSubs.on(); 
-  packSubs.on(); 
+//  miniSubs.on(); 
+// packSubs.on(); 
   flood.on(); 
 }
 
@@ -108,7 +108,7 @@ void loop() {
   
   Serial << c[color] << endl;
   setColor(color);
-  delay(3000);
+  delay(1000);
    
 //  Serial << "Fade" << endl;
 //  setFade();
@@ -182,11 +182,11 @@ void IRlight::send(byte code) {
 
   static Metro sendInterval(100UL); // ms
   
-  while( !sendInterval.check() ); // wait for last send to cle
-  
   Serial << "sending at " << millis() << endl;
   
   for( byte i=0; i<sendCount; i++ ) {
+  
+    while( !sendInterval.check() ); // wait for last send to cle
   
     Serial << _HEX(0xCC) << " " << _HEX(lowByte(this->addressC)) << " " << _HEX(highByte(this->addressC)) << " " << _HEX(code) << endl;
     

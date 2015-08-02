@@ -39,10 +39,10 @@ void send(byte code) {
   
   Serial << _HEX(0xCC) << " " << _HEX(lowByte(addressC)) << " " << _HEX(highByte(addressC)) << " " << _HEX(code) << endl;
     
-  IRsend.print(0xCC);
-  IRsend.print(lowByte(addressC));
-  IRsend.print(highByte(addressC));
-  IRsend.print(code);
+  IRsend.write(0xCC);
+  IRsend.write(lowByte(addressC));
+  IRsend.write(highByte(addressC));
+  IRsend.write(code);
   
   sendInterval.reset();  
  
