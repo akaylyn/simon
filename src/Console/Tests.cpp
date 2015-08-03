@@ -219,6 +219,9 @@ void TestModes::layoutModeLoop(boolean performStartup) {
 
     // do the deed.
     network.layout(layout, layout);
+    
+    // reset high score
+    scoreboard.resetHighScore();
   }
 }
 

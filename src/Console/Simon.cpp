@@ -68,8 +68,8 @@ void idleEnter() {
 
   idleBeforeFanfare.reset();
 
+  scoreboard.clear();
   scoreboard.resetCurrScore();
-
 }
 void idleUpdate() {
   light.animate(A_Idle);
@@ -95,8 +95,10 @@ void idleUpdate() {
   }
   
   scoreboard.showBackerMessages();
+  scoreboard.showSimonTeam();
 }
 void idleExit() {
+  scoreboard.clear();
 }
 
 //***** Game

@@ -1,0 +1,12 @@
+phi_super_font	KEYWORD1
+invert_super_font	KEYWORD2
+lcd_clear	KEYWORD2
+super_msg_lcd	KEYWORD2
+render_super_number	KEYWORD2
+render_super_msg	KEYWORD2
+render_super_char	KEYWORD2
+render_super_char_0	KEYWORD2
+render_super_char_1	KEYWORD2
+render_super_char_2	KEYWORD2
+render_super_char_3	KEYWORD2
+init_super_font	KEYWORD2

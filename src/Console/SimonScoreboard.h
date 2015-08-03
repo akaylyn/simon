@@ -10,15 +10,19 @@
 #include <EEPROM.h>
 #include <avr/pgmspace.h> // PROGMEM
 #include <Metro.h>
+#include <phi_super_font.h> // for really big characters
 
 class SimonScoreboard {
   public:
     void begin();
+    void clear(); // really slow function
     void resetCurrScore();
-    void saveHighScore();
     void saveCurrScore(int playerCurrent);
-    
+    void resetHighScore(); // accessed from within LayoutMode.  Likely, we want to reset this once every project setup, so it's a convenient place to do it.
+    void saveHighScore();
+      
     void showBackerMessages();
+    void showSimonTeam();
     
   private:
     uint32_t highScore;

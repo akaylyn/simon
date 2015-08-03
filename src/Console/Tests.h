@@ -12,6 +12,7 @@
 #include "Network.h" // for mode switch sends and Tower comms
 #include "Light.h" // for lights
 #include "Fire.h" // for fire
+#include "SimonScoreboard.h" // to enabled LCD/scoreboard use
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>

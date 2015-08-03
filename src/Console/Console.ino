@@ -16,6 +16,7 @@
 #include <wavTrigger.h> // sound board
 #include <LiquidCrystal_I2C.h> // LCD
 #include <avr/pgmspace.h> // PROGMEM
+#include <phi_super_font.h> // for really big characters
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
