@@ -72,7 +72,7 @@ void setup()
   //  flood.color(color); 
 
   // strips, small floods, big floods
-  flood.begin(0x00F7, 1,   0xC0, 0x40, 0x00, 0x80, 0x20, 0xA0, 0x60, 0x28, 0xE0, 0xD0, 0xF0, 0xC8, 0xE8);
+  flood.begin(0x00F7, 2,   0xC0, 0x40, 0x00, 0x80, 0x20, 0xA0, 0x60, 0x28, 0xE0, 0xD0, 0xF0, 0xC8, 0xE8);
 //  for( byte i=0; i<10; i++) flood.up();
   // 50W floods: any damn thing
   // strips: 0x00F?
@@ -128,7 +128,9 @@ void loop() {
       else if( newColorInst.red > 0 ) setColor(I_RED);
       else if( newColorInst.green > 0 ) setColor(I_GRN);
       else if( newColorInst.blue > 0 ) setColor(I_BLU);
-      else setOff();
+//      else setOff();
+      else setColor(4); // default to on, but rotating colors.
+//      else setFade(); // default to on, but rotating colors.
       
       lastColorInst = newColorInst;
     }    

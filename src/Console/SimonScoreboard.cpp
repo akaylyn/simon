@@ -34,8 +34,12 @@ void SimonScoreboard::begin() {
   lcd.home();                   // go home
   lcd.print("    Simon v2 LCD    ");
 
+  Serial << F("Setup: setting up super fonts....") << endl;
+
   init_super_font(&lcd); // big big numbers
 
+  Serial << F("Setup: LCD initialized.") << endl;
+  
   highScore = EEPROM.read(EEPROM_ADDR);
   displayHighScore();
 
@@ -82,17 +86,21 @@ void SimonScoreboard::saveHighScore() {
 */
 
 void SimonScoreboard::displayCurrScore() {
+  static char p1[] = "PLAYER1";
   lcd.setCursor(0, 0);
-  lcd.print(F("PLAYER1:"));
+  lcd.print(p1);
 
+  static char p2[] = "HIGH:";
   lcd.setCursor(0, 3);
-  lcd.print(F("HIGH:"));
+  lcd.print(p2);
   char b[2];
-  sprintf(b, "%2d", highScore); // using a buffer to get padding
+  sprintf(b, "%02d", highScore); // using a buffer to get padding
   lcd.print(b);
 
-  sprintf(b, "%2d", currScore);   
+  sprintf(b, "%02d", currScore);   
   render_super_msg(b, 9, 0);
+  
+  Serial << F("Scoreboard: exiting displayCurrSore.") << endl;
 }
 
 void SimonScoreboard::displayHighScore() {
@@ -108,13 +116,13 @@ void SimonScoreboard::showBackerMessages() {
   static int i=random(0, nMessages); // start somewhere new at the beginning.
   
   if( cycleInterval.check() ) {
-    Serial << "i=" << i << endl;
-    Serial << "nM=" << nMessages << endl;
-    Serial << "thx=" << thx << endl;
+//    Serial << "i=" << i << endl;
+//    Serial << "nM=" << nMessages << endl;
+//    Serial << "thx=" << thx << endl;
     strcpy_P(buffer, (char*)pgm_read_word(&(backerMessages[i]))); // Necessary casts and dereferencing, just copy.
-    Serial << "m=" << buffer << endl;
+//    Serial << "m=" << buffer << endl;
     sprintf(buffer2, "%20s", buffer); // sprintf incurs a 1K memory cost.  It's awful, and I just need blank padding.
-    Serial << "m=" << buffer2 << endl;
+//    Serial << "m=" << buffer2 << endl;
         
     lcd.setCursor(0, 2);
     lcd.print(thx);
@@ -134,13 +142,13 @@ void SimonScoreboard::showSimonTeam() {
   static int i=random(0, nMessages); // start somewhere new at the beginning.
   
   if( cycleInterval.check() ) {
-    Serial << "i=" << i << endl;
-    Serial << "nM=" << nMessages << endl;
-    Serial << "thx=" << thx << endl;
+//    Serial << "i=" << i << endl;
+//    Serial << "nM=" << nMessages << endl;
+//    Serial << "thx=" << thx << endl;
     strcpy_P(buffer, (char*)pgm_read_word(&(simonTeam[i]))); // Necessary casts and dereferencing, just copy.
-    Serial << "m=" << buffer << endl;
+//    Serial << "m=" << buffer << endl;
     sprintf(buffer2, "%20s", buffer); // sprintf incurs a 1K memory cost.  It's awful, and I just need blank padding.
-    Serial << "m=" << buffer2 << endl;
+//    Serial << "m=" << buffer2 << endl;
         
     lcd.setCursor(0, 0);
     lcd.print(thx);
