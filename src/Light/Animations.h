@@ -28,10 +28,12 @@ void twinkleRand(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
 // Uses the matrix as a strip
 void tronLightCycles(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
 // all state altered in these methods must be passed
-void serialPrint();
-boolean isCycle(int x, int y);
-void moveCycles();
-void moveThisCycle(byte c);
+//void serialPrint();
+boolean isCycle(TronCycles &cycles, int x, int y);
+void addCycle(Adafruit_NeoPixel &strip, TronCycles &cycles, uint32_t x, uint32_t y, uint32_t color);
+void fadeCycles(Adafruit_NeoPixel &strip);
+void moveCycles(TronCycles &cycles);
+void moveThisCycle(Adafruit_NeoPixel &strip, TronCycles &cycles, byte c);
 uint32_t getPixelN(uint32_t x, uint32_t y);
 
 // Animations designed or the NeoPixel Matrix wrapped around the inside of the console

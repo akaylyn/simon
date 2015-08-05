@@ -28,7 +28,7 @@ Adafruit_NeoMatrix rimJob = Adafruit_NeoMatrix(
     );
 
 // I don't know if this is valid; RIM_PIN is already assigned for the actual matrix above
-Adafruit_NeoPixel rimJobStrip = Adafruit_NeoPixel(RIM_X*RIM_Y, RIM_PIN, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel rimJobStrip = Adafruit_NeoPixel(RIM_X*RIM_Y, RIM_PIN, NEO_GRB + NEO_KHZ800);
 
 // strips around the buttons
 Adafruit_NeoPixel redL = Adafruit_NeoPixel(BUTTON_N, RED_PIN, NEO_GRB + NEO_KHZ800);
@@ -86,6 +86,7 @@ ProxPulsePosition proxPulsePos;
 ProxPulsePosition idlePos;
 GameplayPosition gameplayPos;
 GameplayPosition gameplayDecayPos;
+TronCycles tronCycles;
 
 void configureAnimations() {
 
@@ -117,6 +118,14 @@ void configureAnimations() {
   rimConfig.position = &proxPulsePos;
   rimConfig.timer = Metro(30UL);
   gameplayPos.decayPos = &gameplayDecayPos;
+
+  // Rim as a strip
+  rimConfigStrip.name = "Outer rim - strip";
+  rimConfigStrip.strip = &rimJob;
+  rimConfigStrip.color = blue;
+  rimConfigStrip.ready = true;
+  rimConfigStrip.position = &tronCycles;
+  rimConfigStrip.timer = Metro(30UL);
 
   // Init neo pixel strips for the buttons
   redL.begin();
