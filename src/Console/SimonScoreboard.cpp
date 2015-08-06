@@ -16,7 +16,7 @@ const char* const backerMessages[] PROGMEM = {b00, b01, b02, b03};
                       //   "01234567890123456789" -> 20 characters in width, max
 const char t00[] PROGMEM = "Mike Dodds";   // "String 0" etc are strings to store - change to suit.
 const char t01[] PROGMEM = "Kyle Miller";
-const char t02[] PROGMEM = "Andrea Pollit";
+const char t02[] PROGMEM = "Andrea Pollitt";
 const char t03[] PROGMEM = "Shane Iler";
 const char t04[] PROGMEM = "Chris Galvin";
 const char t05[] PROGMEM = "Alan Hudson (Giles)";
@@ -31,8 +31,6 @@ void SimonScoreboard::begin() {
   // LCD
   lcd.begin(20,4); // initialize the lcd
   lcd.backlight(); // backlight, always
-  lcd.home();                   // go home
-  lcd.print("    Simon v2 LCD    ");
 
   Serial << F("Setup: setting up super fonts....") << endl;
 
@@ -41,15 +39,12 @@ void SimonScoreboard::begin() {
   Serial << F("Setup: LCD initialized.") << endl;
   
   highScore = EEPROM.read(EEPROM_ADDR);
-  displayHighScore();
 
 }
 
 void SimonScoreboard::clear() {
   lcd.clear(); // takes a while, iirc.
 }
-
-
 
 void SimonScoreboard::resetCurrScore() {
   currScore = 0;
@@ -64,6 +59,7 @@ void SimonScoreboard::saveCurrScore(int playerCurrent) {
 }
 
 void SimonScoreboard::resetHighScore() {
+  highScore = 0;
   EEPROM.write(EEPROM_ADDR, 0);
 }
 
@@ -72,7 +68,6 @@ void SimonScoreboard::saveHighScore() {
     highScore = currScore;
     EEPROM.write(EEPROM_ADDR, highScore);
   }
-  displayHighScore();
 }
 
 /*
@@ -86,26 +81,18 @@ void SimonScoreboard::saveHighScore() {
 */
 
 void SimonScoreboard::displayCurrScore() {
-  static char p1[] = "PLAYER1";
+  static char p1[] = "PLAYER1:";
   lcd.setCursor(0, 0);
   lcd.print(p1);
-
+  char b[3]; // zero terminated strings, so you need one more allocated than expected.
+  sprintf(b, "%02d", currScore); // using a buffer to get padding
+  render_super_msg(b, 9, 0);
+  
   static char p2[] = "HIGH:";
   lcd.setCursor(0, 3);
   lcd.print(p2);
-  char b[2];
   sprintf(b, "%02d", highScore); // using a buffer to get padding
   lcd.print(b);
-
-  sprintf(b, "%02d", currScore);   
-  render_super_msg(b, 9, 0);
-  
-  Serial << F("Scoreboard: exiting displayCurrSore.") << endl;
-}
-
-void SimonScoreboard::displayHighScore() {
-  lcd.setCursor(10, 1);
-  lcd.print(highScore);
 }
 
 void SimonScoreboard::showBackerMessages() {

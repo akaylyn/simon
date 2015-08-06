@@ -113,6 +113,8 @@ void gameEnter() {
   fire.clear();
 
   sound.stopAll();
+  
+  scoreboard.displayCurrScore(); // where we at?
 
   // delay after a player's last move
   waitDuration(800UL);

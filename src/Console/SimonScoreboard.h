@@ -23,13 +23,13 @@ class SimonScoreboard {
       
     void showBackerMessages();
     void showSimonTeam();
+
+    void displayCurrScore();
     
   private:
     uint32_t highScore;
     uint32_t currScore;
     static const byte EEPROM_ADDR = 77; // layoutpos + sizeof layout data; 69 + 8
-    void displayCurrScore();
-    void displayHighScore();
 };
 
 extern SimonScoreboard scoreboard;
