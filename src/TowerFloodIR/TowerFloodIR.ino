@@ -1,4 +1,6 @@
-// Compile for Arduino Pro/Pro Mini 5V 16Mhz with ATMega 328
+// Compile for Arduino Pro/Pro Mini 5V 16Mhz with ATMega 328.
+// During compilation, hold down RESET on the mini, and release when "Uploading..."
+// The pinout for the Minis with the rectangular RESET button are flipped, so the programmer will face away from you.
 
 // need to strike RobotIRRemote directory in Arduino IDE libraries folder.  Name collision!
 #include <IRremote.h> // IR connected to pin 3
