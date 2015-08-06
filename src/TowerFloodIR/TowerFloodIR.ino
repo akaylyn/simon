@@ -1,6 +1,6 @@
 // Compile for Arduino Pro/Pro Mini 5V 16Mhz with ATMega 328.
 // During compilation, hold down RESET on the mini, and release when "Uploading..."
-// The pinout for the Minis with the rectangular RESET button are flipped, so the programmer will face away from you.
+// Or, pop the board out of the PCB and program that way.
 
 // need to strike RobotIRRemote directory in Arduino IDE libraries folder.  Name collision!
 #include <IRremote.h> // IR connected to pin 3
@@ -49,8 +49,10 @@ IRlight packSubs; // pack-of-four submersibles
 void setup()
 {
   Serial.begin(115200);
-  Serial << "Startup." << endl;
+  Serial << F("Startup.") << endl;
 
+  Serial << F("Clock speed (MHz): ") << F_CPU << endl;
+  
   SSerial.begin(9600);
   ET.begin(details(newColorInst), &SSerial);
 
