@@ -7,9 +7,13 @@
 // MSGEQ7 datasheet: https://www.sparkfun.com/datasheets/Components/General/MSGEQ7.pdf
 // pin locations
 
-#define MSGEQ7_ANALOG_PIN      A0
-#define MSGEQ7_STROBE_PIN      A1
-#define MSGEQ7_RESET_PIN       A2
+#define WAV_OUT_PIN A0
+#define WAV_STROBE_PIN A1
+#define WAV_RESET_PIN A2
+
+#define MIC_OUT_PIN A3
+#define MIC_STROBE_PIN A4
+#define MIC_RESET_PIN A5
 
 #define NUM_FREQUENCY_BANDS    7
 
@@ -24,7 +28,7 @@
 class Mic {
   public:
     // startup
-    void begin();
+    void begin(int resetPin, int stobePin, int outPin);
     
     // show the volume levels 
     void print();
@@ -43,6 +47,9 @@ class Mic {
     void setBeatMin(byte band, int val);
       
   private:
+    // pins 
+    int resetPin, strobePin, outPin;
+  
     // index for last read
     int sampleIndex;
     // track the volume
@@ -58,6 +65,6 @@ class Mic {
     bool isBeat[NUM_FREQUENCY_BANDS];
 };
     
-extern Mic mic;
+extern Mic listenWav, listenMic;
 
 #endif

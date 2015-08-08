@@ -5,15 +5,19 @@ const int bandCenter[NUM_FREQUENCY_BANDS] = {
   63, 160, 400, 1000, 2500, 6250, 16000
 }; // in Hz.
 
-void Mic::begin() {
+void Mic::begin(int resetPin, int stobePin, int outPin) {
   Serial << "Mic: startup." << endl;
 
+  this->resetPin = resetPin;
+  this->strobePin = strobePin;
+  this->outPin = outPin;
+  
   // Set up the MSGEQ7 IC
-  pinMode(MSGEQ7_ANALOG_PIN, INPUT);
-  pinMode(MSGEQ7_STROBE_PIN, OUTPUT);
-  pinMode(MSGEQ7_RESET_PIN, OUTPUT);
-  digitalWrite(MSGEQ7_RESET_PIN, LOW);
-  digitalWrite(MSGEQ7_STROBE_PIN, HIGH);
+  pinMode(resetPin, OUTPUT);
+  pinMode(strobePin, OUTPUT);
+  pinMode(outPin, INPUT);
+  digitalWrite(resetPin, LOW);
+  digitalWrite(strobePin, HIGH);
 
   // set threshold
   for ( int i = 0; i < NUM_FREQUENCY_BANDS; i++ ) {
@@ -48,18 +52,18 @@ void Mic::update() {
   float currVol[NUM_FREQUENCY_BANDS];
 
   // Toggle the RESET pin of the MSGEQ7 to start reading from the lowest frequency band
-  digitalWrite(MSGEQ7_RESET_PIN, HIGH); // HIGH for >= 100 nS; easy
-  digitalWrite(MSGEQ7_RESET_PIN, LOW);
+  digitalWrite(resetPin, HIGH); // HIGH for >= 100 nS; easy
+  digitalWrite(resetPin, LOW);
 
   // Read the volume in every frequency band from the MSGEQ7
   for (int i = 0; i < NUM_FREQUENCY_BANDS; i++) {
 
-    digitalWrite(MSGEQ7_STROBE_PIN, LOW);
+    digitalWrite(strobePin, LOW);
     delayMicroseconds(30); // Allow the output to settle, and get >=72 us btw LOW strobe-strobe
 
-    currVol[i] = analogRead(MSGEQ7_ANALOG_PIN);    // LOW strobe-strobe delay needs to be >=72 us
+    currVol[i] = analogRead(outPin);    // LOW strobe-strobe delay needs to be >=72 us
 
-    digitalWrite(MSGEQ7_STROBE_PIN, HIGH); // HIGH for >= 18 us.
+    digitalWrite(strobePin, HIGH); // HIGH for >= 18 us.
     //    delayMicroseconds(15);
 
   }
@@ -132,7 +136,7 @@ void Mic::setBeatMin(byte b, int val) {
   bandBeatMin[b] = val;
 }
 
-Mic mic;
+Mic listenWav, listenMic;
 
 
 

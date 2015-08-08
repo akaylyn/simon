@@ -1,5 +1,5 @@
 #include "Tests.h"
-#include "SimonScoreBoard.h"
+#include "SimonScoreboard.h"
 
 #define MODE_TRACK_OFFSET 699
 
@@ -68,6 +68,7 @@ boolean TestModes::update() {
       layoutModeLoop(performStartup);
       break;
     case EXTERN:
+      externModeLoop(performStartup);
       break;
   }
 
@@ -497,6 +498,29 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
       }
     }
   }
+}
+
+void TestModes::externModeLoop(boolean performStartup) {
+  if( performStartup ) {
+    listenWav.setThreshold(1, 1.0); // low threshold
+    listenMic.setThreshold(1, 1.0); // low threshold
+    
+    sound.stopAll();
+    sound.setLeveling(0,1); // prep for 4x tones and no music.
+    sound.playWins(512); // pure bass test
+  }
+
+  listenWav.update();
+  if( listenWav.getBeat(1) ) { 
+    Serial << F("listenWav: ");  
+    listenWav.print();
+    delay(100);
+  }
+/*  
+  Serial << F("listenMic: ");  
+  listenMic.update();
+  listenMic.print();
+*/  
 }
 
 TestModes testModes;
