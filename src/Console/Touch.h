@@ -51,7 +51,8 @@ class Touch {
 
     // pressed state checks
     boolean pressed(color index); // returns true if pressed
-    boolean anyPressed(); // convenience function; returns true if any index is pressed
+    boolean anyColorPressed(); // convenience function; returns true if any index is pressed
+    boolean anyButtonPressed();
     color whatPressed(); // returns the first pressed button found
 
     // returns "distance" an object is to the sensor

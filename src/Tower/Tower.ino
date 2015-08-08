@@ -122,12 +122,6 @@ void loop() {
     // reset idle
     idleUpdate.reset();
 
-  if ( idleUpdate.check()) {
-    idleTestPattern(newColorInst);
-    // and take a moment to check heap+stack remaining
-    Serial << F("Tower: free RAM: ") << freeRam() << endl;
-  }
-
   // execute any new instructions
   if ( memcmp((void*)(&newColorInst), (void*)(&lastColorInst), sizeof(colorInstruction)) != 0 ) {
     Serial << F("New color instruction. R:") << newColorInst.red << F(" G:") << newColorInst.green << F(" B:") << newColorInst.blue << endl;
@@ -151,6 +145,14 @@ void loop() {
     modeChange(newMode);
     // cache
     lastMode = newMode;
+  }
+  
+  // Go to idle cycle, unless we're in the lights test.  
+  // This lets us stay on the same color indefinitely for testing.
+  if ( idleUpdate.check() && newMode != LIGHTS) {
+    idleTestPattern(newColorInst);
+    // and take a moment to check heap+stack remaining
+    Serial << F("Tower: free RAM: ") << freeRam() << endl;
   }
 
 }
@@ -201,7 +203,3 @@ void idleTestPattern(colorInstruction &inst) {
   inst = cMap[colorOrder[c]];
   Serial << endl << F("Idle: color ") << c+1 << F(" of ") << N_COLORS << F(". R:") << inst.red << F(" G:") << inst.green << F(" B:") << inst.blue << endl;
 }
-
-
-
-
