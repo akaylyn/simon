@@ -40,7 +40,7 @@ class IRlight {
 IRsend irsend;
 
 IRlight flood; // Loftek (50W) and off-brand (10W) floods, and RGB strip lighting.
-//IRlight miniSubs; // cute little CR2032s
+IRlight miniSubs; // cute little CR2032s
 //IRlight packSubs; // pack-of-four submersibles
 IRlight soondarSubs; // pack-of-four 12 and big submersibles by Soondar
 
@@ -60,7 +60,7 @@ void setup()
   pinMode(13, OUTPUT);
 
   // minisubs 
-//  miniSubs.begin(0x01FE, 1, 0x48, 0x58, 0x48, 0x48, 0x20, 0xA0, 0x60, 0x50, 0x30, 0xC0, 0xC0, 0xC0, 0xC0); 
+  miniSubs.begin(0x01FE, 1, 0x48, 0x58, 0x48, 0x48, 0x20, 0xA0, 0x60, 0x50, 0x30, 0xC0, 0xC0, 0xC0, 0xC0); 
   // no up and down
  // strictly address 0x01FE
   
@@ -96,48 +96,48 @@ void setup()
 void setColor(byte color) {
   Serial << F("Instruction, color: ") << color << endl;
 
-//  if( !ET.receiveData() ) miniSubs.color(color); 
 //  if( !ET.receiveData() ) packSubs.color(color); 
   if( !ET.receiveData() ) soondarSubs.color(color); 
+  if( !ET.receiveData() ) miniSubs.color(color); 
   if( !ET.receiveData() ) flood.color(color); 
 }
 void setFade() {
   Serial << F("Instruction, fade.")<< endl;
 
-//  if( !ET.receiveData() ) miniSubs.fade(); 
 //  if( !ET.receiveData() ) packSubs.fade();
   if( !ET.receiveData() ) soondarSubs.fade(); 
+  if( !ET.receiveData() ) miniSubs.fade(); 
   if( !ET.receiveData() ) flood.fade(); 
 }
 void setSmooth() {
   Serial << F("Instruction, smooth.")<< endl;
 
-//  if( !ET.receiveData() ) miniSubs.smooth(); 
 //  if( !ET.receiveData() ) packSubs.smooth();
   if( !ET.receiveData() ) soondarSubs.smooth(); 
+  if( !ET.receiveData() ) miniSubs.smooth(); 
   if( !ET.receiveData() ) flood.smooth(); 
 }
 void setOn() {
   Serial << F("Instruction, on.")<< endl;
 
-//  if( !ET.receiveData() ) miniSubs.on(); 
 //  if( !ET.receiveData() ) packSubs.on(); 
   if( !ET.receiveData() ) soondarSubs.on(); 
+  if( !ET.receiveData() ) miniSubs.on(); 
   if( !ET.receiveData() ) flood.on(); 
 }
 void setOff() {
   Serial << F("Instruction, off.")<< endl;
 
-//  if( !ET.receiveData() ) miniSubs.off(); 
 //  if( !ET.receiveData() ) packSubs.off(); 
   if( !ET.receiveData() ) soondarSubs.off(); 
+  if( !ET.receiveData() ) miniSubs.off(); 
   if( !ET.receiveData() ) flood.off(); 
 }
 
 void loop() {
   
  // check SSerial
-  if( ET.receiveData() ) {
+    if( ET.receiveData() ) {
     // have data.  is it different than last?
     if( memcmp((void*)(&newColorInst), (void*)(&lastColorInst), sizeof(colorInstruction)) != 0 ) {
       if( newColorInst.red > 0 && newColorInst.green > 0 && newColorInst.blue > 0 ) setColor(4); // white
