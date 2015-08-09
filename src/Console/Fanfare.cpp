@@ -188,7 +188,8 @@ void playerFanfare(fanfare_t level) {
    unsigned long budget = (unsigned long) ((float)trackLength / fireBudgetFactor);
    float bt = (float) trackLength / budget;
    byte active;
-
+   //unsigned long samples = 0;
+   
   Serial << "Track Length: " << trackLength << " budget: " << budget << endl;;
 
    color fireTower = I_RED;
@@ -204,6 +205,9 @@ void playerFanfare(fanfare_t level) {
      network.update();
      waitDuration(1UL);
      listenWav.update();
+     //samples++;
+     //if (samples > 100) listenWav.print();
+     
 
      if (hearBeat && currTime > beatEndTime) {
        Serial << "Beat over.  " << endl;

@@ -5,17 +5,15 @@ const int bandCenter[NUM_FREQUENCY_BANDS] = {
   63, 160, 400, 1000, 2500, 6250, 16000
 }; // in Hz.
 
-void Mic::begin(int resetPin, int stobePin, int outPin) {
-  Serial << "Mic: startup." << endl;
-
+void Mic::begin(int resetPin, int strobePin, int outPin) {
   this->resetPin = resetPin;
   this->strobePin = strobePin;
   this->outPin = outPin;
   
   // Set up the MSGEQ7 IC
+  pinMode(outPin, INPUT);
   pinMode(resetPin, OUTPUT);
   pinMode(strobePin, OUTPUT);
-  pinMode(outPin, INPUT);
   digitalWrite(resetPin, LOW);
   digitalWrite(strobePin, HIGH);
 
