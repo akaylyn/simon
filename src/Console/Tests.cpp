@@ -52,6 +52,7 @@ boolean TestModes::update() {
       layoutModeLoop(performStartup);
       break;
     case EXTERN:
+      externModeLoop(performStartup);
       break;
   }
 
@@ -481,6 +482,171 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
       }
     }
   }
+}
+
+#define beatInterval 333
+#define beatChance 100
+#define airChance 0
+#define lightMoveChance 50   // n in 100 chance of the light moving on a beat
+#define minFirePerFireball 50  // min fire level(ms) per fireball
+#define maxFirePerFireball 200  // max fire level(ms) per fireball
+#define fireBudgetFactor 7  // Divisor of track length we throw fire.  Tune this to throw less fire
+
+#define bassBand 0
+#define bassBand2 1
+
+void TestModes::externModeLoop(boolean performStartup) {
+   static unsigned long beatEndTime = millis();  // time left for beat effect
+   static unsigned long beatWaitTime = millis();
+   static unsigned long startTime;
+   static unsigned long currTime;
+   static int fireballs = 0;
+   static unsigned long firepower = 1;
+   static float threshold = 1.5; // initial threshold is likely to throw a fireball
+   static color fireTower = I_RED;
+   static color lightTower = I_RED;
+   
+   static unsigned long trackLength = 30000;  // todo not really gonna work but test for now   
+   static unsigned long budget; 
+   static float bt;
+   static byte active;
+   static boolean hearBeat = false;
+   static byte tower, tower2 = I_RED;
+
+   currTime = millis();
+
+   if (performStartup) {
+     budget = (unsigned long) ((float)trackLength / fireBudgetFactor);
+     bt = (float) trackLength / budget;
+     active = 0;
+     startTime = millis();
+     hearBeat = false;
+     firepower = 1;
+     threshold = 1.5;
+   } else if ((currTime - startTime) > trackLength) {
+     Serial << "Reseting budget" << endl;
+     // reset budget
+     startTime = currTime;
+     firepower = 1;
+   }
+
+
+   threshold *= bt * (float)firepower / ((float) (currTime - startTime));
+   threshold = constrain(threshold,1.0,5.0);
+   
+   threshold = 4;   // try peggin high.
+   mic.setThreshold(bassBand, threshold);
+   mic.setThreshold(bassBand2, threshold);
+   network.update();
+   waitDuration(1UL);
+   mic.update();
+
+   if (hearBeat && currTime > beatEndTime) {
+     Serial << "Beat over.  " << endl;
+     light.clear();
+     fire.clear();
+     network.update();
+     hearBeat = false;
+     waitDuration(10UL);
+   }
+
+   // Lights will queue changes based on activity level across all non bass bands
+
+   for (byte i = 2; i < NUM_FREQUENCY_BANDS; i++) {
+     if ( mic.getBeat(i) ) {
+       active++;
+     }
+   }
+
+  if (active > 0) {
+    switch (active) {
+    case 0:
+      light.clear();
+      break;
+    case 1:
+    case 2:
+      light.setLight(lightTower, 255, 0 , 0);
+      break;
+    case 3:
+    case 4:
+      light.setLight(lightTower, 0, 255, 0);
+      break;
+    case 5:
+    case 6:
+      light.setLight(lightTower, 0, 0, 255);
+      break;
+    default:
+      light.setLight(lightTower, 255, 255, 0);
+      active = 0;
+      break;
+    }
+
+    if (random(1,101) <= lightMoveChance) {
+      lightTower = incColor(lightTower);
+    }
+  }
+
+  // Fire is queued to the bass channels.  Air effect is random but unlikely right now
+   if (currTime > beatWaitTime) {
+     if (mic.getBeat(bassBand) || mic.getBeat(bassBand2)) {
+       if (random(1,101) <= beatChance) {
+         Serial << "Fire" << endl;
+         hearBeat = true;
+         //byte fireLevel = minFirePerFireball / 10 + random(0,maxFirePerFireball / 10);
+         byte fireLevel = fscale(0, 100, minFirePerFireball / 10, maxFirePerFireball / 10, random(101), -6.0);
+         unsigned long fireMs = fireLevel * 10; // each level is 10ms
+         Serial << " fireLevel: " << fireMs << endl;
+
+         flameEffect airEffect = veryRich;
+
+          if (random(1, 101) <= airChance) {
+            byte effect = random(0, 6);
+            switch (effect) {
+            case 0:
+              airEffect = kickStart;
+              break;
+            case 1:
+              airEffect = kickMiddle;
+              break;
+            case 2:
+              airEffect = kickEnd;
+              break;
+            case 3:
+              airEffect = gatlingGun;
+              break;
+            case 4:
+              airEffect = randomly;
+              break;
+            case 5:
+              airEffect = veryLean;
+              break;
+            }
+          }
+
+          byte towers = random(0,2);
+
+          switch(towers) {
+            case 0:
+              fire.setFire(fireTower,fireLevel,airEffect);
+              break;
+            case 1:
+              fire.setFire(fireTower,fireLevel,airEffect);
+              fire.setFire(oppTower(fireTower),fireLevel,airEffect);
+              break;
+          }
+
+         network.update();
+         fireballs++;
+         firepower += fireMs;
+         beatEndTime = currTime + fireMs;
+         beatWaitTime = currTime + beatInterval;
+
+         fireTower = randColor();
+       } else {
+         Serial << "Ignore" << endl;
+       }
+     }
+   }
 }
 
 TestModes testModes;

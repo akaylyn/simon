@@ -56,4 +56,8 @@ enum fanfare_t {
 
 void playerFanfare(fanfare_t level);
 
+color incColor(color val);
+color randColor();
+color oppTower(color val);
+  
 #endif

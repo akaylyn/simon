@@ -115,8 +115,6 @@ void loseFanfare() {
 }
 
 void playerFanfare(fanfare_t level) {
-  Serial << "***Inside alan playerFanFare: fanfareLevel: " << level << "\n";
-
   if (!FANFARE_ENABLED) {
     Serial.println("Fanfare disabled");
     return;
@@ -159,9 +157,10 @@ void playerFanfare(fanfare_t level) {
       trackLength = 30000UL;
       break;
     case IDLE:
+      trackLength = 18000UL;
+      break;
     case CONSOLATION:
       trackLength = 3000UL;
-      Serial << "IDLE level: " << trackLength << endl;
       break;
     case NONE:
       return;
