@@ -77,6 +77,15 @@ enum color {
   N_COLORS // use this to size arrays appropriately
 };
 
+enum nonColorButtons{
+  I_START = (int)N_COLORS,
+  I_RIGHT,
+  I_LEFT,
+  
+  N_BUTTONS
+};
+
+
 typedef struct {
   byte red;
   byte green;
@@ -110,7 +119,7 @@ const colorInstruction cGreen = {0, 255, 0};
 const colorInstruction cBlue = {0, 0, 255};
 // MGD: Tower does pay attention to this color spec, but Light does not.
 //const colorInstruction cYellow = {255, 255, 0};
-const colorInstruction cYellow = {255, 220, 0};
+const colorInstruction cYellow = {255, 100, 0};
 const colorInstruction cWhite = {255, 255, 255};
 // and this serves as an easy way to pull out the right RGB color from the
 const colorInstruction cMap[N_COLORS] = {cRed, cGreen, cBlue, cYellow};

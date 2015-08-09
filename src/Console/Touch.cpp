@@ -132,8 +132,13 @@ boolean Touch::pressed(color index) {
 }
 
 // returns true if any of the buttons have switched states.
-boolean Touch::anyPressed() {
+boolean Touch::anyColorPressed() {
   return ( pressed(I_RED) || pressed(I_GRN) || pressed(I_BLU) || pressed(I_YEL) );
+}
+
+// returns true if any of the buttons have switched states.
+boolean Touch::anyButtonPressed() {
+  return ( anyColorPressed() || startPressed() || leftPressed() || rightPressed() );
 }
 
 // returns the first pressed button found
@@ -150,17 +155,17 @@ color Touch::whatPressed() {
 boolean Touch::startPressed() {
   // capsense
   MPR121.updateTouchData();
-  return( MPR121.getTouchData(4) );
+  return( MPR121.getTouchData(I_START) );
 }
 boolean Touch::rightPressed() {
   // capsense
   MPR121.updateTouchData();
-  return( MPR121.getTouchData(5) );
+  return( MPR121.getTouchData(I_RIGHT) );
 }
 boolean Touch::leftPressed() {
   // capsense
   MPR121.updateTouchData();
-  return( MPR121.getTouchData(6) );
+  return( MPR121.getTouchData(I_LEFT) );
 }
 
 // returns "distance" an object is to the sensor, scaled [0, 255]

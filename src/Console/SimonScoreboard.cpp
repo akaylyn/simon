@@ -148,6 +148,11 @@ void SimonScoreboard::showSimonTeam() {
   }
 }
 
+void SimonScoreboard::showMessage(char * msg) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(msg);
+}
 
 SimonScoreboard scoreboard;
 

@@ -57,7 +57,8 @@ void setup() {
   byte touchMapToColor[N_COLORS] = {I_RED, I_GRN, I_BLU, I_YEL};
   touch.begin(touchMapToColor);
   sensor.begin();
-  mic.begin();
+  listenWav.begin(WAV_RESET_PIN, WAV_STROBE_PIN, WAV_OUT_PIN); // only listens to WAV play board
+  listenMic.begin(MIC_RESET_PIN, MIC_STROBE_PIN, MIC_OUT_PIN); // only listens to external mic (and line in)
 
   //------ Network
   network.begin();

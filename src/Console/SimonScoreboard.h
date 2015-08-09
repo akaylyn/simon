@@ -26,6 +26,8 @@ class SimonScoreboard {
 
     void displayCurrScore();
     
+    void showMessage(char * msg);
+    
   private:
     uint32_t highScore;
     uint32_t currScore;

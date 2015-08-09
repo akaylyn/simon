@@ -1,9 +1,22 @@
 #include "Tests.h"
+#include "SimonScoreboard.h"
 
 #define MODE_TRACK_OFFSET 699
 
 // called from the main loop.  return true if we want to head back to playing Simon.
 boolean TestModes::update() {
+  
+  char * systemModeNames[] = {
+    "Gameplay Mode",
+    "Whiteout Mode",
+    "Bongo Mode",
+    "Proximity Mode",
+    "Fire Test Mode",
+    "Lights Test Mode",
+    "Layout Mode",
+    "External Mode",
+  };
+  
   static int currentMode = N_systemMode-1;
   static boolean performStartup, modeChange = true;
 
@@ -18,6 +31,9 @@ boolean TestModes::update() {
     sound.stopAll();
     sound.setLeveling(1, 0); // Level for one track, no music
     sound.playTrack(MODE_TRACK_OFFSET + currentMode);
+    
+    // Show the mode name on the scoreboard
+    scoreboard.showMessage(systemModeNames[currentMode]);
 
     Metro delayFor(1500UL);
     delayFor.reset();
@@ -89,7 +105,7 @@ void TestModes::whiteoutModeLoop(boolean performStartup) {
       light.setLight((color)index, cInst);
   }
 
-  if(!touch.anyPressed()) {
+  if(!touch.anyColorPressed()) {
     // No button is being pressed, so go back to bright white light
     step = 0;
 
@@ -186,7 +202,7 @@ void TestModes::layoutModeLoop(boolean performStartup) {
   }
 
   if ( touch.anyChanged() ) {
-    if ( touch.anyPressed() ) {
+    if ( touch.anyColorPressed() ) {
       // increment this tower's color assignment
       byte tower = (byte)touch.whatPressed();
 
@@ -255,7 +271,7 @@ void TestModes::bongoModeLoop(boolean performStartup) {
 
   if ( touch.anyChanged() ) {
     light.animate(A_GameplayPressed);
-    if ( touch.anyPressed()) {
+    if ( touch.anyColorPressed()) {
       // if anything's pressed, pack the instructions
       color pressed = touch.whatPressed();
 
@@ -363,7 +379,7 @@ void TestModes::lightsTestModeLoop(boolean performStartup) {
   }
 
   if ( touch.anyChanged() ) {
-    if ( touch.anyPressed()) {
+    if ( touch.anyColorPressed()) {
       sound.playTrack(BOOP_TRACK);
 
       color whatPressed = touch.whatPressed();
@@ -433,7 +449,7 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
   }
 
   //look for button presses
-  if (touch.anyChanged() && touch.anyPressed()) {
+  if (touch.anyChanged() && touch.anyColorPressed()) {
     color whatPressed = touch.whatPressed();
 
     if(!sensor.fireEnabled()) {
@@ -484,6 +500,7 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
   }
 }
 
+<<<<<<< HEAD
 #define beatInterval 333
 #define beatChance 100
 #define airChance 0
@@ -535,11 +552,11 @@ void TestModes::externModeLoop(boolean performStartup) {
    threshold = constrain(threshold,1.0,5.0);
    
    threshold = 4;   // try peggin high.
-   mic.setThreshold(bassBand, threshold);
-   mic.setThreshold(bassBand2, threshold);
+   listenMic.setThreshold(bassBand, threshold);
+   listenMic.setThreshold(bassBand2, threshold);
    network.update();
    waitDuration(1UL);
-   mic.update();
+   listenMic.update();
 
    if (hearBeat && currTime > beatEndTime) {
      Serial << "Beat over.  " << endl;
@@ -553,7 +570,7 @@ void TestModes::externModeLoop(boolean performStartup) {
    // Lights will queue changes based on activity level across all non bass bands
 
    for (byte i = 2; i < NUM_FREQUENCY_BANDS; i++) {
-     if ( mic.getBeat(i) ) {
+     if ( listenMic.getBeat(i) ) {
        active++;
      }
    }
@@ -588,7 +605,7 @@ void TestModes::externModeLoop(boolean performStartup) {
 
   // Fire is queued to the bass channels.  Air effect is random but unlikely right now
    if (currTime > beatWaitTime) {
-     if (mic.getBeat(bassBand) || mic.getBeat(bassBand2)) {
+     if (listenMic.getBeat(bassBand) || listenMic.getBeat(bassBand2)) {
        if (random(1,101) <= beatChance) {
          Serial << "Fire" << endl;
          hearBeat = true;
