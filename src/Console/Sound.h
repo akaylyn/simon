@@ -25,7 +25,8 @@ const int trTones[N_TONES] = {1, 2, 3, 4, 5}; // red, grn, blu, yel, wrong
 const int trWins[2] = {502, 568}; // store WINS in 100-299   512 is pure bass test
 const int trLose[2] = {300, 319}; // store LOSE in 300-499
 const int trRock[2] = {102, 102}; // store ROCK in 500-699
-const int trBaff[2] = {700, 701}; // store BAFF in 700-999
+const int trBaff[2] = {700, 701}; // store BAFF in 700-709
+const int trDrum[2] = {710, 725}; // store DRUM in 710-999
 
 #define BOOP_TRACK 100
 #define ARMED_TRACK 900
@@ -98,6 +99,10 @@ class Sound {
     // set volume manually.  THIS IS VERY LIKELY TO CREATE CLIPPING UNLESS YOU KNOW WHAT YOU'RE DOING
     void setVolume(int track, int gain);
 
+    int playDrumSound(byte colorIndex);
+    void nextDrumSet();
+    void prevDrumSet();
+
   private:
     // Play a track.  INTENTIONALLY private to preserve gain settings
     // track is 1 to 999.
@@ -110,6 +115,9 @@ class Sound {
     
     // store tone and volume levels
     int toneGain, trackGain;
+
+    // drum kit set index
+    int currDrumSet;
 
 };
 

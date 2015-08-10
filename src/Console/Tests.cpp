@@ -270,12 +270,22 @@ void TestModes::bongoModeLoop(boolean performStartup) {
   }
 
   if ( touch.anyChanged() ) {
+    // change sound set
+    if (touch.rightPressed()) 
+    {
+        sound.nextDrumSet();
+    }
+    if (touch.leftPressed()) 
+    {
+        sound.prevDrumSet();
+    }
+    
     light.animate(A_GameplayPressed);
     if ( touch.anyColorPressed()) {
       // if anything's pressed, pack the instructions
       color pressed = touch.whatPressed();
 
-      sound.playTone(pressed);
+      sound.playDrumSound(pressed);
 
       colorInstruction c = cMap[pressed];
       light.setLight(pressed, c);

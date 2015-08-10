@@ -23,6 +23,8 @@ bool Sound::begin() {
   
   // quiet
   stopAll();
+
+  currDrumSet = 0;
   
   Serial << "Sound::begin: complete." << endl;
   return ( true );
@@ -277,6 +279,26 @@ void Sound::unitTest() {
 
   this->stopAll();
   
+}
+
+int Sound::playDrumSound(byte colorIndex) {
+  return playTrack(trDrum[0] + currDrumSet + colorIndex, this->toneGain);
+}
+
+void Sound::nextDrumSet() {
+  if (currDrumSet == trDrum[1]) {
+    currDrumSet = 0;
+  } else {
+    currDrumSet += N_COLORS;
+  }
+}
+
+void Sound::prevDrumSet() {
+  if (currDrumSet == trDrum[0]) {
+    currDrumSet = trDrum[1] - N_COLORS;
+  } else {
+    currDrumSet -= N_COLORS;
+  }
 }
 
 // instantiate
