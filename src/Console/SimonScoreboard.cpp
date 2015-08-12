@@ -154,5 +154,7 @@ void SimonScoreboard::showMessage(char * msg) {
   lcd.print(msg);
 }
 
+
+
 SimonScoreboard scoreboard;
 

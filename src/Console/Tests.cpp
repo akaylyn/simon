@@ -405,6 +405,9 @@ void TestModes::lightsTestModeLoop(boolean performStartup) {
 #define FIRE_TEST_ARMED_TIMEOUT_MILLIS 2 * 1000
 void TestModes::fireTestModeLoop(boolean performStartup) {
 
+  static char lcdMsg[20];
+  static float budget = loadFireBudgetFactor();
+  
   static Metro armedTimer(FIRE_TEST_ARMED_TIMEOUT_MILLIS);
   static bool armed[N_COLORS];
 
@@ -422,6 +425,9 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
     for(int index = 0; index < N_COLORS; index++) {
       armed[index] = false;
     }
+    
+    sprintf(lcdMsg, "Fire Budget: %03.1f", budget);
+    scoreboard.showMessage(lcdMsg);
   }
 
   // Check to see if any of the towers are armed
@@ -434,7 +440,7 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
 
   // If our armed timer has timed out and anything is armed, disarm every tower
   if(anyArmed && armedTimer.check()) {
-    Serial << "Disarmed timer fired.  Disarm everything!";
+    Serial << F("Disarmed timer fired.  Disarm everything!");
 
     // Disarm all the towers
     for(int index = 0; index < N_COLORS; index++) {
@@ -460,7 +466,7 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
       if(armed[whatPressed]) {
         // The button has been pressed on an armed tower, fire it!
 
-        Serial << "Firing on tower " << whatPressed << " on frame " << frame << endl;
+        Serial << F("Firing on tower ") << whatPressed << F(" on frame ") << frame << endl;
 
         // Make fire go now!
         fire.setFire(whatPressed, 255, kickMiddle);
@@ -481,7 +487,7 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
       }
       else if(!anyArmed) {
         // A button was pressed, and now towers are armed.  Armed the tower that was pressed
-        Serial << "Arming on tower " << whatPressed << " on frame " << frame << endl;
+        Serial << F("Arming on tower ") << whatPressed << (" on frame ") << frame << endl;
 
         // Light the tower up
         colorInstruction cInst = cRed;
@@ -498,6 +504,21 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
       }
     }
   }
+  
+  // check for left and right to adjust fireBudget
+  while( touch.leftPressed() ) {
+    saveFireBudgetFactor(budget);
+    sprintf(lcdMsg, "Fire Budget: %03.1f", budget);
+    scoreboard.showMessage(lcdMsg);
+    delay(100);
+  }
+  while( touch.rightPressed() ) {
+    budget=constrain(budget+0.1, 0.0, 25.5);
+    saveFireBudgetFactor(budget);
+    sprintf(lcdMsg, "Fire Budget: %03.1f", budget);
+    scoreboard.showMessage(lcdMsg);
+    delay(100);
+  }
 }
 
 #define beatInterval 333
@@ -506,7 +527,8 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
 #define lightMoveChance 50   // n in 100 chance of the light moving on a beat
 #define minFirePerFireball 50  // min fire level(ms) per fireball
 #define maxFirePerFireball 200  // max fire level(ms) per fireball
-#define fireBudgetFactor 7  // Divisor of track length we throw fire.  Tune this to throw less fire
+// MGD in function for EEPROM read.
+//#define fireBudgetFactor 7  // Divisor of track length we throw fire.  Tune this to throw less fire
 
 #define bassBand 0
 #define bassBand2 1
@@ -528,10 +550,16 @@ void TestModes::externModeLoop(boolean performStartup) {
    static byte active;
    static boolean hearBeat = false;
    static byte tower, tower2 = I_RED;
+  
+   // MGD
+   static float fireBudgetFactor; // Divisor of track length we throw fire.  Tune this to throw less fire
 
    currTime = millis();
 
    if (performStartup) {
+     // MGD
+     fireBudgetFactor = loadFireBudgetFactor();  // Divisor of track length we throw fire.  Tune this to throw less fire
+     
      budget = (unsigned long) ((float)trackLength / fireBudgetFactor);
      bt = (float) trackLength / budget;
      active = 0;
@@ -539,6 +567,7 @@ void TestModes::externModeLoop(boolean performStartup) {
      hearBeat = false;
      firepower = 1;
      threshold = 2;
+
    } else if ((currTime - startTime) > trackLength) {
      Serial << "Reseting budget: " << budget << endl;
      // reset budget

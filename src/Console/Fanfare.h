@@ -38,6 +38,7 @@
 #include "Sound.h"
 #include "Mic.h"
 #include "Simon.h"
+#include "SimonScoreboard.h"
 
 // fanfare mapping
 enum fanfare_t {
@@ -59,5 +60,9 @@ void playerFanfare(fanfare_t level);
 color incColor(color val);
 color randColor();
 color oppTower(color val);
-  
+
+void saveFireBudgetFactor(float factor);
+float loadFireBudgetFactor();
+static const int budgetEepromAddr = 108;
+
 #endif

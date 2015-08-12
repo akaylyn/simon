@@ -52,7 +52,7 @@ void loseFanfare() {
     unsigned long currTime = millis();
     unsigned long startTime = millis();
 
-    Serial << "Playing lose";
+    Serial << F("Playing lose"); // harsh
 /*
     fire.setFire(I_RED,5,veryLean);
     fire.setFire(I_GRN,5,veryLean);
@@ -116,11 +116,11 @@ void loseFanfare() {
 
 void playerFanfare(fanfare_t level) {
   if (!FANFARE_ENABLED) {
-    Serial.println("Fanfare disabled");
+    Serial.println(F("Fanfare disabled"));
     return;
   }
 
-  Serial << F("Gameplay: Player fanfare, fanfareLevel: ") << level << " consol: " << CONSOLATION << endl;
+  Serial << F("Gameplay: Player fanfare, fanfareLevel: ") << level << F(" consolation: ") << CONSOLATION << endl;
   //Metro fanfareDuration(FANFARE_DURATION_PER_CORRECT * currentLength);
 
   // make sweet fire/light/music.
@@ -176,7 +176,11 @@ void playerFanfare(fanfare_t level) {
    byte lightMoveChance = 50;  // n in 100 chance of the light moving on a beat
    byte minFirePerFireball = 50;  // min fire level(ms) per fireball
    byte maxFirePerFireball = 200;  // max fire level(ms) per fireball
-   float fireBudgetFactor = 7.0;  // Divisor of track length we throw fire.  Tune this to throw less fire
+  
+  // MGD
+  //   float fireBudgetFactor = 7.0;  // Divisor of track length we throw fire.  Tune this to throw less fire
+  // set from fireTest
+  float fireBudgetFactor = loadFireBudgetFactor();  // Divisor of track length we throw fire.  Tune this to throw less fire
 
    unsigned long beatEndTime = millis();  // time left for beat effect
    unsigned long beatWaitTime = millis();
@@ -189,7 +193,7 @@ void playerFanfare(fanfare_t level) {
    byte active;
    //unsigned long samples = 0;
    
-  Serial << "Track Length: " << trackLength << " budget: " << budget << endl;;
+  Serial << F("Track Length: ") << trackLength << F(" budget: ") << budget << endl;;
 
    color fireTower = I_RED;
    color lightTower = I_RED;
@@ -209,7 +213,7 @@ void playerFanfare(fanfare_t level) {
      
 
      if (hearBeat && currTime > beatEndTime) {
-       Serial << "Beat over.  " << endl;
+       Serial << F("Beat over.  ") << endl;
        light.clear();
        fire.clear();
        network.update();
@@ -257,12 +261,12 @@ void playerFanfare(fanfare_t level) {
      if (currTime > beatWaitTime) {
        if (listenWav.getBeat(bassBand) || listenWav.getBeat(bassBand2)) {
          if (random(1,101) <= beatChance) {
-           Serial << "Fire" << endl;
+           Serial << F("Fire") << endl;
            hearBeat = true;
            //byte fireLevel = minFirePerFireball / 10 + random(0,maxFirePerFireball / 10);
            byte fireLevel = fscale(0, 100, minFirePerFireball / 10, maxFirePerFireball / 10, random(101), -6.0);
            unsigned long fireMs = fireLevel * 10; // each level is 10ms
-           Serial << " fireLevel: " << fireMs;
+           Serial << F(" fireLevel: ") << fireMs;
 
            flameEffect airEffect = veryRich;
 
@@ -310,7 +314,7 @@ void playerFanfare(fanfare_t level) {
 
            fireTower = randColor();
          } else {
-           Serial << "Ignore" << endl;
+           Serial << F("Ignore") << endl;
          }
        }
      }
@@ -326,6 +330,15 @@ void playerFanfare(fanfare_t level) {
   Serial << "Fireballs: " << fireballs << " power: " << firepower << " budget: " << budget << endl;
   Serial << F("Gameplay: Player fanfare ended") << endl;
 
+}
+
+void saveFireBudgetFactor(float factor) {
+  byte f2b = constrain(factor * 10.0, 0.0, 255.0); // valid cast when factor in [0,25.5]
+  EEPROM.write(budgetEepromAddr, f2b);
+}
+
+float loadFireBudgetFactor() {
+  return( (float)EEPROM.read(budgetEepromAddr)/10.0 );
 }
 
 

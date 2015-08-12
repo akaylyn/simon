@@ -15,6 +15,7 @@
 #include "SimonScoreboard.h" // to enabled LCD/scoreboard use
 #include "Mic.h"
 #include "Simon.h"
+#include "Fanfare.h"
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
