@@ -10,6 +10,7 @@ class TouchTests {
     public:
         void testChanged(int electrode);
         void testPressed(int electrode);
+        void testWhatPressed();
 
         // unit test for touch sensor
         void touchUnitTest(unsigned long timeout=(-1)); // unsigned.  will flip to maximum time.

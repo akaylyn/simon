@@ -20,12 +20,12 @@ bool Sound::begin() {
 
   // set leveling
   setLeveling();
-  
+
   // quiet
   stopAll();
 
   currDrumSet = 0;
-  
+
   Serial << "Sound::begin: complete." << endl;
   return ( true );
 }
@@ -43,7 +43,7 @@ void Sound::setLeveling(int nTones, int nTracks) {
   // relative to the total gain that we want out of the system
   this->toneGain = TONE_GAIN - floor( 10.0*log10(float(nTones) + float(nTracks)*pow(10.0, float(TRACK_GAIN_RELATIVE_TO_TONE)/10.0)) );
   this->trackGain = this->toneGain + TRACK_GAIN_RELATIVE_TO_TONE;
-  
+
   Serial << F("Sound::setLeveling: nTones=") << nTones << F(" with gain=") << this->toneGain;
   Serial << F(" nTracks=") << nTracks << F(" with gain=") << this->trackGain << endl;
 }
@@ -79,7 +79,7 @@ int Sound::playTrack(int track, int gain) {
   wav.trackPlayPoly(tr);
 
   Serial << F("Sound::playTrack: track=") << tr << F(" gain=") << ga << endl;
- 
+
   return ( tr );
 }
 
@@ -109,10 +109,10 @@ void Sound::crossFadeTrack(int extro, int intro, unsigned long fadeTime) {
   // enforce limits
   int ex = constrain(extro, 1, 999);
   int in = constrain(intro, 1, 999);
-  
+
   // fade, with Stop at the end.  Stop is important, so voices can be freed up.
   wav.trackCrossFade(ex, in, this->trackGain, fadeTime);
-  
+
   Serial << F("Sound::crossFadeTrack track=") << ex << F(" into=") << in << F(" in(ms)=") << fadeTime << endl;
 }
 
@@ -154,7 +154,7 @@ void Sound::stopTones() {
   // get the array of currently playing tracks
   int tr[14];
   wav.getPlayingTracks(tr);
-  
+
   // loop across and issue a stop command
   for( byte i=0; i<14; i++ ) {
     if( tr[i] > 0 && tr[i] <= N_TONES) wav.trackStop(tr[i]);
@@ -175,12 +175,12 @@ void Sound::stopAll() {
   // get the array of currently playing tracks
   int tr[14];
   wav.getPlayingTracks(tr);
-  
+
   // loop across and issue a stop command
   for( byte i=0; i<14; i++ ) {
     if( tr[i] > 0 ) wav.trackStop(tr[i]);
   }
-  
+
   // and, be damned sure
   // stop
   wav.stopAllTracks();
@@ -198,7 +198,7 @@ void Sound::setVolume(int track, int gain) {
 
   // set volume
   wav.trackGain(tr, ga);
-  
+
 //  Serial << F("Sound: volume for track:") << tr << F(" =") << ga << endl;
 }
 
@@ -222,7 +222,7 @@ void Sound::relevelVol() {
       else nTracks++;
     }
   }
-  
+
   // with that, execute the volume adjustments per track
   // figure out what we've got in the way of total tracks, tone and music tracks
   for( byte i=0;i<14;i++ ) {
@@ -231,17 +231,17 @@ void Sound::relevelVol() {
       else setVol(tr[i], trackGain);
     }
   }
-  
+
   // QED
 }
 */
 
 // unit test for Music
 void Sound::unitTest() {
-  
+
   // quiet
   this->stopAll();
-  
+
   // try out leveling to confirm 4x tones and 0x tracks don't clip;
   this->setLeveling(4, 0);
   this->playTone(I_RED);
@@ -252,16 +252,16 @@ void Sound::unitTest() {
   delay(1000);
   this->playTone(I_YEL);
   delay(1000);
-  
+
   delay(5000);
   this->stopTone(I_RED);
   delay(5000);
-  
+
   this->stopTones();
-  
+
   // try out leveling to confirm 1x tones and 1x tracks don't clip;
   this->setLeveling(1, 1);
-  
+
   this->playTone(I_RED);
   delay(1000);
   int tr = this->playWins(101);
@@ -273,33 +273,61 @@ void Sound::unitTest() {
 
   // try out leveling to confirm zero tones and 1x tracks don't clip;
   this->setLeveling(0, 1);
-  
+
   tr = this->playWins(101);
   delay(5000);
 
   this->stopAll();
-  
+
 }
 
 int Sound::playDrumSound(byte colorIndex) {
   return playTrack(trDrum[0] + currDrumSet + colorIndex, this->toneGain);
 }
 
-void Sound::nextDrumSet() {
-  if (currDrumSet == trDrum[1]) {
+int Sound::nextDrumSet() {
+  Serial << "Set: " << currDrumSet << endl;
+  if (trDrum[0] + currDrumSet >= trDrum[1]) {
     currDrumSet = 0;
   } else {
     currDrumSet += N_COLORS;
   }
+  return currDrumSet;
 }
 
-void Sound::prevDrumSet() {
-  if (currDrumSet == trDrum[0]) {
-    currDrumSet = trDrum[1] - N_COLORS;
+int Sound::prevDrumSet() {
+  Serial << "Set: " << currDrumSet << endl;
+  if (trDrum[0] + currDrumSet <= trDrum[0]) {
+    currDrumSet = trDrum[1] - trDrum[0] - N_COLORS;
   } else {
     currDrumSet -= N_COLORS;
   }
+  return currDrumSet;
 }
+
+char* drumKitLabels[] = {
+  "Disco 1",
+  "Disco 2",
+  "Beep Boop",
+  "Tribal",
+};
+
+char* Sound::getLabel(int drumSet) {
+  int id = drumSet + trDrum[0];
+  if (id == 710)
+    return drumKitLabels[0];
+  if (id == 714)
+    return drumKitLabels[1];
+  if (id == 718)
+    return drumKitLabels[2];
+  if (id == 722)
+    return drumKitLabels[3];
+}
+
+char* Sound::getCurrLabel() {
+  return getLabel(currDrumSet);
+}
+
 
 // instantiate
 Sound sound;

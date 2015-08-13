@@ -46,14 +46,15 @@ class Touch {
     boolean begin(byte sensorIndex[N_COLORS]);
 
     // state change checks
-    boolean changed(color index); // returns true if state changed
+    boolean changed(byte index); // returns true if state changed
     boolean anyChanged(); // convenience function; returns true if any index is changed
 
     // pressed state checks
-    boolean pressed(color index); // returns true if pressed
+    boolean pressed(byte index); // returns true if pressed
     boolean anyColorPressed(); // convenience function; returns true if any index is pressed
     boolean anyButtonPressed();
     color whatPressed(); // returns the first pressed button found
+    nonColorButtons whatNonColorButtonPressed();
 
     // returns "distance" an object is to the sensor
     byte distance(color index); // roughly speaking, the distance an object is away from the sensor
@@ -61,7 +62,7 @@ class Touch {
 
     // debugging tool: prints sensor baseline and electrode information
     void printElectrodeAndBaselineData();
-    
+
     // MGD new buttons
     boolean startPressed();
     boolean leftPressed();

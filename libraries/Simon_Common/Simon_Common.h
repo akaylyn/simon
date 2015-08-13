@@ -73,16 +73,16 @@ enum color {
   I_GRN,   // upper left
   I_BLU,   // lower right
   I_YEL,   // lower left
+  N_COLORS, // use this to size arrays appropriately
 
-  N_COLORS // use this to size arrays appropriately
+  I_START = N_COLORS,
+  I_RIGHT,
+  I_LEFT,
+  N_BUTTONS
 };
 
 enum nonColorButtons{
-  I_START = (int)N_COLORS,
-  I_RIGHT,
-  I_LEFT,
-  
-  N_BUTTONS
+
 };
 
 

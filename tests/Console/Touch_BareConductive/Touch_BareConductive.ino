@@ -15,6 +15,8 @@
 // should Unit Tests be run if the startup routines return an error?
 #define RUN_UNIT_ON_ERROR true
 
+extern Touch touch;
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -23,20 +25,22 @@ void setup() {
   randomSeed(analogRead(0));
 
   //if( !touchStart() && RUN_UNIT_ON_ERROR || 0) touchUnitTest();
-  touchStart();
+  byte touchMapToColor[N_BUTTONS] = {I_RED, I_GRN, I_BLU, I_YEL, I_START, I_RIGHT, I_LEFT};
+  touch.begin(touchMapToColor);
 
 }
 
 // main loop for the core.
 void loop() {
-    TouchTests tests;
+  TouchTests tests;
 
-    Metro timeout(tests.TIMEOUT);
-    while (!timeout.check()) {
-        for (int i = 0; i < NUM_ELECTRODES; i++) {
+  Metro timeout(tests.TIMEOUT);
+  while (!timeout.check()) {
+    for (int i = 0; i < NUM_ELECTRODES; i++) {
 
-            tests.testChanged(i);
-            tests.testPressed(i);
-        }
+      tests.testWhatPressed();
+      tests.testChanged(i);
+      tests.testPressed(i);
     }
+  }
 }

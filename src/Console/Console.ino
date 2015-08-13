@@ -54,7 +54,7 @@ void setup() {
   // start each unit
 
   //------ Input units.
-  byte touchMapToColor[N_COLORS] = {I_RED, I_GRN, I_BLU, I_YEL};
+  byte touchMapToColor[N_BUTTONS] = {I_RED, I_GRN, I_BLU, I_YEL, I_START, I_RIGHT, I_LEFT};
   touch.begin(touchMapToColor);
   sensor.begin();
   listenWav.begin(WAV_RESET_PIN, WAV_STROBE_PIN, WAV_OUT_PIN); // only listens to WAV play board
@@ -82,10 +82,12 @@ void loop() {
   // perform Tower resends; you should do this always if you want meaningful synchronization with Towers
   network.update();
 
+  /*
   // MGD new buttons
   if( touch.startPressed() ) Serial << F("Touch: start pressed") << endl;
   if( touch.leftPressed() ) Serial << F("Touch: left pressed") << endl;
   if( touch.rightPressed() ) Serial << F("Touch: right pressed") << endl;
+  */
 
 }
 
