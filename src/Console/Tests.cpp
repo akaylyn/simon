@@ -345,8 +345,9 @@ void TestModes::proximityModeLoop(boolean performStartup) {
 
       sound.setVolume(trTone[i], gain);
 
+      colorInstruction colorSequence[] = { cRed, cGreen, cBlue, cYellowConsole};
       // set lights
-      colorInstruction c = cMap[i];
+      colorInstruction c = colorSequence[i];
       c.red -= c.red > 0 ? dist : 0;
       c.green -= c.green > 0 ? dist : 0;
       c.blue -= c.blue > 0 ? dist : 0;
@@ -366,7 +367,6 @@ void TestModes::proximityModeLoop(boolean performStartup) {
       lastDistance[i] = dist;
     }
   }
-
 }
 
 /*
