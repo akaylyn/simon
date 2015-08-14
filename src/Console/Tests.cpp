@@ -364,7 +364,7 @@ void TestModes::proximityModeLoop(boolean performStartup) {
    */
 void TestModes::lightsTestModeLoop(boolean performStartup) {
 
-  colorInstruction colorSequence[] = { cOff, cRed, cGreen, cBlue, cWhite };
+  colorInstruction colorSequence[] = { cOff, cRed, cGreen, cBlue, cYellowTest};
 
   static int towerSpotInSequence [N_COLORS];
 
@@ -505,8 +505,9 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
 #define airChance 0
 #define lightMoveChance 50   // n in 100 chance of the light moving on a beat
 #define minFirePerFireball 50  // min fire level(ms) per fireball
-#define maxFirePerFireball 200  // max fire level(ms) per fireball
-#define fireBudgetFactor 7  // Divisor of track length we throw fire.  Tune this to throw less fire
+#define maxFirePerFireball 150  // max fire level(ms) per fireball
+//#define fireBudgetFactor 7  // Divisor of track length we throw fire.  Tune this to throw less fire
+#define fireBudgetFactor 2  // Divisor of track length we throw fire.  Tune this to throw less fire(1-15)
 
 #define bassBand 0
 #define bassBand2 1
@@ -528,6 +529,8 @@ void TestModes::externModeLoop(boolean performStartup) {
    static byte active;
    static boolean hearBeat = false;
    static byte tower, tower2 = I_RED;
+   static int numSamples = 0;
+   static boolean printSamples = false;
 
    currTime = millis();
 
@@ -539,6 +542,9 @@ void TestModes::externModeLoop(boolean performStartup) {
      hearBeat = false;
      firepower = 1;
      threshold = 2;
+     
+     listenMic.update();
+     listenMic.update();
    } else if ((currTime - startTime) > trackLength) {
      Serial << "Reseting budget: " << budget << endl;
      // reset budget
@@ -548,15 +554,23 @@ void TestModes::externModeLoop(boolean performStartup) {
 
 
    threshold *= bt * (float)firepower / ((float) (currTime - startTime));
-   threshold = constrain(threshold,2.0,5.0);
+//   threshold = constrain(threshold,1.0,15.0);
+   threshold = constrain(threshold,0.25,15.0);
    
-//   threshold = 4;   // try peggin high.
    listenMic.setThreshold(bassBand, threshold);
    listenMic.setThreshold(bassBand2, threshold);
    network.update();
    waitDuration(1UL);
    listenMic.update();
 
+   if (printSamples) {
+     numSamples++;
+     if (numSamples > 50) {
+       numSamples=0;
+       listenMic.print();
+     }
+   }
+   
    if (hearBeat && currTime > beatEndTime) {
      light.clear();
      fire.clear();
@@ -577,41 +591,50 @@ void TestModes::externModeLoop(boolean performStartup) {
          Serial << " fireLevel: " << fireMs << endl;
 
          flameEffect airEffect = veryRich;
-
+         
           byte towers = random(0,9);
-
+          byte r = random(0,2) * 255;
+          byte g = random(0,2) * 255;
+          byte b = random(0,2) * 255;
+          
+          if (firepower > budget) {  // tone it down if over budget
+            Serial << "Capping fire" << endl;
+            towers = towers / 2;  
+            fireLevel = fscale(0, 100, minFirePerFireball / 10, maxFirePerFireball / 10, 0, -6.0);
+            fireMs = fireLevel * 10; // each level is 10ms
+          }
           switch(towers) {
             case 0:
             case 1:
             case 2:
             case 3:
               fire.setFire(fireTower,fireLevel,airEffect);
-              light.setLight(fireTower, 255, 0 , 0);
+              light.setLight(fireTower, r,g,b);
               break;
             case 4:
             case 5:
               fire.setFire(fireTower,fireLevel,airEffect);
-              light.setLight(fireTower, 255, 0 , 0);
+              light.setLight(fireTower, r, g , b);
               fire.setFire(oppTower(fireTower),fireLevel,airEffect);
-              light.setLight(oppTower(fireTower), 255, 0 , 0);
+              light.setLight(oppTower(fireTower), r, g , b);
               break;
             case 6:
               fire.setFire(fireTower,fireLevel,airEffect);
-              light.setLight(fireTower, 255, 0 , 0);
+              light.setLight(fireTower, r,g, b);
               fire.setFire(oppTower(fireTower),fireLevel,airEffect);
-              light.setLight(oppTower(fireTower), 255, 0 , 0);
+              light.setLight(oppTower(fireTower), r,g, b);
               fire.setFire(incColor(fireTower),fireLevel,airEffect);
-              light.setLight(incColor(fireTower), 255, 0 , 0);
+              light.setLight(incColor(fireTower), r, g , b);
               break;
             case 7:
               fire.setFire(I_RED,fireLevel,airEffect);
-              light.setLight(I_RED, 255, 0 , 0);
+              light.setLight(I_RED, r, g , b);
               fire.setFire(I_GRN,fireLevel,airEffect);
-              light.setLight(I_GRN, 255, 0 , 0);
+              light.setLight(I_GRN, r, g , b);
               fire.setFire(I_BLU,fireLevel,airEffect);
-              light.setLight(I_BLU, 255, 0 , 0);
+              light.setLight(I_BLU, r, g , b);
               fire.setFire(I_YEL,fireLevel,airEffect);
-              light.setLight(I_YEL, 255, 0 , 0);
+              light.setLight(I_YEL, r, g , b);
               break;
           }
 
@@ -621,7 +644,7 @@ void TestModes::externModeLoop(boolean performStartup) {
          beatEndTime = currTime + fireMs;
          beatWaitTime = currTime + beatInterval;
 
-         Serial << "Fire used: " << firepower <<  " thresh: " << threshold << endl;
+         Serial << "Fire used: " << ((firepower / (float) budget) * 100) <<  "%  time left: " << (trackLength - (currTime - startTime)) << " thresh: " << threshold << endl;
          fireTower = randColor();
        } else {
          Serial << "Ignore" << endl;

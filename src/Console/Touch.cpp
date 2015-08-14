@@ -183,7 +183,8 @@ byte Touch::distance(byte index) {
   sensorRead /= 10;
 
   // track sensor returns for 12 sensors and the virtual 13th.
-  static int minRead[13] = { 350,350,350,350,350,350,350,350,350,350,350,350,350 }; // 300 seems to be the normal low end, but let's leave some room for drift
+//  static int minRead[13] = { 350,350,350,350,350,350,350,350,350,350,350,350,350 }; // 300 seems to be the normal low end, but let's leave some room for drift
+  static int minRead[13] = { 400,400,400,400,400,400,400,400,400,400,400,400,400 }; // 300 seems to be the normal low end, but let's leave some room for drift
   minRead[index] = min(minRead[index], sensorRead);
 
   int delta = sensorRead - minRead[index];
