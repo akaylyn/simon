@@ -43,7 +43,7 @@
 class Touch {
   public:
     // intialization; returns true if ok.
-    boolean begin(byte sensorIndex[N_COLORS]);
+    boolean begin(byte sensorIndex[N_BUTTONS]);
 
     // state change checks
     boolean changed(byte index); // returns true if state changed
@@ -73,7 +73,7 @@ class Touch {
     boolean update();
 
     // maps color index to MPR121 sensor index
-    byte sensorIndex[N_COLORS];
+    byte sensorIndex[N_BUTTONS];
 
     // hardware buttons
     Bounce *button[N_COLORS];  // messy, but I can't figure out how to declare without instantiation, which the compiler requires.
