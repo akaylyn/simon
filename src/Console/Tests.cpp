@@ -270,11 +270,11 @@ void TestModes::bongoModeLoop(boolean performStartup) {
     scoreboard.showMessage2(sound.getCurrLabel());
   }
 
-  if ( touch.anyChanged() ) {
+  if (touch.anyChanged()) {
     if (touch.anyButtonPressed()) {
 
-      light.animate(A_GameplayPressed);
       color pressed = touch.whatPressed();
+      light.animate(A_GameplayPressed);
 
       // change sound set
       if (pressed == I_START)
@@ -282,12 +282,6 @@ void TestModes::bongoModeLoop(boolean performStartup) {
         scoreboard.showMessage2(sound.getLabel(sound.nextDrumSet()));
         Serial << "Next Drum Set" << endl;
       }
-      if (pressed == I_LEFT)
-      {
-        scoreboard.showMessage2(sound.getLabel(sound.prevDrumSet()));
-        Serial << "Prev Drum Set" << endl;
-      }
-      Serial << "btnPressed: " << pressed << endl;
 
       // if anything's pressed, pack the instructions
       sound.playDrumSound(pressed);

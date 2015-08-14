@@ -89,6 +89,9 @@ void loop() {
   if( touch.rightPressed() ) Serial << F("Touch: right pressed") << endl;
   */
 
+
+  color pressed = touch.whatPressed();
+  Serial << "btnPressed: " << pressed << endl;
 }
 
 int freeRam () {

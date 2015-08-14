@@ -20,9 +20,19 @@ void TouchTests::testPressed(int electrode) {
   }
 }
 
+void TouchTests::testAnyColorPressed() {
+  Serial << "anyColorPressed: " << touch.anyColorPressed() << endl;
+}
 
+void TouchTests::testAnyButtonPressed() {
+  Serial << "anyButtonPressed: " << touch.anyButtonPressed() << endl;
+}
 
 void TouchTests::testWhatPressed() {
+  Serial << "whatPressed: " << touch.whatPressed() << endl;
+}
+
+void TouchTests::testBongoMode() {
   boolean DEBUG = true;
   Metro unitTestTimeout(TIMEOUT);
   while (! unitTestTimeout.check() ) {

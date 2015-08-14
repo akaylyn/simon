@@ -10,7 +10,11 @@ boolean Touch::begin(byte sensorIndex[N_BUTTONS]) {
 
   // store it
   for( byte i=0; i<N_BUTTONS; i++ )
+  {
     this->sensorIndex[i] = sensorIndex[i];
+    Serial << "touch init index: " << i << endl;
+    Serial << "sensor index: " << sensorIndex[i] << endl;
+  }
 
   // 0x5A is the MPR121 I2C address on the Bare Touch Board
   Wire.begin();
@@ -148,9 +152,9 @@ color Touch::whatPressed() {
   if( pressed(I_GRN) ) return (I_GRN);
   if( pressed(I_BLU) ) return (I_BLU);
   if( pressed(I_YEL) ) return (I_YEL);
+  if( pressed(I_START) ) return (I_START);
   if( pressed(I_RIGHT) ) return (I_RIGHT);
   if( pressed(I_LEFT) ) return (I_LEFT);
-  if( pressed(I_START) ) return (I_START);
   return(N_BUTTONS);
 }
 

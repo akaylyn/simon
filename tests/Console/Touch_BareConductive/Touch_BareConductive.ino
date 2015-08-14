@@ -38,9 +38,12 @@ void loop() {
   while (!timeout.check()) {
     for (int i = 0; i < NUM_ELECTRODES; i++) {
 
-      tests.testWhatPressed();
-      tests.testChanged(i);
-      tests.testPressed(i);
+      //tests.testAnyColorPressed();
+      //tests.testAnyButtonPressed();
+      tests.testBongoMode();
+      //tests.testWhatPressed();
+      //tests.testChanged(i);
+      //tests.testPressed(i);
     }
   }
 }

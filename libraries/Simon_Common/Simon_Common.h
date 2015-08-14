@@ -75,7 +75,7 @@ enum color {
   I_YEL,   // lower left
   N_COLORS, // use this to size arrays appropriately
 
-  I_START = N_COLORS,
+  I_START = 4, // 4
   I_RIGHT,
   I_LEFT,
   N_BUTTONS
