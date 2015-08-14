@@ -93,7 +93,7 @@ void idleUpdate() {
     // run tests
     simon.transitionTo(test);
   }
-  
+
   scoreboard.showBackerMessages();
   scoreboard.showSimonTeam();
 }
@@ -113,7 +113,7 @@ void gameEnter() {
   fire.clear();
 
   sound.stopAll();
-  
+
   scoreboard.displayCurrScore(); // where we at?
 
   // delay after a player's last move
@@ -182,7 +182,7 @@ void playerUpdate() {
   boolean correct = true;
 
   // wait for button press.
-  if ( touch.anyColorPressed() ) {
+  if ( touch.anyButtonPressed() ) {
 
     // you could, in theory, press all the buttons simultaneously to get it right...
     // but humans aren't that fast, so this is an alien/Ninja/godling detector.
@@ -290,7 +290,7 @@ void waitDuration(unsigned long duration) {
 }
 
 void waitAllReleased() {
-  while ( touch.anyColorPressed() ) network.update();
+  while ( touch.anyButtonPressed() ) network.update();
 }
 
 // Not used, currently, but Mike would like to retain this code:
@@ -319,7 +319,7 @@ unsigned long trandom(unsigned long xmin, unsigned long xmode, unsigned long xma
 
 void waitForButtonsReleased() {
   // wait for all of the buttons to be released.
-  while ( touch.anyColorPressed() ) {
+  while ( touch.anyButtonPressed() ) {
     network.update();
   }
 }
