@@ -373,9 +373,10 @@ void TestModes::proximityModeLoop(boolean performStartup) {
    This mode lets the user step each tower through the primary colors, white, and off.  It's usefull for debugging issues with the LED strands
    Pressing any button advances the associated tower to the next color in the sequence.
    */
+
 void TestModes::lightsTestModeLoop(boolean performStartup) {
 
-  colorInstruction colorSequence[] = { cOff, cRed, cGreen, cBlue, cYellowTest};
+  colorInstruction colorSequence[] = { cOff, cRed, cGreen, cBlue, cYellowConsole};
 
   static int towerSpotInSequence [N_COLORS];
 
