@@ -287,10 +287,9 @@ int Sound::playDrumSound(byte colorIndex) {
 
 int Sound::nextDrumSet() {
   Serial << "Set: " << currDrumSet << endl;
+  currDrumSet += N_COLORS;
   if (trDrum[0] + currDrumSet >= trDrum[1]) {
     currDrumSet = 0;
-  } else {
-    currDrumSet += N_COLORS;
   }
   return currDrumSet;
 }
