@@ -25,7 +25,8 @@ const int trTones[N_TONES] = {1, 2, 3, 4, 5}; // red, grn, blu, yel, wrong
 const int trWins[2] = {502, 568}; // store WINS in 100-299   512 is pure bass test
 const int trLose[2] = {300, 319}; // store LOSE in 300-499
 const int trRock[2] = {102, 102}; // store ROCK in 500-699
-const int trBaff[2] = {700, 701}; // store BAFF in 700-999
+const int trBaff[2] = {700, 701}; // store BAFF in 700-709
+const int trDrum[2] = {710, 725}; // store DRUM in 710-999
 
 #define BOOP_TRACK 100
 #define ARMED_TRACK 900
@@ -56,11 +57,11 @@ class Sound {
 
     // set how we want volume levels to be applied so that simultaneous playback does not clip.
     void setLeveling(int nTones=N_TONES-1, int nTracks=1);
-    // e.g. 
+    // e.g.
     //  bongo: setLeveling(4, 0) -> reduce individual track gains so that 4x tones and zero tracks can play simultaneously
     //  gameplay: setLeveling(1, 1) -> reduce individual track gains so that 1x tones and 1x track (ROCK) can play simultaneously
     //  win/lose: setLevel(0, 1) -> reduce individual track gains so that zero tones and 1x track (WINS/LOSE) can play simultaneously
-    
+
     // note that the calling program should store the return value for later stopTrack
     // and fadeTrack usage.
 
@@ -69,10 +70,10 @@ class Sound {
     int playLose(int track = RANDOM_TRACK);
     int playBaff(int track = RANDOM_TRACK);
     int playRock(int track = RANDOM_TRACK);
-    
+
     // Play a specific track by number
     int playTrack(int track);
-    
+
     // Stop a track
     void stopTrack(int track);
     // Fade out track
@@ -91,12 +92,19 @@ class Sound {
     void stopTones();
     // Stop tones and tracks
     void stopAll();
-      
+
     // unit test for Music
     void unitTest();
-    
+
     // set volume manually.  THIS IS VERY LIKELY TO CREATE CLIPPING UNLESS YOU KNOW WHAT YOU'RE DOING
     void setVolume(int track, int gain);
+
+    int playDrumSound(byte colorIndex);
+    // returns the drum set index
+    int nextDrumSet();
+    int prevDrumSet();
+    char* getLabel(int drumSet);
+    char* getCurrLabel();
 
   private:
     // Play a track.  INTENTIONALLY private to preserve gain settings
@@ -107,9 +115,12 @@ class Sound {
 
     // select a random track
     int randomTrack(const int (&range)[2]);
-    
+
     // store tone and volume levels
     int toneGain, trackGain;
+
+    // drum kit set index
+    int currDrumSet;
 
 };
 

@@ -20,14 +20,15 @@ class SimonScoreboard {
     void saveCurrScore(int playerCurrent);
     void resetHighScore(); // accessed from within LayoutMode.  Likely, we want to reset this once every project setup, so it's a convenient place to do it.
     void saveHighScore();
-      
+
     void showBackerMessages();
     void showSimonTeam();
 
     void displayCurrScore();
-    
+
     void showMessage(char * msg);
-   
+    void showMessage2(char * msg);
+
   private:
     uint32_t highScore;
     uint32_t currScore;

@@ -81,7 +81,12 @@ void loop() {
     setStripColor(redL, inst.light[I_RED]);
     setStripColor(grnL, inst.light[I_GRN]);
     setStripColor(bluL, inst.light[I_BLU]);
-    setStripColor(yelL, inst.light[I_YEL]);
+    if (inst.light[I_YEL].red == 255 && inst.light[I_YEL].green == 100) {
+      // hardcode the color so that it isn't 255,100,0, which is orangy for the console, but yellow for the tower
+      setStripColor(yelL, yelL.Color(RED_MAX, GRN_MAX, LED_OFF));
+    } else {
+      setStripColor(yelL, inst.light[I_YEL]);
+    }
 
     // toggle LED to ACK new button press
     static boolean ledStatus = false;

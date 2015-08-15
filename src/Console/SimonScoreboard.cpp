@@ -37,7 +37,7 @@ void SimonScoreboard::begin() {
   init_super_font(&lcd); // big big numbers
 
   Serial << F("Setup: LCD initialized.") << endl;
-  
+
   highScore = EEPROM.read(EEPROM_ADDR);
 
 }
@@ -87,7 +87,7 @@ void SimonScoreboard::displayCurrScore() {
   char b[3]; // zero terminated strings, so you need one more allocated than expected.
   sprintf(b, "%02d", currScore); // using a buffer to get padding
   render_super_msg(b, 9, 0);
-  
+
   static char p2[] = "HIGH:";
   lcd.setCursor(0, 3);
   lcd.print(p2);
@@ -101,7 +101,7 @@ void SimonScoreboard::showBackerMessages() {
   static Metro cycleInterval(3000);
   static int nMessages = sizeof(backerMessages)/2;
   static int i=random(0, nMessages); // start somewhere new at the beginning.
-  
+
   if( cycleInterval.check() ) {
 //    Serial << "i=" << i << endl;
 //    Serial << "nM=" << nMessages << endl;
@@ -110,12 +110,12 @@ void SimonScoreboard::showBackerMessages() {
 //    Serial << "m=" << buffer << endl;
     sprintf(buffer2, "%20s", buffer); // sprintf incurs a 1K memory cost.  It's awful, and I just need blank padding.
 //    Serial << "m=" << buffer2 << endl;
-        
+
     lcd.setCursor(0, 2);
     lcd.print(thx);
     lcd.setCursor(0, 3);
     lcd.print(buffer2);
-    
+
     cycleInterval.interval(random(3000,4000));
     cycleInterval.reset();
     (++i) %= nMessages; // increment with wrap
@@ -127,7 +127,7 @@ void SimonScoreboard::showSimonTeam() {
   static Metro cycleInterval(3000);
   static int nMessages = sizeof(simonTeam)/2;
   static int i=random(0, nMessages); // start somewhere new at the beginning.
-  
+
   if( cycleInterval.check() ) {
 //    Serial << "i=" << i << endl;
 //    Serial << "nM=" << nMessages << endl;
@@ -136,12 +136,12 @@ void SimonScoreboard::showSimonTeam() {
 //    Serial << "m=" << buffer << endl;
     sprintf(buffer2, "%20s", buffer); // sprintf incurs a 1K memory cost.  It's awful, and I just need blank padding.
 //    Serial << "m=" << buffer2 << endl;
-        
+
     lcd.setCursor(0, 0);
     lcd.print(thx);
     lcd.setCursor(0, 1);
     lcd.print(buffer2);
-    
+
     cycleInterval.interval(random(3000,4000));
     cycleInterval.reset();
     (++i) %= nMessages; // increment with wrap
@@ -154,6 +154,11 @@ void SimonScoreboard::showMessage(char * msg) {
   lcd.print(msg);
 }
 
+void SimonScoreboard::showMessage2(char * msg) {
+  lcd.clear();
+  lcd.setCursor(0, 1);
+  lcd.print(msg);
+}
 
 
 SimonScoreboard scoreboard;
