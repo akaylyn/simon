@@ -171,12 +171,12 @@ void playerFanfare(fanfare_t level) {
    winTime.reset();
 
    unsigned long beatInterval = 333;  // 180 BPM max
-   byte beatChance = 80;  // chance in 100 a beat triggers a fire.  Makes the anim for a specific track different each time
+   byte beatChance = 95;  // chance in 100 a beat triggers a fire.  Makes the anim for a specific track different each time
    byte airChance = 0;  // n in 100- chance of air effect
    byte lightMoveChance = 50;  // n in 100 chance of the light moving on a beat
    byte minFirePerFireball = 50;  // min fire level(ms) per fireball
    byte maxFirePerFireball = 200;  // max fire level(ms) per fireball
-   float fireBudgetFactor = 7.0;  // Divisor of track length we throw fire.  Tune this to throw less fire
+   float fireBudgetFactor = (26.5 - loadFireBudgetFactor());  // Divisor of track length we throw fire.  Tune this to throw less fire
 
    unsigned long beatEndTime = millis();  // time left for beat effect
    unsigned long beatWaitTime = millis();
@@ -189,7 +189,7 @@ void playerFanfare(fanfare_t level) {
    byte active;
    //unsigned long samples = 0;
    
-  Serial << "Track Length: " << trackLength << " budget: " << budget << endl;;
+  Serial << "FireFactor: " << fireBudgetFactor << " Track Length: " << trackLength << " budget: " << budget << endl;;
 
    color fireTower = I_RED;
    color lightTower = I_RED;
@@ -198,7 +198,7 @@ void playerFanfare(fanfare_t level) {
    while(!winTime.check()) {
      currTime = millis();
      threshold *= bt * (float)firepower / ((float) (currTime - startTime));
-     threshold = constrain(threshold,1.0,5.0);
+     threshold = constrain(threshold,0.5,10.0);
      listenWav.setThreshold(bassBand, threshold);
      listenWav.setThreshold(bassBand2, threshold);
      network.update();
@@ -257,12 +257,11 @@ void playerFanfare(fanfare_t level) {
      if (currTime > beatWaitTime) {
        if (listenWav.getBeat(bassBand) || listenWav.getBeat(bassBand2)) {
          if (random(1,101) <= beatChance) {
-           Serial << "Fire" << endl;
            hearBeat = true;
            //byte fireLevel = minFirePerFireball / 10 + random(0,maxFirePerFireball / 10);
            byte fireLevel = fscale(0, 100, minFirePerFireball / 10, maxFirePerFireball / 10, random(101), -6.0);
            unsigned long fireMs = fireLevel * 10; // each level is 10ms
-           Serial << " fireLevel: " << fireMs;
+           Serial << "Fire level: " << fireMs << " ";
 
            flameEffect airEffect = veryRich;
 
@@ -290,21 +289,49 @@ void playerFanfare(fanfare_t level) {
               }
             }
 
-            byte towers = random(0,2);
+          byte towers = random(0,9);
+          byte r = random(0,2) * 255;
+          byte g = random(0,2) * 255;
+          byte b = random(0,2) * 255;
 
-            switch(towers) {
-              case 0:
-                fire.setFire(fireTower,fireLevel,airEffect);
-                break;
-              case 1:
-                fire.setFire(fireTower,fireLevel,airEffect);
-                fire.setFire(oppTower(fireTower),fireLevel,airEffect);
-                break;
-            }
+          if (firepower > budget) {  // tone it down if over budget
+            Serial << "Capping fire" << endl;
+            towers = towers / 2;
+            fireLevel = fscale(0, 100, minFirePerFireball / 10, maxFirePerFireball / 10, 0, -6.0);
+            fireMs = fireLevel * 10; // each level is 10ms
+          }
+          
+          switch(towers) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+              fire.setFire(fireTower,fireLevel,airEffect);
+              firepower += (1 * fireMs);
+              break;
+            case 4:
+            case 5:
+              fire.setFire(fireTower,fireLevel,airEffect);
+              fire.setFire(oppTower(fireTower),fireLevel,airEffect);
+              firepower += (2 * fireMs);
+              break;
+            case 6:
+              fire.setFire(fireTower,fireLevel,airEffect);
+              fire.setFire(oppTower(fireTower),fireLevel,airEffect);
+              fire.setFire(incColor(fireTower),fireLevel,airEffect);
+              firepower += (3 * fireMs);
+              break;
+            case 7:
+              fire.setFire(I_RED,fireLevel,airEffect);
+              fire.setFire(I_GRN,fireLevel,airEffect);
+              fire.setFire(I_BLU,fireLevel,airEffect);
+              fire.setFire(I_YEL,fireLevel,airEffect);
+              firepower += (4 * fireMs);
+              break;
+          }
 
            network.update();
            fireballs++;
-           firepower += fireMs;
            beatEndTime = currTime + fireMs;
            beatWaitTime = currTime + beatInterval;
 
@@ -328,4 +355,19 @@ void playerFanfare(fanfare_t level) {
 
 }
 
+void saveFireBudgetFactor(float factor) {
+  byte f2b = constrain(factor * 10.0, 0.0, 255.0); // valid cast when factor in [0,25.5]
+  EEPROM.write(budgetEepromAddr, f2b);
+}
+
+float loadFireBudgetFactor() {
+  float val = (float)EEPROM.read(budgetEepromAddr)/10.0;
+  
+  // protect from unitialized data and corrupt data
+  if ( val > 25.5) val = 25.5;
+  if (val < 0) val = 0;
+  
+  Serial << "Loaded fire budget: " << val << endl;
+  return val;
+}
 

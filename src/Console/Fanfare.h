@@ -60,4 +60,8 @@ color incColor(color val);
 color randColor();
 color oppTower(color val);
   
+void saveFireBudgetFactor(float factor);
+float loadFireBudgetFactor();
+static const int budgetEepromAddr = 108;
+
 #endif

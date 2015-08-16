@@ -417,14 +417,21 @@ void TestModes::lightsTestModeLoop(boolean performStartup) {
 #define FIRE_TEST_ARMED_TIMEOUT_MILLIS 2 * 1000
 void TestModes::fireTestModeLoop(boolean performStartup) {
 
+  static char lcdMsg[20];
+  static float budget = loadFireBudgetFactor();
   static Metro armedTimer(FIRE_TEST_ARMED_TIMEOUT_MILLIS);
   static bool armed[N_COLORS];
+  static char str_temp[6];
 
   // I was having trouble with some timing (the touch panels are not debounced), so I keep a frame count for debugging.
   static int frame = 0;
   frame++;
 
   if(performStartup) {
+    dtostrf(budget, 3, 1, str_temp);
+    sprintf(lcdMsg, "Fire Budget: %s", str_temp);
+    scoreboard.showMessage(lcdMsg);
+    delay(100);
 
     // Turn off the fire and lights
     fire.clear();
@@ -475,7 +482,7 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
         Serial << "Firing on tower " << whatPressed << " on frame " << frame << endl;
 
         // Make fire go now!
-        fire.setFire(whatPressed, 255, kickMiddle);
+        fire.setFire(whatPressed, 255, veryLean);
 
         //  Play a sound.  This is helpful for debugging, to now we *tried* to fire, even if a solenoid failed.
         sound.playTrack(BOOP_TRACK);
@@ -510,6 +517,28 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
       }
     }
   }
+  
+    // check for left and right to adjust fireBudget
+  while( touch.leftPressed()) {
+    if (budget <= 0) budget = 25.5;
+    budget=constrain(budget-0.2, 0.0, 25.5);
+    Serial << "Budget: " << budget << endl;
+    dtostrf(budget, 3, 1, str_temp);
+    sprintf(lcdMsg, "Fire Budget: %s", str_temp);
+    saveFireBudgetFactor(budget);
+    scoreboard.showMessage(lcdMsg);
+    delay(100);
+  }
+  while( touch.rightPressed()  || touch.startPressed()) {
+    if (budget >= 25.5) budget = 0;
+    budget=constrain(budget+0.2, 0.0, 25.5);
+    Serial << "Budget: " << budget << endl;
+    dtostrf(budget, 3, 1, str_temp);
+    sprintf(lcdMsg, "Fire Budget: %s", str_temp);
+    saveFireBudgetFactor(budget);
+    scoreboard.showMessage(lcdMsg);
+    delay(100);
+  }
 }
 
 #define beatInterval 333
@@ -518,8 +547,6 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
 #define lightMoveChance 50   // n in 100 chance of the light moving on a beat
 #define minFirePerFireball 50  // min fire level(ms) per fireball
 #define maxFirePerFireball 150  // max fire level(ms) per fireball
-//#define fireBudgetFactor 7  // Divisor of track length we throw fire.  Tune this to throw less fire
-#define fireBudgetFactor 2  // Divisor of track length we throw fire.  Tune this to throw less fire(1-15)
 
 #define bassBand 0
 #define bassBand2 1
@@ -543,10 +570,12 @@ void TestModes::externModeLoop(boolean performStartup) {
    static byte tower, tower2 = I_RED;
    static int numSamples = 0;
    static boolean printSamples = false;
+   static float fireBudgetFactor;
 
    currTime = millis();
 
    if (performStartup) {
+     fireBudgetFactor = 26.5 - loadFireBudgetFactor();
      budget = (unsigned long) ((float)trackLength / fireBudgetFactor);
      bt = (float) trackLength / budget;
      active = 0;
@@ -614,6 +643,7 @@ void TestModes::externModeLoop(boolean performStartup) {
             fireLevel = fscale(0, 100, minFirePerFireball / 10, maxFirePerFireball / 10, 0, -6.0);
             fireMs = fireLevel * 10; // each level is 10ms
           }
+          
           switch(towers) {
             case 0:
             case 1:
@@ -621,6 +651,7 @@ void TestModes::externModeLoop(boolean performStartup) {
             case 3:
               fire.setFire(fireTower,fireLevel,airEffect);
               light.setLight(fireTower, r,g,b);
+              firepower += (1 * fireMs);
               break;
             case 4:
             case 5:
@@ -628,6 +659,7 @@ void TestModes::externModeLoop(boolean performStartup) {
               light.setLight(fireTower, r, g , b);
               fire.setFire(oppTower(fireTower),fireLevel,airEffect);
               light.setLight(oppTower(fireTower), r, g , b);
+              firepower += (2 * fireMs);
               break;
             case 6:
               fire.setFire(fireTower,fireLevel,airEffect);
@@ -636,6 +668,7 @@ void TestModes::externModeLoop(boolean performStartup) {
               light.setLight(oppTower(fireTower), r,g, b);
               fire.setFire(incColor(fireTower),fireLevel,airEffect);
               light.setLight(incColor(fireTower), r, g , b);
+              firepower += (3 * fireMs);
               break;
             case 7:
               fire.setFire(I_RED,fireLevel,airEffect);
@@ -646,12 +679,12 @@ void TestModes::externModeLoop(boolean performStartup) {
               light.setLight(I_BLU, r, g , b);
               fire.setFire(I_YEL,fireLevel,airEffect);
               light.setLight(I_YEL, r, g , b);
+              firepower += (4 * fireMs);
               break;
           }
 
          network.update();
          fireballs++;
-         firepower += (towers * fireMs);
          beatEndTime = currTime + fireMs;
          beatWaitTime = currTime + beatInterval;
 
