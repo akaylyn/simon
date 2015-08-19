@@ -2,15 +2,19 @@
 
 // MPR121 object instantiated in the library.
 
-boolean Touch::begin(byte sensorIndex[N_COLORS]) {
+boolean Touch::begin(byte sensorIndex[N_BUTTONS]) {
 
   Serial << F("Touch: startup.") << endl;
 
   // following Examples->BareConductive_MPR->SimpleTouch
 
   // store it
-  for( byte i=0; i<N_COLORS; i++ )
+  for( byte i=0; i<N_BUTTONS; i++ )
+  {
     this->sensorIndex[i] = sensorIndex[i];
+    Serial << "touch init index: " << i << endl;
+    Serial << "sensor index: " << sensorIndex[i] << endl;
+  }
 
   // 0x5A is the MPR121 I2C address on the Bare Touch Board
   Wire.begin();
@@ -85,11 +89,11 @@ boolean Touch::begin(byte sensorIndex[N_COLORS]) {
 
 // Returns true if the state of a specific button has changed
 // based on what it was previously.
-boolean Touch::changed(color index) {
+boolean Touch::changed(byte index) {
   boolean ret = false;
 
   // capsense
-  static boolean previousState[N_COLORS];
+  static boolean previousState[N_BUTTONS];
 
   MPR121.updateTouchData();
   boolean currentState = MPR121.getTouchData(sensorIndex[index]);
@@ -108,13 +112,14 @@ boolean Touch::changed(color index) {
 }
 // returns true if any of the buttons are pressed.
 boolean Touch::anyChanged() {
-  return ( changed(I_RED) || changed(I_GRN) || changed(I_BLU) || changed(I_YEL) );
+  return ( changed(I_RED) || changed(I_GRN) || changed(I_BLU) || changed(I_YEL)
+      || changed(I_START) || changed(I_RIGHT) || changed(I_LEFT) );
 }
 
 
 // returns true WHILE a specific sensor IS PRESSED
 // this function will be called after touchChanged() asserts a change.
-boolean Touch::pressed(color index) {
+boolean Touch::pressed(byte index) {
   boolean ret = false;
 
   // capsense
@@ -132,8 +137,13 @@ boolean Touch::pressed(color index) {
 }
 
 // returns true if any of the buttons have switched states.
-boolean Touch::anyPressed() {
+boolean Touch::anyColorPressed() {
   return ( pressed(I_RED) || pressed(I_GRN) || pressed(I_BLU) || pressed(I_YEL) );
+}
+
+// returns true if any of the buttons have switched states.
+boolean Touch::anyButtonPressed() {
+  return ( anyColorPressed() || pressed(I_START) || pressed(I_LEFT) || pressed(I_RIGHT) );
 }
 
 // returns the first pressed button found
@@ -142,25 +152,30 @@ color Touch::whatPressed() {
   if( pressed(I_GRN) ) return (I_GRN);
   if( pressed(I_BLU) ) return (I_BLU);
   if( pressed(I_YEL) ) return (I_YEL);
-  // otherwise, signal "Boo!"
-  return(N_COLORS);
+  if( pressed(I_START) ) return (I_START);
+  if( pressed(I_RIGHT) ) return (I_RIGHT);
+  if( pressed(I_LEFT) ) return (I_LEFT);
+  return(N_BUTTONS);
+}
+
+nonColorButtons Touch::whatNonColorButtonPressed() {
 }
 
 // MGD new buttons
 boolean Touch::startPressed() {
   // capsense
   MPR121.updateTouchData();
-  return( MPR121.getTouchData(4) );
+  return( MPR121.getTouchData(I_START) );
 }
 boolean Touch::rightPressed() {
   // capsense
   MPR121.updateTouchData();
-  return( MPR121.getTouchData(5) );
+  return( MPR121.getTouchData(I_RIGHT) );
 }
 boolean Touch::leftPressed() {
   // capsense
   MPR121.updateTouchData();
-  return( MPR121.getTouchData(6) );
+  return( MPR121.getTouchData(I_LEFT) );
 }
 
 // returns "distance" an object is to the sensor, scaled [0, 255]
@@ -178,7 +193,7 @@ byte Touch::distance(byte index) {
   sensorRead /= 10;
 
   // track sensor returns for 12 sensors and the virtual 13th.
-  static int minRead[13] = { 350,350,350,350,350,350,350,350,350,350,350,350,350 }; // 300 seems to be the normal low end, but let's leave some room for drift
+  static int minRead[13] = { 400,400,400,400,400,400,400,400,400,400,400,400,400 }; // 300 seems to be the normal low end, but let's leave some room for drift
   minRead[index] = min(minRead[index], sensorRead);
 
   int delta = sensorRead - minRead[index];

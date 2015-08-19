@@ -115,8 +115,6 @@ void loseFanfare() {
 }
 
 void playerFanfare(fanfare_t level) {
-  Serial << "***Inside alan playerFanFare: fanfareLevel: " << level << "\n";
-
   if (!FANFARE_ENABLED) {
     Serial.println("Fanfare disabled");
     return;
@@ -139,8 +137,8 @@ void playerFanfare(fanfare_t level) {
   fire.clear();
   network.update();
 
-  mic.update();   // populate avg
-  mic.update();   // populate avg
+  listenWav.update();   // populate avg
+  listenWav.update();   // populate avg
 
   unsigned long trackLength = 30000UL;
 
@@ -159,9 +157,10 @@ void playerFanfare(fanfare_t level) {
       trackLength = 30000UL;
       break;
     case IDLE:
+      trackLength = 18000UL;
+      break;
     case CONSOLATION:
       trackLength = 3000UL;
-      Serial << "IDLE level: " << trackLength << endl;
       break;
     case NONE:
       return;
@@ -188,7 +187,8 @@ void playerFanfare(fanfare_t level) {
    unsigned long budget = (unsigned long) ((float)trackLength / fireBudgetFactor);
    float bt = (float) trackLength / budget;
    byte active;
-
+   //unsigned long samples = 0;
+   
   Serial << "Track Length: " << trackLength << " budget: " << budget << endl;;
 
    color fireTower = I_RED;
@@ -199,11 +199,14 @@ void playerFanfare(fanfare_t level) {
      currTime = millis();
      threshold *= bt * (float)firepower / ((float) (currTime - startTime));
      threshold = constrain(threshold,1.0,5.0);
-     mic.setThreshold(bassBand, threshold);
-     mic.setThreshold(bassBand2, threshold);
+     listenWav.setThreshold(bassBand, threshold);
+     listenWav.setThreshold(bassBand2, threshold);
      network.update();
      waitDuration(1UL);
-     mic.update();
+     listenWav.update();
+     //samples++;
+     //if (samples > 100) listenWav.print();
+     
 
      if (hearBeat && currTime > beatEndTime) {
        Serial << "Beat over.  " << endl;
@@ -217,7 +220,7 @@ void playerFanfare(fanfare_t level) {
     // Lights will queue changes based on activity level across all non bass bands
 
     for (byte i = 2; i < NUM_FREQUENCY_BANDS; i++) {
-      if ( mic.getBeat(i) ) {
+      if ( listenWav.getBeat(i) ) {
         active++;
       }
     }
@@ -252,7 +255,7 @@ void playerFanfare(fanfare_t level) {
 
     // Fire is queued to the bass channels.  Air effect is random but unlikely right now
      if (currTime > beatWaitTime) {
-       if (mic.getBeat(bassBand) || mic.getBeat(bassBand2)) {
+       if (listenWav.getBeat(bassBand) || listenWav.getBeat(bassBand2)) {
          if (random(1,101) <= beatChance) {
            Serial << "Fire" << endl;
            hearBeat = true;

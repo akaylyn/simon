@@ -15,6 +15,8 @@
 #include <EasyTransfer.h> // used for sending message to the sound module
 #include <wavTrigger.h> // sound board
 #include <LiquidCrystal_I2C.h> // LCD
+#include <avr/pgmspace.h> // PROGMEM
+#include <phi_super_font.h> // for really big characters
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
@@ -52,10 +54,11 @@ void setup() {
   // start each unit
 
   //------ Input units.
-  byte touchMapToColor[N_COLORS] = {I_RED, I_GRN, I_BLU, I_YEL};
+  byte touchMapToColor[N_BUTTONS] = {I_RED, I_GRN, I_BLU, I_YEL, I_START, I_RIGHT, I_LEFT};
   touch.begin(touchMapToColor);
   sensor.begin();
-  mic.begin();
+  listenWav.begin(WAV_RESET_PIN, WAV_STROBE_PIN, WAV_OUT_PIN); // only listens to WAV play board
+  listenMic.begin(MIC_RESET_PIN, MIC_STROBE_PIN, MIC_OUT_PIN); // only listens to external mic (and line in)
 
   //------ Network
   network.begin();
@@ -79,11 +82,12 @@ void loop() {
   // perform Tower resends; you should do this always if you want meaningful synchronization with Towers
   network.update();
 
+  /*
   // MGD new buttons
   if( touch.startPressed() ) Serial << F("Touch: start pressed") << endl;
   if( touch.leftPressed() ) Serial << F("Touch: left pressed") << endl;
   if( touch.rightPressed() ) Serial << F("Touch: right pressed") << endl;
-
+  */
 }
 
 int freeRam () {

@@ -3,6 +3,7 @@
 // The IDE requires all libraries to be #include’d in the main (.ino) file.  Clutter.
 #include <Streaming.h> // <<-style printing
 #include <Bounce.h> // remote relays
+#include <Metro.h> // countdown timers
 
 //------ sizes, indexing and inter-unit data structure definitions.
 #include <Simon_Common.h>
@@ -19,23 +20,26 @@
 
 // perform lighting
 #include <RGBlink.h> // control LEDs
-#include <IRremote.h> // control IR Rx lighting
-#include <QueueArray.h> // queing for IR transmissions
-#include <Metro.h> // countdown timers
 #include "Light.h"
 // pin locations for outputs
 #define PIN_R 6 // the PWM pin which drives the red LED
 #define PIN_G 5 // the PWM pin which drives the green LED
 #define PIN_B 9 // the PWM pin which drives the blue LED
-#define PIN_IR 3 // the PWM pin which drives the IR floodlight
 
 // perform fire
-#include <Metro.h> // countdown timers
 #include <Timer.h> // interval timers
 #include "Fire.h"
 // pin locations for outputs
 #define PIN_FLAME 7 // relay for flame effect solenoid
 #define PIN_AIR 8 // relay for air solenoid
+
+// perform IR Control
+#include <EasyTransfer.h> // rx, tx
+#include <SoftwareSerial.h> // 
+
+SoftwareSerial SSerial(A2, A3); // A2/A3 to A3/A2 (crossed) to IR controller
+EasyTransfer ET; 
+colorInstruction IRinstruction;
 
 // instantiate
 Instruction instruction;
@@ -61,9 +65,13 @@ void setup() {
   Serial << F("Setup: pausing after boot 1 sec...") << endl;
   delay(1000UL);
 
+  // IR startup
+  SSerial.begin(9600);
+  ET.begin(details(IRinstruction), &SSerial);
+
   // startup
   instruction.begin(HARD_SET_NODE_ID_TO);
-  light.begin(PIN_R, PIN_G, PIN_B, PIN_IR);
+  light.begin(PIN_R, PIN_G, PIN_B);
   fire.begin(PIN_FLAME, PIN_AIR);
   
   // random seed.
@@ -114,17 +122,14 @@ void loop() {
     // reset idle
     idleUpdate.reset();
 
-  if ( idleUpdate.check()) {
-    idleTestPattern(newColorInst);
-    // and take a moment to check heap+stack remaining
-    Serial << F("Tower: free RAM: ") << freeRam() << endl;
-  }
-
   // execute any new instructions
   if ( memcmp((void*)(&newColorInst), (void*)(&lastColorInst), sizeof(colorInstruction)) != 0 ) {
     Serial << F("New color instruction. R:") << newColorInst.red << F(" G:") << newColorInst.green << F(" B:") << newColorInst.blue << endl;
     // change the lights
     light.perform(newColorInst);
+    // control the IR
+    IRinstruction = newColorInst;
+    ET.sendData();
     // cache
     lastColorInst = newColorInst;   
   }
@@ -140,6 +145,14 @@ void loop() {
     modeChange(newMode);
     // cache
     lastMode = newMode;
+  }
+  
+  // Go to idle cycle, unless we're in the lights test.  
+  // This lets us stay on the same color indefinitely for testing.
+  if ( idleUpdate.check() && newMode != LIGHTS) {
+    idleTestPattern(newColorInst);
+    // and take a moment to check heap+stack remaining
+    Serial << F("Tower: free RAM: ") << freeRam() << endl;
   }
 
 }
@@ -190,7 +203,3 @@ void idleTestPattern(colorInstruction &inst) {
   inst = cMap[colorOrder[c]];
   Serial << endl << F("Idle: color ") << c+1 << F(" of ") << N_COLORS << F(". R:") << inst.red << F(" G:") << inst.green << F(" B:") << inst.blue << endl;
 }
-
-
-
-

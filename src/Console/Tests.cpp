@@ -1,9 +1,22 @@
 #include "Tests.h"
+#include "SimonScoreboard.h"
 
 #define MODE_TRACK_OFFSET 699
 
 // called from the main loop.  return true if we want to head back to playing Simon.
 boolean TestModes::update() {
+
+  char * systemModeNames[] = {
+    "Gameplay Mode",
+    "Whiteout Mode",
+    "Bongo Mode",
+    "Proximity Mode",
+    "Fire Test Mode",
+    "Lights Test Mode",
+    "Layout Mode",
+    "External Mode",
+  };
+
   static int currentMode = N_systemMode-1;
   static boolean performStartup, modeChange = true;
 
@@ -18,6 +31,9 @@ boolean TestModes::update() {
     sound.stopAll();
     sound.setLeveling(1, 0); // Level for one track, no music
     sound.playTrack(MODE_TRACK_OFFSET + currentMode);
+
+    // Show the mode name on the scoreboard
+    scoreboard.showMessage(systemModeNames[currentMode]);
 
     Metro delayFor(1500UL);
     delayFor.reset();
@@ -52,6 +68,7 @@ boolean TestModes::update() {
       layoutModeLoop(performStartup);
       break;
     case EXTERN:
+      externModeLoop(performStartup);
       break;
   }
 
@@ -88,7 +105,7 @@ void TestModes::whiteoutModeLoop(boolean performStartup) {
       light.setLight((color)index, cInst);
   }
 
-  if(!touch.anyPressed()) {
+  if(!touch.anyColorPressed()) {
     // No button is being pressed, so go back to bright white light
     step = 0;
 
@@ -185,7 +202,7 @@ void TestModes::layoutModeLoop(boolean performStartup) {
   }
 
   if ( touch.anyChanged() ) {
-    if ( touch.anyPressed() ) {
+    if ( touch.anyColorPressed() ) {
       // increment this tower's color assignment
       byte tower = (byte)touch.whatPressed();
 
@@ -219,6 +236,9 @@ void TestModes::layoutModeLoop(boolean performStartup) {
 
     // do the deed.
     network.layout(layout, layout);
+
+    // reset high score
+    scoreboard.resetHighScore();
   }
 }
 
@@ -247,23 +267,34 @@ void TestModes::bongoModeLoop(boolean performStartup) {
     light.clear();
 
     lastFireTime = millis();
+    scoreboard.showMessage2(sound.getCurrLabel());
   }
 
-  if ( touch.anyChanged() ) {
-    light.animate(A_GameplayPressed);
-    if ( touch.anyPressed()) {
-      // if anything's pressed, pack the instructions
+  if (touch.anyChanged()) {
+    if (touch.anyButtonPressed()) {
+
       color pressed = touch.whatPressed();
+      light.animate(A_GameplayPressed);
 
-      sound.playTone(pressed);
+      // change sound set
+      if (pressed == I_START)
+      {
+        scoreboard.showMessage2(sound.getLabel(sound.nextDrumSet()));
+        Serial << "Next Drum Set" << endl;
+      }
 
-      colorInstruction c = cMap[pressed];
-      light.setLight(pressed, c);
+      // if anything's pressed, pack the instructions
+      sound.playDrumSound(pressed);
 
-      // only allow full-on every 10s.
-      byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 50UL, 250UL) / 10;
-      fire.setFire(pressed, fireLevel, gatlingGun);
-      lastFireTime = millis();
+      if (pressed <= N_COLORS) {
+        colorInstruction c = cMap[pressed];
+        light.setLight(pressed, c);
+
+        // only allow full-on every 10s.
+        byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 50UL, 250UL) / 10;
+        fire.setFire(pressed, fireLevel, gatlingGun);
+        lastFireTime = millis();
+      }
     } else {
       light.clearButtons(); // clear lights
       fire.clear(); // clear fire
@@ -314,8 +345,9 @@ void TestModes::proximityModeLoop(boolean performStartup) {
 
       sound.setVolume(trTone[i], gain);
 
+      colorInstruction colorSequence[] = { cRed, cGreen, cBlue, cYellowConsole};
       // set lights
-      colorInstruction c = cMap[i];
+      colorInstruction c = colorSequence[i];
       c.red -= c.red > 0 ? dist : 0;
       c.green -= c.green > 0 ? dist : 0;
       c.blue -= c.blue > 0 ? dist : 0;
@@ -335,16 +367,16 @@ void TestModes::proximityModeLoop(boolean performStartup) {
       lastDistance[i] = dist;
     }
   }
-
 }
 
 /*
    This mode lets the user step each tower through the primary colors, white, and off.  It's usefull for debugging issues with the LED strands
    Pressing any button advances the associated tower to the next color in the sequence.
    */
+
 void TestModes::lightsTestModeLoop(boolean performStartup) {
 
-  colorInstruction colorSequence[] = { cOff, cRed, cGreen, cBlue, cWhite };
+  colorInstruction colorSequence[] = { cOff, cRed, cGreen, cBlue, cYellowConsole};
 
   static int towerSpotInSequence [N_COLORS];
 
@@ -359,7 +391,7 @@ void TestModes::lightsTestModeLoop(boolean performStartup) {
   }
 
   if ( touch.anyChanged() ) {
-    if ( touch.anyPressed()) {
+    if ( touch.anyColorPressed()) {
       sound.playTrack(BOOP_TRACK);
 
       color whatPressed = touch.whatPressed();
@@ -429,7 +461,7 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
   }
 
   //look for button presses
-  if (touch.anyChanged() && touch.anyPressed()) {
+  if (touch.anyChanged() && touch.anyColorPressed()) {
     color whatPressed = touch.whatPressed();
 
     if(!sensor.fireEnabled()) {
@@ -478,6 +510,158 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
       }
     }
   }
+}
+
+#define beatInterval 333
+#define beatChance 100
+#define airChance 0
+#define lightMoveChance 50   // n in 100 chance of the light moving on a beat
+#define minFirePerFireball 50  // min fire level(ms) per fireball
+#define maxFirePerFireball 150  // max fire level(ms) per fireball
+//#define fireBudgetFactor 7  // Divisor of track length we throw fire.  Tune this to throw less fire
+#define fireBudgetFactor 2  // Divisor of track length we throw fire.  Tune this to throw less fire(1-15)
+
+#define bassBand 0
+#define bassBand2 1
+
+void TestModes::externModeLoop(boolean performStartup) {
+   static unsigned long beatEndTime = millis();  // time left for beat effect
+   static unsigned long beatWaitTime = millis();
+   static unsigned long startTime;
+   static unsigned long currTime;
+   static int fireballs = 0;
+   static unsigned long firepower = 1;
+   static float threshold = 1.5; // initial threshold is likely to throw a fireball
+   static color fireTower = I_RED;
+   static color lightTower = I_RED;
+
+   static unsigned long trackLength = 30000;  // todo not really gonna work but test for now
+   static unsigned long budget;
+   static float bt;
+   static byte active;
+   static boolean hearBeat = false;
+   static byte tower, tower2 = I_RED;
+   static int numSamples = 0;
+   static boolean printSamples = false;
+
+   currTime = millis();
+
+   if (performStartup) {
+     budget = (unsigned long) ((float)trackLength / fireBudgetFactor);
+     bt = (float) trackLength / budget;
+     active = 0;
+     startTime = currTime - 1; // avoid / 0
+     hearBeat = false;
+     firepower = 1;
+     threshold = 2;
+
+     listenMic.update();
+     listenMic.update();
+   } else if ((currTime - startTime) > trackLength) {
+     Serial << "Reseting budget: " << budget << endl;
+     // reset budget
+     startTime = currTime - 1;  // avoid / 0
+     firepower = 1;
+   }
+
+
+   threshold *= bt * (float)firepower / ((float) (currTime - startTime));
+//   threshold = constrain(threshold,1.0,15.0);
+   threshold = constrain(threshold,0.25,15.0);
+   listenMic.setThreshold(bassBand, threshold);
+   listenMic.setThreshold(bassBand2, threshold);
+   network.update();
+   waitDuration(1UL);
+   listenMic.update();
+
+   if (printSamples) {
+     numSamples++;
+     if (numSamples > 50) {
+       numSamples=0;
+       listenMic.print();
+     }
+   }
+
+   if (hearBeat && currTime > beatEndTime) {
+     light.clear();
+     fire.clear();
+     network.update();
+     hearBeat = false;
+     waitDuration(10UL);
+   }
+
+  // Fire is queued to the bass channels.  Air effect is random but unlikely right now
+   if (currTime > beatWaitTime) {
+     if (listenMic.getBeat(bassBand) || listenMic.getBeat(bassBand2)) {
+       if (random(1,101) <= beatChance) {
+         Serial << "Fire" << endl;
+         hearBeat = true;
+         //byte fireLevel = minFirePerFireball / 10 + random(0,maxFirePerFireball / 10);
+         byte fireLevel = fscale(0, 100, minFirePerFireball / 10, maxFirePerFireball / 10, random(101), -6.0);
+         unsigned long fireMs = fireLevel * 10; // each level is 10ms
+         Serial << " fireLevel: " << fireMs << endl;
+
+         flameEffect airEffect = veryRich;
+
+          byte towers = random(0,9);
+          byte r = random(0,2) * 255;
+          byte g = random(0,2) * 255;
+          byte b = random(0,2) * 255;
+
+          if (firepower > budget) {  // tone it down if over budget
+            Serial << "Capping fire" << endl;
+            towers = towers / 2;
+            fireLevel = fscale(0, 100, minFirePerFireball / 10, maxFirePerFireball / 10, 0, -6.0);
+            fireMs = fireLevel * 10; // each level is 10ms
+          }
+          switch(towers) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+              fire.setFire(fireTower,fireLevel,airEffect);
+              light.setLight(fireTower, r,g,b);
+              break;
+            case 4:
+            case 5:
+              fire.setFire(fireTower,fireLevel,airEffect);
+              light.setLight(fireTower, r, g , b);
+              fire.setFire(oppTower(fireTower),fireLevel,airEffect);
+              light.setLight(oppTower(fireTower), r, g , b);
+              break;
+            case 6:
+              fire.setFire(fireTower,fireLevel,airEffect);
+              light.setLight(fireTower, r,g, b);
+              fire.setFire(oppTower(fireTower),fireLevel,airEffect);
+              light.setLight(oppTower(fireTower), r,g, b);
+              fire.setFire(incColor(fireTower),fireLevel,airEffect);
+              light.setLight(incColor(fireTower), r, g , b);
+              break;
+            case 7:
+              fire.setFire(I_RED,fireLevel,airEffect);
+              light.setLight(I_RED, r, g , b);
+              fire.setFire(I_GRN,fireLevel,airEffect);
+              light.setLight(I_GRN, r, g , b);
+              fire.setFire(I_BLU,fireLevel,airEffect);
+              light.setLight(I_BLU, r, g , b);
+              fire.setFire(I_YEL,fireLevel,airEffect);
+              light.setLight(I_YEL, r, g , b);
+              break;
+          }
+
+         network.update();
+         fireballs++;
+         firepower += (towers * fireMs);
+         beatEndTime = currTime + fireMs;
+         beatWaitTime = currTime + beatInterval;
+
+         Serial << "Fire used: " << ((firepower / (float) budget) * 100) <<  "%  time left: " << (trackLength - (currTime - startTime)) << " thresh: " << threshold << endl;
+         fireTower = randColor();
+       } else {
+         Serial << "Ignore" << endl;
+       }
+     }
+   }
 }
 
 TestModes testModes;

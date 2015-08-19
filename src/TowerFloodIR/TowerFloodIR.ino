@@ -1,3 +1,6 @@
+// Compile for Arduino Pro/Pro Mini 5V 16Mhz with ATMega 328.
+// During compilation, hold down RESET on the mini, and release when "Uploading..."
+
 // need to strike RobotIRRemote directory in Arduino IDE libraries folder.  Name collision!
 #include <IRremote.h> // IR connected to pin 3
 #include <Streaming.h>
@@ -6,7 +9,7 @@
 #include <EasyTransfer.h> // rx, tx
 #include <SoftwareSerial.h> // 
 
-SoftwareSerial SSerial(A2, A3); // 
+SoftwareSerial SSerial(A2, A3); // to A2 and A3 on Tower Moteino, swapping the cabling
 EasyTransfer ET; 
 colorInstruction lastColorInst, newColorInst;
 
@@ -38,15 +41,18 @@ IRsend irsend;
 
 IRlight flood; // Loftek (50W) and off-brand (10W) floods, and RGB strip lighting.
 IRlight miniSubs; // cute little CR2032s
-IRlight packSubs; // pack-of-four submersibles
+//IRlight packSubs; // pack-of-four submersibles
+IRlight soondarSubs; // pack-of-four 12 and big submersibles by Soondar
 
 // about 70 ms to send packet
 
 void setup()
 {
   Serial.begin(115200);
-  Serial << "Startup." << endl;
+  Serial << F("Startup.") << endl;
 
+  Serial << F("Clock speed (MHz): ") << F_CPU << endl;
+  
   SSerial.begin(9600);
   ET.begin(details(newColorInst), &SSerial);
 
@@ -58,11 +64,11 @@ void setup()
   // no up and down
  // strictly address 0x01FE
   
-//  soondarSubs.begin(0x00FF, 0xA2, 0xE2, 0x52, 0x67, 0x22, 0x02, 0xC2, 0xA8, 0x10, 0x5A, 0x5A, 0x38, 0x38);
+  soondarSubs.begin(0x00FF, 1, 0xA2, 0xE2, 0x52, 0x67, 0x22, 0x02, 0xC2, 0xA8, 0x10, 0x5A, 0x5A, 0x38, 0x38);
 // no strobe and smooth
   
   // pack of submersibles 
-  packSubs.begin(0x00FF, 1, 0xB0, 0xF8, 0x90, 0xB8, 0x98, 0xD8, 0x88, 0x38, 0xA8, 0xB2, 0x00, 0x58, 0x30 );
+//  packSubs.begin(0x00FF, 1, 0xB0, 0xF8, 0x90, 0xB8, 0x98, 0xD8, 0x88, 0x38, 0xA8, 0xB2, 0x00, 0x58, 0x30 );
 //  packSubs.begin(0x0018, 2, 0xB0, 0xF8, 0x90, 0xB8, 0x98, 0xD8, 0x88, 0x38, 0xA8, 0xB2, 0x00, 0x30, 0xB2 );
 //  packSubs.begin(0x00F0, 0xB0, 0xF8, 0x90, 0xB8, 0x98, 0xD8, 0x88, 0x38, 0xA8, 0xB2, 0x00, 0x30, 0xB2 );
   // addresses that work end in 1, 8 and C. 0x00FF, too.
@@ -86,39 +92,52 @@ void setup()
 
 // first: obey address codes: strips, small floods, minisubs
 // last: DON'T obey address codes: pack subs, big floods
+
 void setColor(byte color) {
   Serial << F("Instruction, color: ") << color << endl;
 
+//  if( !ET.receiveData() ) packSubs.color(color); 
+  if( !ET.receiveData() ) soondarSubs.color(color); 
   if( !ET.receiveData() ) miniSubs.color(color); 
-  if( !ET.receiveData() ) packSubs.color(color); 
   if( !ET.receiveData() ) flood.color(color); 
 }
 void setFade() {
   Serial << F("Instruction, fade.")<< endl;
 
+//  if( !ET.receiveData() ) packSubs.fade();
+  if( !ET.receiveData() ) soondarSubs.fade(); 
   if( !ET.receiveData() ) miniSubs.fade(); 
-  if( !ET.receiveData() ) packSubs.fade();
   if( !ET.receiveData() ) flood.fade(); 
+}
+void setSmooth() {
+  Serial << F("Instruction, smooth.")<< endl;
+
+//  if( !ET.receiveData() ) packSubs.smooth();
+  if( !ET.receiveData() ) soondarSubs.smooth(); 
+  if( !ET.receiveData() ) miniSubs.smooth(); 
+  if( !ET.receiveData() ) flood.smooth(); 
 }
 void setOn() {
   Serial << F("Instruction, on.")<< endl;
 
+//  if( !ET.receiveData() ) packSubs.on(); 
+  if( !ET.receiveData() ) soondarSubs.on(); 
   if( !ET.receiveData() ) miniSubs.on(); 
-  if( !ET.receiveData() ) packSubs.on(); 
   if( !ET.receiveData() ) flood.on(); 
 }
 void setOff() {
   Serial << F("Instruction, off.")<< endl;
 
+//  if( !ET.receiveData() ) packSubs.off(); 
+  if( !ET.receiveData() ) soondarSubs.off(); 
   if( !ET.receiveData() ) miniSubs.off(); 
-  if( !ET.receiveData() ) packSubs.off(); 
   if( !ET.receiveData() ) flood.off(); 
 }
 
 void loop() {
   
  // check SSerial
-  if( ET.receiveData() ) {
+    if( ET.receiveData() ) {
     // have data.  is it different than last?
     if( memcmp((void*)(&newColorInst), (void*)(&lastColorInst), sizeof(colorInstruction)) != 0 ) {
       if( newColorInst.red > 0 && newColorInst.green > 0 && newColorInst.blue > 0 ) setColor(4); // white
@@ -126,7 +145,10 @@ void loop() {
       else if( newColorInst.red > 0 ) setColor(I_RED);
       else if( newColorInst.green > 0 ) setColor(I_GRN);
       else if( newColorInst.blue > 0 ) setColor(I_BLU);
-      else setOff();
+//      else setOff();
+//      else setColor(4); // default to on, but rotating colors.
+//      else setFade(); // default to on, but rotating colors.
+      else setSmooth(); // default to on, but rotating colors.
       
       lastColorInst = newColorInst;
     }    
@@ -204,7 +226,7 @@ void IRlight::send(byte code) {
     irsend.sendNEC(msg, 32);
     digitalWrite(13, LOW);
     toc = millis();
-    delay(100UL - (toc-tic));
+    delay(150UL - (toc-tic));
   }
   Serial << " " << toc-tic << " ms. x" << sendCount << endl;
 

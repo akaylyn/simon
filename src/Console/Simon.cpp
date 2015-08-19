@@ -68,13 +68,13 @@ void idleEnter() {
 
   idleBeforeFanfare.reset();
 
+  scoreboard.clear();
   scoreboard.resetCurrScore();
-
 }
 void idleUpdate() {
   light.animate(A_Idle);
   // check buttons for game play start
-  if ( touch.anyPressed() ) {
+  if ( touch.anyButtonPressed() ) {
     // going to start a game
     Serial << F("Simon: idle->game") << endl;
 
@@ -93,8 +93,12 @@ void idleUpdate() {
     // run tests
     simon.transitionTo(test);
   }
+
+  scoreboard.showBackerMessages();
+  scoreboard.showSimonTeam();
 }
 void idleExit() {
+  scoreboard.clear();
 }
 
 //***** Game
@@ -109,6 +113,8 @@ void gameEnter() {
   fire.clear();
 
   sound.stopAll();
+
+  scoreboard.displayCurrScore(); // where we at?
 
   // delay after a player's last move
   waitDuration(800UL);
@@ -176,7 +182,7 @@ void playerUpdate() {
   boolean correct = true;
 
   // wait for button press.
-  if ( touch.anyPressed() ) {
+  if ( touch.anyButtonPressed() ) {
 
     // you could, in theory, press all the buttons simultaneously to get it right...
     // but humans aren't that fast, so this is an alien/Ninja/godling detector.
@@ -284,7 +290,7 @@ void waitDuration(unsigned long duration) {
 }
 
 void waitAllReleased() {
-  while ( touch.anyPressed() ) network.update();
+  while ( touch.anyButtonPressed() ) network.update();
 }
 
 // Not used, currently, but Mike would like to retain this code:
@@ -313,7 +319,7 @@ unsigned long trandom(unsigned long xmin, unsigned long xmode, unsigned long xma
 
 void waitForButtonsReleased() {
   // wait for all of the buttons to be released.
-  while ( touch.anyPressed() ) {
+  while ( touch.anyButtonPressed() ) {
     network.update();
   }
 }
