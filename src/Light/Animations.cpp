@@ -275,50 +275,16 @@ void gameplayFillFromMiddle(Adafruit_NeoMatrix &matrix, int center, int prev, ui
 // Tron light cycle code:
 
 void tronLightCycles(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
-  TronCycles* cycles = static_cast<TronCycles*>(posData);
+  TronPosition* data = static_cast<TronPosition*>(posData);
   // dispatch the requests to the rim. number of cycles is proportional to the light level at each button
-  for( int i=0; i< inst.light[I_RED].red / 64; i++ ) addCycle(RED_X, ALL_Y, Red);
-  for( int i=0; i< inst.light[I_GRN].green / 64; i++ ) addCycle(GRN_X, ALL_Y, Grn);
-  for( int i=0; i< inst.light[I_BLU].blue / 64; i++ ) addCycle(BLU_X, ALL_Y, Blu);
-  if( inst.light[I_YEL].red > 64 && inst.light[I_YEL].green > 64 )
-    for( int i=0; i< (int)(inst.light[I_YEL].red+inst.light[I_YEL].green) / 128; i++ ) addCycle(YEL_X, ALL_Y, Yel);
+  addCycle(strip, data->cycles, data->x, data->y, strip.Color(r, g, b));
   //addCycles.reset();
+  moveCycles(strip, data->cycles);
+  fadeCycles(strip);
 }
-
-/*
-void serialPrint() {
-  static unsigned long it=0;
-  Serial << endl << it << F(":") << endl;
-  for( int y=0; y<RIM_Y; y++) {
-    for( int x=0; x<RIM_X; x++) {
-      uint32_t c = rimJob.getPixelColor(getPixelN(x,y));
-      boolean isC = isCycle(x,y);
-      char p;
-
-           if( isC && c==Red ) p = 'R';
-      else if( isC && c==Grn ) p = 'G';
-      else if( isC && c==Blu ) p = 'B';
-      else if( isC && c==Yel ) p = 'Y';
-      else if( isC ) p = '!'; // BAD: cycles have a color
-      else if( c==Red ) p = 'r';
-      else if( c==Grn ) p = 'g';
-      else if( c==Blu ) p = 'b';
-      else if( c==Yel ) p = 'y';
-      else if( c==Dead ) p = ' ';
-      else if( c==White ) p = '*';
-      else p = '.'; // faded/cycle trail
-
-      Serial << p;
-    }
-    Serial << endl;
-  }
-
-  it++;
-}
-*/
 
 // looks for active cycle at a pixel location
-boolean isCycle(TronCycles &cycles, int x, int y) {
+boolean isCycle(TronCycles *cycles, int x, int y) {
   for( int c=0; c<MAX_CYCLES; c++ ) {
     if( cycles[c].live && cycles[c].x==x && cycles[c].y==y )
       return( true );
@@ -326,7 +292,7 @@ boolean isCycle(TronCycles &cycles, int x, int y) {
   return( false );
 }
 
-void addCycle(Adafruit_NeoPixel &strip, TronCycles &cycles, uint32_t x, uint32_t y, uint32_t color) {
+void addCycle(Adafruit_NeoPixel &strip, TronCycles *cycles, uint32_t x, uint32_t y, uint32_t color) {
 
   byte availableCycle=0;
   while( cycles[availableCycle].live ) {
@@ -367,15 +333,15 @@ void fadeCycles(Adafruit_NeoPixel &strip) {
   }
 }
 
-void moveCycles(TronCycles &cycles) {
+void moveCycles(Adafruit_NeoPixel &strip, TronCycles *cycles) {
   for( byte c=0; c<MAX_CYCLES; c++ ) {
     if( cycles[c].live ) {
-      moveThisCycle(cycles, c);
+      moveThisCycle(strip, cycles, c);
      }
   }
 }
 
-void moveThisCycle(Adafruit_NeoPixel &strip, TronCycles &cycles, byte c) {
+void moveThisCycle(Adafruit_NeoPixel &strip, TronCycles *cycles, byte c) {
   int cw = (int)cycles[c].x+1;
   if( cw<0 ) cw = RIM_X-1;
   else if ( cw >= RIM_X) cw = 0;
@@ -419,6 +385,8 @@ void moveThisCycle(Adafruit_NeoPixel &strip, TronCycles &cycles, byte c) {
     movePref[3]= movePref[2]==0 ? 1 : 0;
   }
 
+  const uint32_t Dead = strip.Color(LED_OFF, LED_OFF, LED_OFF);
+  const uint32_t White = strip.Color(RED_MAX, GRN_MAX, BLU_MAX);
   // try some moves
   for( byte m=0; m<4; m++ ) {
     if( strip.getPixelColor(getPixelN(moveX[movePref[m]], moveY[movePref[m]])) == Dead ) {
