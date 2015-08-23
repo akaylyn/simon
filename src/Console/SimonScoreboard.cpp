@@ -5,10 +5,10 @@ LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I
 
 // backer messages
                       //   "01234567890123456789" -> 20 characters in width, max
-const char b00[] PROGMEM = "Allah on high";   // "String 0" etc are strings to store - change to suit.
-const char b01[] PROGMEM = "Thanks, Mom!";
-const char b02[] PROGMEM = "Ralph Baer R.I.P.";
-const char b03[] PROGMEM = "Loves to SimonCrew";
+const char b00[] PROGMEM = "Simon )'( Michelle";   // "String 0" etc are strings to store - change to suit.
+const char b01[] PROGMEM = "TrogdorTheBurninator";
+const char b02[] PROGMEM = "DN <3 DS";
+const char b03[] PROGMEM = "Play nice and often!";
 // Then set up a table to refer to your strings.
 const char* const backerMessages[] PROGMEM = {b00, b01, b02, b03};
 
