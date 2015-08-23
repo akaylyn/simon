@@ -85,7 +85,6 @@ int circPos = 0;
 ProxPulsePosition proxPulsePos;
 ProxPulsePosition idlePos;
 GameplayPosition gameplayPos;
-GameplayPosition gameplayDecayPos;
 TronCycles tronCycles[MAX_CYCLES];
 TronPosition tronPosition;
 
@@ -118,7 +117,6 @@ void configureAnimations() {
   rimConfig.ready = true;
   rimConfig.position = &proxPulsePos;
   rimConfig.timer = Metro(30UL);
-  gameplayPos.decayPos = &gameplayDecayPos;
 
   // Rim as a strip - TronCycles
   rimConfigStrip.name = "Outer rim - strip";
@@ -252,11 +250,6 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
     gameplayPos.yellow = state.light[3].red;
 
     animator.animate(gameplayMatrix, rimConfig);
-  }
-  if (state.animation == A_GameplayDecay) {
-    rimConfig.position = &gameplayDecayPos;
-    rimConfig.timer.interval(20UL);
-    animator.animate(gameplayDecayMatrix, rimConfig);
   }
 
   if (state.animation == A_TronCycles) {

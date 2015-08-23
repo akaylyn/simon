@@ -270,12 +270,14 @@ void TestModes::bongoModeLoop(boolean performStartup) {
     scoreboard.showMessage2(sound.getCurrLabel());
   }
 
-  light.animate(A_TronCycles);
+  //light.animate(A_TronCycles);
+  //light.animate(A_GameplayDecay);
   if (touch.anyChanged()) {
     if (touch.anyButtonPressed()) {
 
       color pressed = touch.whatPressed();
-      light.animate(A_TronCycles);
+      //light.animate(A_TronCycles);
+      light.animate(A_GameplayPressed);
 
       // change sound set
       if (pressed == I_START)
@@ -518,7 +520,7 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
       }
     }
   }
-  
+
     // check for left and right to adjust fireBudget
   while( touch.leftPressed()) {
     if (budget <= 0) budget = 25.5;
@@ -644,7 +646,7 @@ void TestModes::externModeLoop(boolean performStartup) {
             fireLevel = fscale(0, 100, minFirePerFireball / 10, maxFirePerFireball / 10, 0, -6.0);
             fireMs = fireLevel * 10; // each level is 10ms
           }
-          
+
           switch(towers) {
             case 0:
             case 1:

@@ -205,7 +205,7 @@ void twinkleRand(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
 
 /*****************************************************************************/
 // Gameplay animation
-static int gameplayMaxWidth = 15;
+static int gameplayMaxWidth = 13;
 static int RedMidPoint = 7;
 static int BlueMidPoint = 34;
 static int YellowMidPoint = 61;
@@ -215,29 +215,25 @@ void gameplayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posDa
   uint32_t ledOff = matrix.Color(LED_OFF, LED_OFF, LED_OFF);
   GameplayPosition* pos = static_cast<GameplayPosition*>(posData);
 
-  Serial << r << " " << g << " " << b << " " << pos->yellow << endl;
+  //Serial << r << " " << g << " " << b << " " << pos->yellow << " " << pos->decayPos->prev << endl;
 
-  if (pos->prev > gameplayMaxWidth) {
-    pos->prev = 0;
-  }
   if (r == 255) { // 7
-    gameplayFillFromMiddle(matrix, RedMidPoint, pos->prev, matrix.Color(255, 0, 0));
-    pos->prev += 1;
+    gameplayFillFromMiddle(matrix, RedMidPoint, pos->redOffset, matrix.Color(255, 0, 0));
+    pos->redOffset = getFilledOffset(pos->redOffset);
   }
   else if (b == 255) { // 34
-    gameplayFillFromMiddle(matrix, BlueMidPoint, pos->prev, matrix.Color(0, 0, 255));
-    pos->prev += 1;
+    gameplayFillFromMiddle(matrix, BlueMidPoint, pos->blueOffset, matrix.Color(0, 0, 255));
+    pos->blueOffset = getFilledOffset(pos->blueOffset);
   }
   else if (pos->yellow == 255) { // 61
-    gameplayFillFromMiddle(matrix, YellowMidPoint, pos->prev, matrix.Color(255, 255, 0));
-    pos->prev += 1;
+    gameplayFillFromMiddle(matrix, YellowMidPoint, pos->yellowOffset, matrix.Color(255, 255, 0));
+    pos->yellowOffset = getFilledOffset(pos->yellowOffset);
   }
   else if (g == 255) { // 88
-    gameplayFillFromMiddle(matrix, GreenMidPoint, pos->prev, matrix.Color(0, 255, 0));
-    pos->prev += 1;
+    gameplayFillFromMiddle(matrix, GreenMidPoint, pos->greenOffset, matrix.Color(0, 255, 0));
+    pos->greenOffset = getFilledOffset(pos->greenOffset);
   } else {
-    pos->prev = 0;
-    gameplayDecayMatrix(matrix, r, g, b, pos->decayPos);
+    gameplayDecayMatrix(matrix, r, g, b, pos);
   }
 }
 
@@ -245,16 +241,31 @@ void gameplayDecayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *
   GameplayPosition* pos = static_cast<GameplayPosition*>(posData);
   uint32_t ledOff = matrix.Color(LED_OFF, LED_OFF, LED_OFF);
 
-  if (pos->prev == 0) {
-    pos->prev = gameplayMaxWidth;
+  gameplayFillFromMiddle(matrix, GreenMidPoint, pos->greenOffset, ledOff);
+  gameplayFillFromMiddle(matrix, RedMidPoint, pos->redOffset, ledOff);
+  gameplayFillFromMiddle(matrix, BlueMidPoint, pos->blueOffset, ledOff);
+  gameplayFillFromMiddle(matrix, YellowMidPoint, pos->yellowOffset, ledOff);
+
+  pos->greenOffset = getDecayedOffset(pos->greenOffset);
+  pos->redOffset = getDecayedOffset(pos->redOffset);
+  pos->blueOffset = getDecayedOffset(pos->blueOffset);
+  pos->yellowOffset = getDecayedOffset(pos->yellowOffset);
+}
+
+int getFilledOffset(int offset) {
+  offset += 1;
+  if (offset >= gameplayMaxWidth) {
+    offset = gameplayMaxWidth;
   }
+  return offset;
+}
 
-  gameplayFillFromMiddle(matrix, GreenMidPoint, pos->prev, ledOff);
-  gameplayFillFromMiddle(matrix, RedMidPoint, pos->prev, ledOff);
-  gameplayFillFromMiddle(matrix, BlueMidPoint, pos->prev, ledOff);
-  gameplayFillFromMiddle(matrix, YellowMidPoint, pos->prev, ledOff);
-
-  pos->prev -= 1;
+int getDecayedOffset(int offset) {
+  offset -= 1;
+  if (offset < 0) {
+    offset = 0;
+  }
+  return offset;
 }
 
 void gameplayFillFromMiddle(Adafruit_NeoMatrix &matrix, int center, int prev, uint16_t color) {
@@ -266,7 +277,6 @@ void gameplayFillFromMiddle(Adafruit_NeoMatrix &matrix, int center, int prev, ui
 
   for (int height = 0; height < 3; height++) {
     matrix.drawPixel(left, height, color);
-    matrix.drawPixel(center, height, color);
     matrix.drawPixel(right, height, color);
   }
 }

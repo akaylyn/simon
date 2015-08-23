@@ -30,6 +30,8 @@ void proximityPulseMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void 
 void idleMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
 void gameplayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
 void gameplayDecayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
+int getDecayedOffset(int offset);
+int getFilledOffset(int offset);
 
 // Position information needed for the LaserWipe animation
 struct LaserWipePosition {
@@ -44,11 +46,12 @@ struct ProxPulsePosition {
 };
 
 struct GameplayPosition {
-  int prev;
+  int redOffset;
+  int greenOffset;
+  int blueOffset;
+  int yellowOffset;
   int yellow;
-  GameplayPosition* decayPos;
 };
-
 
 // ****************************************************************************
 // Tron Light Cycles Animation
