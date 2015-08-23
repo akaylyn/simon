@@ -49,5 +49,37 @@ struct GameplayPosition {
   GameplayPosition* decayPos;
 };
 
+
+// ****************************************************************************
+// Tron Light Cycles Animation
+// Uses the matrix as a strip
+
+void tronLightCycles(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData);
+
+struct TronCycles {
+  boolean live; // live or dead
+  uint32_t x,y; // location
+  uint32_t color; // color of the cycle
+  byte movePref; // CW or CCW preference
+};
+
+#define CYCLE_DICK_MOVE_PERCENT 15 // chance that a cycle will throw some "zigs" in it's path around the rim
+#define CYCLE_TRAIL_LENGTH BLU_X-RED_X // a light cycle leaves a trail as long as 1/4 of the rim circumference
+#define MAX_CYCLES 50
+struct TronPosition {
+  TronCycles* cycles;
+  uint32_t x,y; // location
+  bool addCycle;
+};
+
+// all state altered in these methods must be passed
+//void serialPrint();
+boolean isCycle(TronCycles *cycles, int x, int y);
+void addCycle(Adafruit_NeoPixel &strip, TronCycles *cycles, uint32_t x, uint32_t y, uint32_t color);
+void fadeCycles(Adafruit_NeoPixel &strip);
+void moveCycles(Adafruit_NeoPixel &strip, TronCycles *cycles);
+void moveThisCycle(Adafruit_NeoPixel &strip, TronCycles *cycles, byte c);
+uint32_t getPixelN(uint32_t x, uint32_t y);
+
 #endif
 

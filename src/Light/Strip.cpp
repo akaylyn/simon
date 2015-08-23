@@ -27,6 +27,9 @@ Adafruit_NeoMatrix rimJob = Adafruit_NeoMatrix(
     NEO_GRB + NEO_KHZ800
     );
 
+// I don't know if this is valid; RIM_PIN is already assigned for the actual matrix above
+//Adafruit_NeoPixel rimJobStrip = Adafruit_NeoPixel(RIM_X*RIM_Y, RIM_PIN, NEO_GRB + NEO_KHZ800);
+
 // strips around the buttons
 Adafruit_NeoPixel redL = Adafruit_NeoPixel(BUTTON_N, RED_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel grnL = Adafruit_NeoPixel(BUTTON_N, GRN_PIN, NEO_GRB + NEO_KHZ800);
@@ -63,6 +66,7 @@ AnimationConfig blueButtonConfig;
 AnimationConfig yellowButtonConfig;
 AnimationConfig circleConfig;
 AnimationConfig placardConfig;
+AnimationConfig rimConfigStrip;
 
 // Colors
 RgbColor red;
@@ -82,6 +86,8 @@ ProxPulsePosition proxPulsePos;
 ProxPulsePosition idlePos;
 GameplayPosition gameplayPos;
 GameplayPosition gameplayDecayPos;
+TronCycles tronCycles[MAX_CYCLES];
+TronPosition tronPosition;
 
 void configureAnimations() {
 
@@ -113,6 +119,15 @@ void configureAnimations() {
   rimConfig.position = &proxPulsePos;
   rimConfig.timer = Metro(30UL);
   gameplayPos.decayPos = &gameplayDecayPos;
+
+  // Rim as a strip - TronCycles
+  rimConfigStrip.name = "Outer rim - strip";
+  rimConfigStrip.strip = &rimJob;
+  rimConfigStrip.color = blue;
+  rimConfigStrip.ready = true;
+  tronPosition.cycles = tronCycles;
+  rimConfigStrip.position = &tronPosition;
+  rimConfigStrip.timer = Metro(30UL);
 
   // Init neo pixel strips for the buttons
   redL.begin();
@@ -242,6 +257,37 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
     rimConfig.position = &gameplayDecayPos;
     rimConfig.timer.interval(20UL);
     animator.animate(gameplayDecayMatrix, rimConfig);
+  }
+
+  if (state.animation == A_TronCycles) {
+
+    tronPosition.addCycle = false;
+    animator.animate(tronLightCycles, rimConfigStrip);
+
+    tronPosition.y = ALL_Y;
+    tronPosition.addCycle = true;
+    for (int i = 0; i < inst.light[I_RED].red / 64; i++) {
+      tronPosition.x = RED_X;
+      rimConfigStrip.color = red;
+      animator.animate(tronLightCycles, rimConfigStrip);
+    }
+    for (int i = 0; i < inst.light[I_GRN].green / 64; i++) {
+      tronPosition.x = GRN_X;
+      rimConfigStrip.color = green;
+      animator.animate(tronLightCycles, rimConfigStrip);
+    }
+    for (int i = 0; i < inst.light[I_BLU].blue / 64; i++) {
+      tronPosition.x = BLU_X;
+      rimConfigStrip.color = blue;
+      animator.animate(tronLightCycles, rimConfigStrip);
+    }
+    if(inst.light[I_YEL].red > 64 && inst.light[I_YEL].green > 64) {
+      for (int i = 0; i < (int)(inst.light[I_YEL].red+inst.light[I_YEL].green) / 128; i++ ) {
+        tronPosition.x = YEL_X;
+        rimConfigStrip.color = yellow;
+        animator.animate(tronLightCycles, rimConfigStrip);
+      }
+    }
   }
 
   if (state.animation == A_Clear) {
