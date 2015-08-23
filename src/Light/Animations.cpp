@@ -277,7 +277,8 @@ void gameplayFillFromMiddle(Adafruit_NeoMatrix &matrix, int center, int prev, ui
 void tronLightCycles(Adafruit_NeoPixel &strip, int r, int g, int b, void *posData) {
   TronPosition* data = static_cast<TronPosition*>(posData);
   // dispatch the requests to the rim. number of cycles is proportional to the light level at each button
-  addCycle(strip, data->cycles, data->x, data->y, strip.Color(r, g, b));
+  if (data->addCycle)
+    addCycle(strip, data->cycles, data->x, data->y, strip.Color(r, g, b));
   //addCycles.reset();
   moveCycles(strip, data->cycles);
   fadeCycles(strip);

@@ -69,6 +69,7 @@ struct TronCycles {
 struct TronPosition {
   TronCycles* cycles;
   uint32_t x,y; // location
+  bool addCycle;
 };
 
 // all state altered in these methods must be passed

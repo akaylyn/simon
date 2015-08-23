@@ -270,11 +270,12 @@ void TestModes::bongoModeLoop(boolean performStartup) {
     scoreboard.showMessage2(sound.getCurrLabel());
   }
 
+  light.animate(A_TronCycles);
   if (touch.anyChanged()) {
     if (touch.anyButtonPressed()) {
 
       color pressed = touch.whatPressed();
-      light.animate(A_GameplayPressed);
+      light.animate(A_TronCycles);
 
       // change sound set
       if (pressed == I_START)

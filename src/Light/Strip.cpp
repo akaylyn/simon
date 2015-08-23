@@ -260,7 +260,12 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
   }
 
   if (state.animation == A_TronCycles) {
+
+    tronPosition.addCycle = false;
+    animator.animate(tronLightCycles, rimConfigStrip);
+
     tronPosition.y = ALL_Y;
+    tronPosition.addCycle = true;
     for (int i = 0; i < inst.light[I_RED].red / 64; i++) {
       tronPosition.x = RED_X;
       rimConfigStrip.color = red;
