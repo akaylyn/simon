@@ -3,14 +3,55 @@ LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I
 
 // MGD See: https://www.arduino.cc/en/Reference/PROGMEM
 
-// backer messages
+// Backer messages
                       //   "01234567890123456789" -> 20 characters in width, max
 const char b00[] PROGMEM = "Simon )'( Michelle";   // "String 0" etc are strings to store - change to suit.
 const char b01[] PROGMEM = "TrogdorTheBurninator";
 const char b02[] PROGMEM = "DN <3 DS";
 const char b03[] PROGMEM = "Play nice and often!";
+
+// All backer names
+const char b04[] PROGMEM = "lauren.desteno";
+const char b05[] PROGMEM = "beaverlakestables";
+const char b06[] PROGMEM = "chozan";
+const char b07[] PROGMEM = "Trevor Schrock";
+const char b08[] PROGMEM = "John Grant";
+const char b09[] PROGMEM = "Patrick Gleason";
+const char b10[] PROGMEM = "Brian Artiaco";
+const char b11[] PROGMEM = "Michelle Clemens";
+const char b12[] PROGMEM = "Alina Morris";
+const char b13[] PROGMEM = "Anonymous";
+const char b14[] PROGMEM = "Grace Jones";
+const char b15[] PROGMEM = "r0beka";
+const char b16[] PROGMEM = "Joel Henderson";
+const char b17[] PROGMEM = "Bribe & Lucy";
+const char b18[] PROGMEM = "Heidi Pickman";
+const char b19[] PROGMEM = "Chase Childers";
+const char b20[] PROGMEM = "Scott Cohen";
+const char b21[] PROGMEM = "joeblakewestseattle";
+const char b22[] PROGMEM = "madeline.barch";
+const char b23[] PROGMEM = "kilgore5612";
+const char b24[] PROGMEM = "Anonymous";
+const char b25[] PROGMEM = "tommyhinman";
+const char b26[] PROGMEM = "Preston";
+const char b27[] PROGMEM = "James Sosan";
+const char b28[] PROGMEM = "Michael Shaver";
+const char b29[] PROGMEM = "Colleen Himes";
+const char b30[] PROGMEM = "Sean Thayer";
+const char b31[] PROGMEM = "Keith Salender";
+const char b32[] PROGMEM = "Anonymous";
+const char b33[] PROGMEM = "Anonymous";
+const char b34[] PROGMEM = "David Betz-Zall";
+const char b35[] PROGMEM = "ewp123";
+const char b36[] PROGMEM = "lauren.desteno";
+const char b37[] PROGMEM = "Anonymous";
+const char b38[] PROGMEM = "Anonymous";
+
 // Then set up a table to refer to your strings.
-const char* const backerMessages[] PROGMEM = {b00, b01, b02, b03};
+const char* const backerMessages[] PROGMEM = {b00, b01, b02, b03, b04, b06, b06, b07, b08, b09,
+                                              b10, b11, b12, b13, b14, b16, b16, b17, b18, b19,
+                                              b20, b21, b22, b23, b24, b26, b26, b27, b28, b29,
+                                              b30, b31, b32, b33, b34, b36, b36, b37, b38};
 
 // Simon team
                       //   "01234567890123456789" -> 20 characters in width, max
