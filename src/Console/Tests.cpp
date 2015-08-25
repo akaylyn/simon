@@ -276,6 +276,7 @@ void TestModes::bongoModeLoop(boolean performStartup) {
 
       color pressed = touch.whatPressed();
       light.animate(A_TronCycles);
+      //light.animate(A_GameplayPressed);
 
       // change sound set
       if (pressed == I_START)
@@ -335,6 +336,7 @@ void TestModes::proximityModeLoop(boolean performStartup) {
     lastFireTime = millis();
   }
 
+  light.animate(A_LaserWipe);
   boolean showLightsNow = false;
   for( byte i = 0; i < N_COLORS; i++ ) {
     // read the sensor distance
@@ -354,7 +356,6 @@ void TestModes::proximityModeLoop(boolean performStartup) {
       c.blue -= c.blue > 0 ? dist : 0;
       light.setLight((color)i, c);
       light.animate(A_ProximityPulseMatrix);
-
       if( dist<10 ) {
         // only allow full-on every 10s.
         byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 5, 50);
@@ -518,7 +519,7 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
       }
     }
   }
-  
+
     // check for left and right to adjust fireBudget
   while( touch.leftPressed()) {
     if (budget <= 0) budget = 25.5;
@@ -644,7 +645,7 @@ void TestModes::externModeLoop(boolean performStartup) {
             fireLevel = fscale(0, 100, minFirePerFireball / 10, maxFirePerFireball / 10, 0, -6.0);
             fireMs = fireLevel * 10; // each level is 10ms
           }
-          
+
           switch(towers) {
             case 0:
             case 1:

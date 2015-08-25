@@ -85,7 +85,6 @@ int circPos = 0;
 ProxPulsePosition proxPulsePos;
 ProxPulsePosition idlePos;
 GameplayPosition gameplayPos;
-GameplayPosition gameplayDecayPos;
 TronCycles tronCycles[MAX_CYCLES];
 TronPosition tronPosition;
 
@@ -118,7 +117,6 @@ void configureAnimations() {
   rimConfig.ready = true;
   rimConfig.position = &proxPulsePos;
   rimConfig.timer = Metro(30UL);
-  gameplayPos.decayPos = &gameplayDecayPos;
 
   // Rim as a strip - TronCycles
   rimConfigStrip.name = "Outer rim - strip";
@@ -187,6 +185,16 @@ void configureAnimations() {
 }
 
 void mapToAnimation(ConcurrentAnimator animator, systemState state) {
+
+  if (state.animation == A_None) {
+    Serial << "NONE" << endl;
+  }
+
+  if (state.animation == A_Clear) {
+    Serial << "CLEAR" << endl;
+    clearAllStrips();
+  }
+
   if (state.animation == A_LaserWipe) {
     animator.animate(laserWipe, redButtonConfig);
     animator.animate(laserWipe, greenButtonConfig);
@@ -253,11 +261,6 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
 
     animator.animate(gameplayMatrix, rimConfig);
   }
-  if (state.animation == A_GameplayDecay) {
-    rimConfig.position = &gameplayDecayPos;
-    rimConfig.timer.interval(20UL);
-    animator.animate(gameplayDecayMatrix, rimConfig);
-  }
 
   if (state.animation == A_TronCycles) {
 
@@ -288,10 +291,6 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
         animator.animate(tronLightCycles, rimConfigStrip);
       }
     }
-  }
-
-  if (state.animation == A_Clear) {
-    clearAllStrips();
   }
 
   if (state.animation == A_NoRim) {
