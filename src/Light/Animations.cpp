@@ -221,35 +221,58 @@ void gameplayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posDa
     gameplayFillFromMiddle(matrix, RedMidPoint, pos->redOffset, matrix.Color(255, 0, 0));
     pos->redOffset = getFilledOffset(pos->redOffset);
   }
-  else if (b == 255) { // 34
+  else {
+    gameplayDecayMatrix(matrix, pos, 1, 0, 0, 0);
+  }
+
+  if (b == 255) { // 34
     gameplayFillFromMiddle(matrix, BlueMidPoint, pos->blueOffset, matrix.Color(0, 0, 255));
     pos->blueOffset = getFilledOffset(pos->blueOffset);
   }
-  else if (pos->yellow == 255) { // 61
+  else {
+    gameplayDecayMatrix(matrix, pos, 0, 0, 1, 0);
+  }
+
+  if (pos->yellow == 255) { // 61
     gameplayFillFromMiddle(matrix, YellowMidPoint, pos->yellowOffset, matrix.Color(255, 255, 0));
     pos->yellowOffset = getFilledOffset(pos->yellowOffset);
   }
-  else if (g == 255) { // 88
+  else {
+    gameplayDecayMatrix(matrix, pos, 0, 0, 0, 1);
+  }
+
+  if (g == 255) { // 88
     gameplayFillFromMiddle(matrix, GreenMidPoint, pos->greenOffset, matrix.Color(0, 255, 0));
     pos->greenOffset = getFilledOffset(pos->greenOffset);
-  } else {
-    gameplayDecayMatrix(matrix, r, g, b, pos);
+  }
+  else {
+    gameplayDecayMatrix(matrix, pos, 0, 1, 0, 0);
   }
 }
 
-void gameplayDecayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData) {
+void gameplayDecayMatrix(Adafruit_NeoMatrix &matrix, void *posData, bool r, bool g, bool b, bool y) {
   GameplayPosition* pos = static_cast<GameplayPosition*>(posData);
   uint32_t ledOff = matrix.Color(LED_OFF, LED_OFF, LED_OFF);
 
-  gameplayFillFromMiddle(matrix, GreenMidPoint, pos->greenOffset, ledOff);
-  gameplayFillFromMiddle(matrix, RedMidPoint, pos->redOffset, ledOff);
-  gameplayFillFromMiddle(matrix, BlueMidPoint, pos->blueOffset, ledOff);
-  gameplayFillFromMiddle(matrix, YellowMidPoint, pos->yellowOffset, ledOff);
+  if (r) {
+    gameplayFillFromMiddle(matrix, RedMidPoint, pos->redOffset, ledOff);
+    pos->redOffset = getDecayedOffset(pos->redOffset);
+  }
 
-  pos->greenOffset = getDecayedOffset(pos->greenOffset);
-  pos->redOffset = getDecayedOffset(pos->redOffset);
-  pos->blueOffset = getDecayedOffset(pos->blueOffset);
-  pos->yellowOffset = getDecayedOffset(pos->yellowOffset);
+  if (g) {
+    gameplayFillFromMiddle(matrix, GreenMidPoint, pos->greenOffset, ledOff);
+    pos->greenOffset = getDecayedOffset(pos->greenOffset);
+  }
+
+  if (b) {
+    gameplayFillFromMiddle(matrix, BlueMidPoint, pos->blueOffset, ledOff);
+    pos->blueOffset = getDecayedOffset(pos->blueOffset);
+  }
+
+  if (y) {
+    gameplayFillFromMiddle(matrix, YellowMidPoint, pos->yellowOffset, ledOff);
+    pos->yellowOffset = getDecayedOffset(pos->yellowOffset);
+  }
 }
 
 int getFilledOffset(int offset) {

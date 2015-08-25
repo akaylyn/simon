@@ -120,7 +120,7 @@ void gameEnter() {
   waitDuration(800UL);
 }
 void gameUpdate() {
-  light.animate(A_GameplayDecay);
+  light.animate(A_GameplayPressed);
 
   // check to see if we've maxed out
   if ( gameCurrent + 1 == gameMaxSequenceLength ) {
@@ -152,7 +152,7 @@ void gameUpdate() {
     waitDuration(playDuration);
 
     // done
-    light.clear();
+    light.clearButtons();
     sound.stopTones();
 
     // wait
@@ -169,7 +169,7 @@ void playerEnter() {
   Serial << F("Simon: ->player") << endl;
 
   // clear
-  light.clear();
+  light.clearButtons();
   fire.clear();
 
   // reset the timeout
@@ -181,9 +181,11 @@ void playerUpdate() {
   // assume we're correct unless proved otherwise
   boolean correct = true;
 
+  light.animate(A_GameplayPressed);
   // wait for button press.
   if ( touch.anyButtonPressed() ) {
 
+    light.animate(A_GameplayPressed);
     // you could, in theory, press all the buttons simultaneously to get it right...
     // but humans aren't that fast, so this is an alien/Ninja/godling detector.
     color button = touch.whatPressed();
@@ -215,7 +217,7 @@ void playerUpdate() {
 
     // done
     sound.stopTones();
-    light.clear();
+    light.clearButtons();
 
     // reset timeout
     playerTimeout.reset();
@@ -259,7 +261,7 @@ void fanfareEnter() {
 
   // clear everthing
   sound.stopAll();
-  light.clear();
+  light.clearButtons();
   fire.clear();
 
   // defined in Fanfare.h/.cpp
@@ -286,7 +288,10 @@ void testExit() {
 void waitDuration(unsigned long duration) {
   Metro wait(duration);
   wait.reset();
-  while ( !wait.check() ) network.update();
+  while ( !wait.check() ) {
+    network.update();
+    light.animate(A_GameplayPressed);
+  }
 }
 
 void waitAllReleased() {

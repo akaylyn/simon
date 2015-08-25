@@ -120,6 +120,7 @@ const colorInstruction cRed = {255, 0, 0};
 const colorInstruction cGreen = {0, 255, 0};
 const colorInstruction cBlue = {0, 0, 255};
 // MGD: Tower does pay attention to this color spec, but Light does not.
+
 //const colorInstruction cYellow = {255, 255, 0};
 const colorInstruction cYellow = {255, 100, 0};
 const colorInstruction cYellowConsole = {255, 255, 0};

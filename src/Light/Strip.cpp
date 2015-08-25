@@ -185,6 +185,16 @@ void configureAnimations() {
 }
 
 void mapToAnimation(ConcurrentAnimator animator, systemState state) {
+
+  if (state.animation == A_None) {
+    Serial << "NONE" << endl;
+  }
+
+  if (state.animation == A_Clear) {
+    Serial << "CLEAR" << endl;
+    clearAllStrips();
+  }
+
   if (state.animation == A_LaserWipe) {
     animator.animate(laserWipe, redButtonConfig);
     animator.animate(laserWipe, greenButtonConfig);
@@ -281,10 +291,6 @@ void mapToAnimation(ConcurrentAnimator animator, systemState state) {
         animator.animate(tronLightCycles, rimConfigStrip);
       }
     }
-  }
-
-  if (state.animation == A_Clear) {
-    clearAllStrips();
   }
 
   if (state.animation == A_NoRim) {

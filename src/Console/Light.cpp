@@ -27,9 +27,12 @@ void Light::setLight(color position, byte red, byte green, byte blue) {
 }
 
 void Light::clear() {
+  network.update();
+  animate(A_NoRim);
+  network.update();
   clearButtons();
-  animate(A_Clear);
   animate(A_None);
+  network.update();
 }
 
 void Light::clearButtons() {

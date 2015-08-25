@@ -29,7 +29,7 @@ void colorWipeMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posD
 void proximityPulseMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
 void idleMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
 void gameplayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
-void gameplayDecayMatrix(Adafruit_NeoMatrix &matrix, int r, int g, int b, void *posData);
+void gameplayDecayMatrix(Adafruit_NeoMatrix &matrix, void *posData, bool r, bool g, bool b, bool y);
 int getDecayedOffset(int offset);
 int getFilledOffset(int offset);
 

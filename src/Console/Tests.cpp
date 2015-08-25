@@ -270,14 +270,13 @@ void TestModes::bongoModeLoop(boolean performStartup) {
     scoreboard.showMessage2(sound.getCurrLabel());
   }
 
-  //light.animate(A_TronCycles);
-  //light.animate(A_GameplayDecay);
+  light.animate(A_TronCycles);
   if (touch.anyChanged()) {
     if (touch.anyButtonPressed()) {
 
       color pressed = touch.whatPressed();
-      //light.animate(A_TronCycles);
-      light.animate(A_GameplayPressed);
+      light.animate(A_TronCycles);
+      //light.animate(A_GameplayPressed);
 
       // change sound set
       if (pressed == I_START)
@@ -337,6 +336,7 @@ void TestModes::proximityModeLoop(boolean performStartup) {
     lastFireTime = millis();
   }
 
+  light.animate(A_LaserWipe);
   boolean showLightsNow = false;
   for( byte i = 0; i < N_COLORS; i++ ) {
     // read the sensor distance
@@ -356,7 +356,6 @@ void TestModes::proximityModeLoop(boolean performStartup) {
       c.blue -= c.blue > 0 ? dist : 0;
       light.setLight((color)i, c);
       light.animate(A_ProximityPulseMatrix);
-
       if( dist<10 ) {
         // only allow full-on every 10s.
         byte fireLevel = map(millis() - lastFireTime, 0UL, 10000UL, 5, 50);
