@@ -137,10 +137,10 @@ struct MPR121_settings_t
 
     // MGD tinkering to allow the baseline to drift during Touched mode more
     // this setting is too fast.
-    //		FDLT(0x01), // real fast change.  a really held button registers release in ~7s.
+    FDLT(0x01), // real fast change.  a really held button registers release in ~7s.
 
     // this feels pretty good, but still a fast change.  Too fast, and a release will be prematurely triggered.
-    FDLT(0x0F),
+    // FDLT(0x0F),
 
     // MGD these control baseline filtering operations during falling values
     // Since a touch can only be in the decreasing direction, it is usually best to set the decreasing filter to be slower than the increasing one.

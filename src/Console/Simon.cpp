@@ -295,7 +295,14 @@ void waitDuration(unsigned long duration) {
 }
 
 void waitAllReleased() {
-  while ( touch.anyButtonPressed() ) network.update();
+  static Metro printInterval(100);
+  while ( touch.anyColorPressed() ) {
+    network.update();
+    if (printInterval.check()) {
+      touch.printElectrodeAndBaselineData();
+      printInterval.reset();
+    }
+  }
 }
 
 // Not used, currently, but Mike would like to retain this code:

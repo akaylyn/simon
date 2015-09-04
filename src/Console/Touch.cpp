@@ -106,6 +106,7 @@ boolean Touch::changed(byte index) {
   // hard buttons
   //  ret |= button[sensorIndex[index]]->update();
 
+  // TODO: put debugging code here
   // return
   return ( ret );
 
@@ -231,11 +232,17 @@ void Touch::printElectrodeAndBaselineData() {
   uint16_t data1 = (((uint16_t)MPR121.getRegister(0x07))<<8) | MPR121.getRegister(0x06);
   uint16_t data2 = (((uint16_t)MPR121.getRegister(0x09))<<8) | MPR121.getRegister(0x08);
   uint16_t data3 = (((uint16_t)MPR121.getRegister(0x0B))<<8) | MPR121.getRegister(0x0A);
-
-  Serial << "0, " << base0 << ", " << data0 << endl;
-  Serial << "1, " << base1 << ", " << data1 << endl;
-  Serial << "2, " << base2 << ", " << data2 << endl;
+  Serial << I_RED << ": " << base0 << "/" << data0 << "\t";
+  Serial << I_GRN << ": " << base1 << "/" << data1 << "\t";
+  Serial << I_BLU << ": " << base2 << "/" << data2 << "\t";
+  Serial << I_YEL << ": " << base3 << "/" << data3 << endl;
+  
+/*
+  Serial << I_RED << ", " << base0 << ", " << data0 << endl;
+  Serial << I_GRN << ", " << base1 << ", " << data1 << endl;
+  Serial << I_BLU << ", " << base2 << ", " << data2 << endl;
   Serial << "3, " << base3 << ", " << data3 << endl;
+*/
 }
 
 // snagged this from https://github.com/BareConductive/midi_theremin/blob/public/midi_theremin/midi_theremin.ino
