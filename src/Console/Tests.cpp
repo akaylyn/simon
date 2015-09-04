@@ -470,6 +470,8 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
   }
 
   //look for button presses
+
+  /*
   if (touch.anyChanged() && touch.anyColorPressed()) {
     color whatPressed = touch.whatPressed();
 
@@ -519,27 +521,30 @@ void TestModes::fireTestModeLoop(boolean performStartup) {
       }
     }
   }
+  */
 
+  if (touch.anyChanged() && touch.anyColorPressed()) {
     // check for left and right to adjust fireBudget
-  while( touch.leftPressed()) {
-    if (budget <= 0) budget = 25.5;
-    budget=constrain(budget-0.2, 0.0, 25.5);
-    Serial << "Budget: " << budget << endl;
-    dtostrf(budget, 3, 1, str_temp);
-    sprintf(lcdMsg, "Fire Budget: %s", str_temp);
-    saveFireBudgetFactor(budget);
-    scoreboard.showMessage(lcdMsg);
-    delay(100);
-  }
-  while( touch.rightPressed()  || touch.startPressed()) {
-    if (budget >= 25.5) budget = 0;
-    budget=constrain(budget+0.2, 0.0, 25.5);
-    Serial << "Budget: " << budget << endl;
-    dtostrf(budget, 3, 1, str_temp);
-    sprintf(lcdMsg, "Fire Budget: %s", str_temp);
-    saveFireBudgetFactor(budget);
-    scoreboard.showMessage(lcdMsg);
-    delay(100);
+    while(touch.pressed(I_BLU)) {
+      if (budget <= 0) budget = 25.5;
+      budget=constrain(budget-0.2, 0.0, 25.5);
+      Serial << "Budget: " << budget << endl;
+      dtostrf(budget, 3, 1, str_temp);
+      sprintf(lcdMsg, "Fire Budget: %s", str_temp);
+      saveFireBudgetFactor(budget);
+      scoreboard.showMessage(lcdMsg);
+      delay(100);
+    }
+    while(touch.pressed(I_RED)) {
+      if (budget >= 25.5) budget = 0;
+      budget=constrain(budget+0.2, 0.0, 25.5);
+      Serial << "Budget: " << budget << endl;
+      dtostrf(budget, 3, 1, str_temp);
+      sprintf(lcdMsg, "Fire Budget: %s", str_temp);
+      saveFireBudgetFactor(budget);
+      scoreboard.showMessage(lcdMsg);
+      delay(100);
+    }
   }
 }
 

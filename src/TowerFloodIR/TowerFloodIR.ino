@@ -45,7 +45,7 @@ IRlight flood; // Loftek (50W) and off-brand (10W) floods, and RGB strip lightin
 void setup()
 {
   Serial.begin(115200);
-  Serial << F("Startup.") << endl;
+  Serial << F("Startup, no subs.") << endl;
 
   Serial << F("Clock speed (MHz): ") << F_CPU << endl;
 
