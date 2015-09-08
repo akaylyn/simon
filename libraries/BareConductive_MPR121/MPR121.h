@@ -95,8 +95,10 @@ struct MPR121_settings_t
 
   // default values in initialisation list
   MPR121_settings_t():
-    TTHRESH(40),
-    RTHRESH(19),
+    //TTHRESH(40),
+    TTHRESH(70),
+    RTHRESH(40),
+    //RTHRESH(19),
     INTERRUPT(4), 	// note that this is not a hardware interrupt, just the digital
     // pin that the MPR121 ~INT pin is connected to
 
@@ -137,7 +139,9 @@ struct MPR121_settings_t
 
     // MGD tinkering to allow the baseline to drift during Touched mode more
     // this setting is too fast.
-    FDLT(0x01), // real fast change.  a really held button registers release in ~7s.
+    // 0x01 gives false releases
+    //FDLT(0x01), // real fast change.  a really held button registers release in ~7s.
+    FDLT(0x08), // real fast change.  a really held button registers release in ~7s.
 
     // this feels pretty good, but still a fast change.  Too fast, and a release will be prematurely triggered.
     // FDLT(0x0F),

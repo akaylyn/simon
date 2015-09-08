@@ -232,10 +232,10 @@ void Touch::printElectrodeAndBaselineData() {
   uint16_t data1 = (((uint16_t)MPR121.getRegister(0x07))<<8) | MPR121.getRegister(0x06);
   uint16_t data2 = (((uint16_t)MPR121.getRegister(0x09))<<8) | MPR121.getRegister(0x08);
   uint16_t data3 = (((uint16_t)MPR121.getRegister(0x0B))<<8) | MPR121.getRegister(0x0A);
-  Serial << I_RED << ": " << base0 << "/" << data0 << "\t";
-  Serial << I_GRN << ": " << base1 << "/" << data1 << "\t";
-  Serial << I_BLU << ": " << base2 << "/" << data2 << "\t";
-  Serial << I_YEL << ": " << base3 << "/" << data3 << endl;
+  Serial << I_RED << ": b" << base0 << "/c" << data0 << "\t";
+  Serial << I_GRN << ": b" << base1 << "/c" << data1 << "\t";
+  Serial << I_BLU << ": b" << base2 << "/c" << data2 << "\t";
+  Serial << I_YEL << ": b" << base3 << "/c" << data3 << endl;
   
 /*
   Serial << I_RED << ", " << base0 << ", " << data0 << endl;
