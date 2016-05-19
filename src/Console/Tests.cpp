@@ -245,7 +245,7 @@ void TestModes::layoutModeLoop(boolean performStartup) {
 // simply operate the Console in "bongoes" mode.  Will shoot fire
 void TestModes::bongoModeLoop(boolean performStartup) {
 
-  bool DEBUG = false;
+  bool DEBUG = true;
   if (DEBUG) {
     static Metro timer(500UL);
     while (timer.check()) {

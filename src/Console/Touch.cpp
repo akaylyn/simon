@@ -61,6 +61,10 @@ boolean Touch::begin(byte sensorIndex[N_BUTTONS]) {
       //MPR121.setProxMode(PROX0_3);
       Serial << F("Touch: MPR121 proximity enabled.") << endl;
 
+      // custom threshold for the smaller buttons
+      MPR121.setTouchThreshold(I_START, 20);
+      MPR121.setReleaseThreshold(I_START, 10);
+
       // initial data update
       MPR121.updateAll();
       Serial << F("Touch: MPR121 data update.") << endl;
@@ -235,7 +239,18 @@ void Touch::printElectrodeAndBaselineData() {
   Serial << I_RED << ": b" << base0 << "/c" << data0 << "\t";
   Serial << I_GRN << ": b" << base1 << "/c" << data1 << "\t";
   Serial << I_BLU << ": b" << base2 << "/c" << data2 << "\t";
-  Serial << I_YEL << ": b" << base3 << "/c" << data3 << endl;
+  Serial << I_YEL << ": b" << base3 << "/c" << data3 << "\t";
+
+  uint16_t base_start = ((uint16_t)MPR121.getRegister(0x22))<<2;
+  uint16_t base_right = ((uint16_t)MPR121.getRegister(0x23))<<2;
+  uint16_t base_left = ((uint16_t)MPR121.getRegister(0x24))<<2;
+  uint16_t data_start = (((uint16_t)MPR121.getRegister(0x0D))<<8) | MPR121.getRegister(0x0C);
+  uint16_t data_right = (((uint16_t)MPR121.getRegister(0x0F))<<8) | MPR121.getRegister(0x0E);
+  uint16_t data_left = (((uint16_t)MPR121.getRegister(0x11))<<8) | MPR121.getRegister(0x10);
+
+  Serial << I_START << ": b" << base_start << "/c" << data_start << "\t";
+  Serial << I_RIGHT << ": b" << base_left << "/c" << data_left << "\t";
+  Serial << I_LEFT << ": b" << base_right << "/c" << data_right << endl;
   
 /*
   Serial << I_RED << ", " << base0 << ", " << data0 << endl;

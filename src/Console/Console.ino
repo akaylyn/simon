@@ -82,12 +82,12 @@ void loop() {
   // perform Tower resends; you should do this always if you want meaningful synchronization with Towers
   network.update();
 
-  /*
+  
   // MGD new buttons
   if( touch.startPressed() ) Serial << F("Touch: start pressed") << endl;
   if( touch.leftPressed() ) Serial << F("Touch: left pressed") << endl;
   if( touch.rightPressed() ) Serial << F("Touch: right pressed") << endl;
-  */
+  
 }
 
 int freeRam () {
