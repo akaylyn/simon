@@ -59,19 +59,19 @@ boolean Touch::begin(byte sensorIndex[N_BUTTONS]) {
       // Alan removed
       // enable 13-th virtual proximity electrode, tying electrodes 0..3 together.
       //MPR121.setProxMode(PROX0_3);
-      Serial << F("Touch: MPR121 proximity enabled.") << endl;
+      //Serial << F("Touch: MPR121 proximity enabled.") << endl;
 
       // custom threshold for the start button
-      MPR121.setTouchThreshold(I_START, 20);
-      MPR121.setReleaseThreshold(I_START, 10);
+      MPR121.setTouchThreshold(I_START, 8);
+      MPR121.setReleaseThreshold(I_START, 5);
 
       // custom threshold for the little left button; still need to get these numbers, I think?
-      MPR121.setTouchThreshold(I_LEFT, 20);
-      MPR121.setReleaseThreshold(I_LEFT, 10);
+      MPR121.setTouchThreshold(I_LEFT, 10);
+      MPR121.setReleaseThreshold(I_LEFT, 5);
 
       // custom threshold for the little right button; still need to get these numbers, I think?
-      MPR121.setTouchThreshold(I_RIGHT, 20);
-      MPR121.setReleaseThreshold(I_RIGHT, 10);
+      MPR121.setTouchThreshold(I_RIGHT, 10);
+      MPR121.setReleaseThreshold(I_RIGHT, 5);
 
       // initial data update
       MPR121.updateAll();
@@ -244,10 +244,10 @@ void Touch::printElectrodeAndBaselineData() {
   uint16_t data1 = (((uint16_t)MPR121.getRegister(0x07))<<8) | MPR121.getRegister(0x06);
   uint16_t data2 = (((uint16_t)MPR121.getRegister(0x09))<<8) | MPR121.getRegister(0x08);
   uint16_t data3 = (((uint16_t)MPR121.getRegister(0x0B))<<8) | MPR121.getRegister(0x0A);
-  Serial << I_RED << ": b" << base0 << "/c" << data0 << "\t";
-  Serial << I_GRN << ": b" << base1 << "/c" << data1 << "\t";
-  Serial << I_BLU << ": b" << base2 << "/c" << data2 << "\t";
-  Serial << I_YEL << ": b" << base3 << "/c" << data3 << "\t";
+  Serial << "r/" << I_RED << ": b" << base0 << "/c" << data0 << "\t";
+  Serial << "g/" << I_GRN << ": b" << base1 << "/c" << data1 << "\t";
+  Serial << "b/" << I_BLU << ": b" << base2 << "/c" << data2 << "\t";
+  Serial << "y/" << I_YEL << ": b" << base3 << "/c" << data3 << "\t";
 
   uint16_t base_start = ((uint16_t)MPR121.getRegister(0x22))<<2;
   uint16_t base_right = ((uint16_t)MPR121.getRegister(0x23))<<2;
@@ -256,9 +256,9 @@ void Touch::printElectrodeAndBaselineData() {
   uint16_t data_right = (((uint16_t)MPR121.getRegister(0x0F))<<8) | MPR121.getRegister(0x0E);
   uint16_t data_left = (((uint16_t)MPR121.getRegister(0x11))<<8) | MPR121.getRegister(0x10);
 
-  Serial << I_START << ": b" << base_start << "/c" << data_start << "\t";
-  Serial << I_RIGHT << ": b" << base_left << "/c" << data_left << "\t";
-  Serial << I_LEFT << ": b" << base_right << "/c" << data_right << endl;
+  Serial << "s/" << I_START << ": b" << base_start << "/c" << data_start << "\t";
+  Serial << "</" << I_LEFT << ": b" << base_left << "/c" << data_left << "\t";
+  Serial << ">/" << I_RIGHT << ": b" << base_right << "/c" << data_right << endl;
   
 /*
   Serial << I_RED << ", " << base0 << ", " << data0 << endl;
