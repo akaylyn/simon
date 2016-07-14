@@ -183,7 +183,7 @@ void playerUpdate() {
 
   light.animate(A_GameplayPressed);
   // wait for button press.
-  if ( touch.anyButtonPressed() ) {
+  if ( touch.anyColorPressed() ) {
 
     light.animate(A_GameplayPressed);
     // you could, in theory, press all the buttons simultaneously to get it right...

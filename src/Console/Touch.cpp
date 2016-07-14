@@ -62,8 +62,8 @@ boolean Touch::begin(byte sensorIndex[N_BUTTONS]) {
       //Serial << F("Touch: MPR121 proximity enabled.") << endl;
 
       // custom threshold for the start button
-      MPR121.setTouchThreshold(I_START, 8);
-      MPR121.setReleaseThreshold(I_START, 5);
+      MPR121.setTouchThreshold(I_START, 5);
+      MPR121.setReleaseThreshold(I_START, 2);
 
       // custom threshold for the little left button; still need to get these numbers, I think?
       MPR121.setTouchThreshold(I_LEFT, 10);
