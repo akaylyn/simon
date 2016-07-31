@@ -150,7 +150,7 @@ struct MPR121_settings_t
     // Since a touch can only be in the decreasing direction, it is usually best to set the decreasing filter to be slower than the increasing one.
     // This allows for automatic recovery from a bad baseline reading
     MHDF(0x0F),
-    NHDF(0x3F),
+    NHDF(0x08), // 3f
     NCLF(0x0A),
     FDLF(0x0C),
 
