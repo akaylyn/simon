@@ -13,10 +13,12 @@
 #include <Metro.h>
 #include <Streaming.h>
 
-#define FLAME_OFFSET 1
-void flameOn() { DmxSimple.write(FLAME_OFFSET+0, 255); }
-void flameOff() { DmxSimple.write(FLAME_OFFSET+0, 0); }
-#define LIGHT_OFFSET 5
+#define FLAME_OFFSET 1 // should read "001"
+void lamp1On() { DmxSimple.write(FLAME_OFFSET+0, 255); }
+void lamp1Off() { DmxSimple.write(FLAME_OFFSET+0, 0); }
+void lamp2On() { DmxSimple.write(FLAME_OFFSET+1, 255); }
+void lamp2Off() { DmxSimple.write(FLAME_OFFSET+1, 0); }
+#define LIGHT_OFFSET 3 // should read "d003", "d007", "d011", "d014"
 void red(byte level) { DmxSimple.write(LIGHT_OFFSET+0, level); }
 void green(byte level) { DmxSimple.write(LIGHT_OFFSET+1, level); }
 void blue(byte level) { DmxSimple.write(LIGHT_OFFSET+2, level); }
@@ -38,7 +40,7 @@ void setup() {
   ** easily change the number of channels sent here. If you don't
   ** do this, DmxSimple will set the maximum channel number to the
   ** highest channel you DmxSimple.write() to. */
-  DmxSimple.maxChannel(4+5);
+  DmxSimple.maxChannel(7);
 
   white(255);
   strobe(0);
@@ -46,17 +48,26 @@ void setup() {
 
 
 void loop() {
-  
-  all(255);  
-  strobe(255);
-  flameOn();
-  delay(100);
-  flameOff();
-  all(0);
-  strobe(0);
 
-  white(64*sin(millis() % 10000UL));
-  red(255*sin(millis() % 10000UL));
-  delay(900+1000);
-    
+  // firing
+  all(255);
+  for(byte i=0;i<5;i++) {
+    lamp1On();
+    delay(75);
+    lamp1Off();
+    delay(100);
+  }
+  all(0);
+
+  // rotate colors
+  static byte color = 3;
+  color++;
+  if(color>=4) color=0;
+  
+  if(color==0) red(255);
+  else if(color==1) green(255);
+  else if(color==2) blue(255);
+  if(color==3) white(255);
+
+  delay(1000);  
 }
