@@ -13,7 +13,7 @@
 #include <Metro.h>
 #include <Streaming.h>
 
-
+#define LED 9
 
 #define FLAME_CHANS 2 // should read "001"
 void lamp1On() { DmxSimple.write(1, 255); }
@@ -43,6 +43,7 @@ void setup() {
   delay(1000);
   
   pinMode(3, OUTPUT);
+  pinMode(LED, OUTPUT);
 
   /* The most common pin for DMX output is pin 3, which DmxSimple
   ** uses by default. If you need to change that, do it here. */
@@ -87,5 +88,12 @@ void loop() {
   else if(color==2) FOR_ALL_LAMPS blue(l,255); //for(byte i=0;i<=LAMP_N;i++) blue(i,255);
   if(color==3) FOR_ALL_LAMPS white(l,255); //for(byte i=0;i<=LAMP_N;i++) white(i,255);
 
+  static boolean ledState = false;
+  ledState = !ledState;
+  digitalWrite(LED, ledState);
+
+  if(ledState) lamp2On();
+  else lamp2Off();
+  
   delay(1000);  
 }
