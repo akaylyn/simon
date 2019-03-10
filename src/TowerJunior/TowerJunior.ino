@@ -14,7 +14,8 @@
 #include <EEPROM.h> // saving and loading radio settings
 // boostrap the tower nodeID to this value (2,3,4,5), overwriting EEPROM.
 // set "BROADCAST" to read EEPROM value
-#define HARD_SET_NODE_ID_TO JUNIOR
+//#define HARD_SET_NODE_ID_TO JUNIOR
+#define HARD_SET_NODE_ID_TO BROADCAST
 #include "Instruction.h"
 
 // perform lighting
@@ -35,7 +36,8 @@ Light light;
 Fire fire;
 
 // without comms for this duration, run a lighting test pattern
-#define IDLE_PERIOD 10000UL // ms
+#define IDLE_PERIOD_MIN 30UL // ms
+#define IDLE_PERIOD_MAX 1000UL // ms
 
 void setup() {
   // put your setup code here, to run once:
@@ -72,46 +74,39 @@ void loop() {
   light.update();
 
   // a place to store instructions
-  static colorInstruction lastColorInst, newColorInst;
-  static fireInstruction lastFireInst, newFireInst;
-  static systemMode lastMode, newMode;
+  static systemState lastState, newState;
 
   // if we're idle and we haven't received anything, cycle the lights.
-  static Metro idleUpdate(IDLE_PERIOD);
+  static Metro idleUpdate(IDLE_PERIOD_MAX);
 
   // check for radio traffic instructions
-  if( instruction.update(newColorInst, newFireInst, newMode) )
+  if( instruction.update(newState) )
     // reset idle
     idleUpdate.reset();
 
   // execute any new instructions
-  if ( memcmp((void*)(&newColorInst), (void*)(&lastColorInst), sizeof(colorInstruction)) != 0 ) {
-    Serial << F("New color instruction. R:") << newColorInst.red << F(" G:") << newColorInst.green << F(" B:") << newColorInst.blue << endl;
+  if ( memcmp((void*)(&newState), (void*)(&lastState), sizeof(systemState)) != 0 ) {
+    Serial << F("New state instruction.") << endl;
     // change the lights
-    light.perform(newColorInst);
+    light.perform(newState);
+    // change the fire
+    fire.perform(newState);
     // cache
-    lastColorInst = newColorInst;   
+    lastState = newState;   
   }
-  if ( memcmp((void*)(&newFireInst), (void*)(&lastFireInst), sizeof(fireInstruction)) != 0 ) {
-    Serial << F("New fire instruction. D:") << newFireInst.duration << F(" E:") << newFireInst.effect  << endl;
-    // change the lights
-    fire.perform(newFireInst);
-    // cache
-    lastFireInst = newFireInst;
-  }
-  if ( newMode != lastMode ) {
+  if ( newState.mode != lastState.mode ) {
     // change the mode
-    modeChange(newMode);
-    // cache
-    lastMode = newMode;
+    modeChange(newState.mode);
   }
   
   // Go to idle cycle, unless we're in the lights test.  
   // This lets us stay on the same color indefinitely for testing.
-  if ( idleUpdate.check() && newMode != LIGHTS) {
-    idleTestPattern(newColorInst);
+  if ( idleUpdate.check() && newState.mode != LIGHTS) {
+    idleTestPattern();
     // and take a moment to check heap+stack remaining
     Serial << F("Tower: free RAM: ") << freeRam() << endl;
+    // and add some entropy
+    idleUpdate.interval(random(IDLE_PERIOD_MIN, IDLE_PERIOD_MAX));
   }
 
 }
@@ -122,7 +117,7 @@ int freeRam () {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
-void modeChange(systemMode &mode) {
+void modeChange(byte mode) {
 
   Serial << F("Mode state change.  Going to mode: ") << mode << endl;
 
@@ -137,7 +132,9 @@ void modeChange(systemMode &mode) {
     case 4: color=cYellow; break;
     default: color=cWhite; break;
   }
-  light.perform(color);
+  static systemState st;
+  for(byte i=0; i<N_COLORS; i++) st.light[i] = color;
+  light.perform(st);
   
   // run a delay, paying attention to solenoid timers during.
   static Metro delayTime(1500UL);
@@ -151,14 +148,22 @@ void modeChange(systemMode &mode) {
 
 }
 
-void idleTestPattern(colorInstruction &inst) { 
-  const byte colorOrder[N_COLORS]={I_RED, I_BLU, I_YEL, I_GRN}; // go clockwise around the simon console
+void idleTestPattern() { 
+  const colorInstruction colors[N_COLORS] = {cRed, cBlue, cYellowConsole, cGreen}; // go clockwise around the simon console
   
+  static systemState st;
+
   // where are we?
-  static byte c = instruction.getNodeID(); // all the nodes will start one off from each other.
+  static byte c = 0; // all the nodes will start one off from each other.
+  
+  st.light[I_RED] = colors[(0+c) % N_COLORS];
+  st.light[I_BLU] = colors[(1+c) % N_COLORS];
+  st.light[I_YEL] = colors[(2+c) % N_COLORS];
+  st.light[I_GRN] = colors[(3+c) % N_COLORS];
+    
+  Serial << endl << F("Idle: color offset ") << c << F(" of ") << N_COLORS << F(".")  << endl;
+  light.perform(st);
+
   c += 1;
   c = c % N_COLORS;
-  
-  inst = cMap[colorOrder[c]];
-  Serial << endl << F("Idle: color ") << c+1 << F(" of ") << N_COLORS << F(". R:") << inst.red << F(" G:") << inst.green << F(" B:") << inst.blue << endl;
 }

@@ -20,7 +20,7 @@ void Fire::update() {
   if( flameDuration.check() ) stop();
 }
 
-void Fire::perform(fireInstruction &inst) {
+void Fire::perform(systemState &system) {
   // track if we're running something
   static boolean isLockedOut = false;
   static Metro lockoutTimer;
@@ -32,12 +32,18 @@ void Fire::perform(fireInstruction &inst) {
     Serial << ("Fire: locked out") << endl;
     return;
   }
+  
+  // unpack flame instruction
+  unsigned long maxDuration = 0;
+  for( byte i=0; i<N_COLORS; i++ ) 
+    if( maxDuration < system.fire[i].duration ) maxDuration = system.fire[i].duration;
+    
   // we're not being asked for a flame effect
-  if( inst.duration == 0 ) return;
+  if( maxDuration == 0 ) return;
   
   // unpack flame instruction
   unsigned long flameTime = constrain(
-    (unsigned long)inst.duration * 10UL, // requested time in ms
+    maxDuration * 10UL, // requested time in ms
     minPropaneTime, maxPropaneTime
   );
   // set the lockout appropriately
@@ -88,11 +94,11 @@ raight propane (DEFAULT) "very rich"
       break;
   }
 */
-  Serial << F("Fire: effect duration ") << flameTime << F(" ms. Effect ") << inst.effect << F(" IGNORED. Lockout ") << lockoutInterval << endl;
+  Serial << F("Fire: effect duration ") << flameTime << F(" ms. Effect IGNORED. Lockout ") << lockoutInterval << endl;
   
   // set fireInstruction back to idle
-  inst.duration = 0;
-  inst.effect = veryRich;
+//  inst.duration = 0;
+//  inst.effect = veryRich;
 }
 
 

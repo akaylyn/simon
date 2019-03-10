@@ -17,7 +17,7 @@ class Fire {
   public:
     void begin();
     void update();
-    void perform(fireInstruction &inst);
+    void perform(systemState &system);
 
     void stop();
 

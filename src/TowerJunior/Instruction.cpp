@@ -5,26 +5,17 @@ void Instruction::begin(nodeID node) {
 
   this->node = networkStart(node);
   
-  this->stateIndex = this->node - TOWER1;
   this->lastPacketNumber = (byte)-1; // 255. wraps.
-  
-  Serial << F("Instruction: listening to systemState index=") << this->stateIndex << endl;
 }
 
-boolean Instruction::update(colorInstruction &colorInst, fireInstruction &fireInst, systemMode &mode) { 
+boolean Instruction::update(systemState &state) { 
   // check for comms traffic
   if ( radio.receiveDone() ) {
     // process it.
     if ( radio.DATALEN == sizeof(systemState) ) {
       // save instruction
-      systemState state;
       state = *(systemState*)radio.DATA;
         
-      // copy it out
-      colorInst = state.light[this->stateIndex];
-      fireInst = state.fire[this->stateIndex];
-      mode = (systemMode)state.mode;
-      
       // track
       byte packetDelta = state.packetNumber - this->lastPacketNumber; // Wrap!
       if( packetDelta > 1 ) {

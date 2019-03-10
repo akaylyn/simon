@@ -16,7 +16,7 @@
 class Instruction {
   public:
     void begin(nodeID node);
-    boolean update(colorInstruction &colorInst, fireInstruction &fireInst, systemMode &mode);
+    boolean update(systemState &state);
     byte getNodeID();
     
   protected:   
@@ -24,8 +24,6 @@ class Instruction {
     RFM69 radio;
     // store my NODEID
     nodeID node;
-    // store the index into systemState
-    byte stateIndex;
     // gets the network setup
     nodeID networkStart(nodeID node);
     

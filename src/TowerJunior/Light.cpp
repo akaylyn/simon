@@ -3,7 +3,7 @@
 #define FLAME_CHANS 2 // should read "001"; flame is channel 1; sparker is channel 2
 
 #define LAMP_CHANS 5 // should read "d003", "d008", "d013", "d018"
-// Green:d003, Red:d008, Blue: d013, Yellow: d018
+// Red:d003, Blue: d008, Yellow: d013, Green:d018 
 #define LAMP_N 4
 
 int lampIndex(byte lamp, byte channel) {
@@ -30,14 +30,32 @@ void Light::begin() {
   for(byte i=0;i<=LAMP_N;i++) { master(i,255); red(i,0); green(i,0); blue(i,0); white(i,0); }
 }
 
-void Light::perform(colorInstruction &inst) {
-  // copy out the colors
-  FOR_ALL_LAMPS {
-    red(l,inst.red);
-    green(l,inst.green);
-    blue(l,inst.blue);
-    white(l,16);
-  }
+void Light::perform(systemState &system) {
+
+  // red 
+  red(0, system.light[I_RED].red);
+  green(0, system.light[I_RED].green);
+  blue(0, system.light[I_RED].blue);
+  white(0, 0);
+  
+  // blue 
+  red(1, system.light[I_BLU].red);
+  green(1, system.light[I_BLU].green);
+  blue(1, system.light[I_BLU].blue);
+  white(1, 0);
+  
+  // yellow 
+  red(2, system.light[I_YEL].red);
+  green(2, system.light[I_YEL].green);
+  blue(2, system.light[I_YEL].blue);
+  white(2, 0);
+  
+  // green 
+  red(3, system.light[I_GRN].red);
+  green(3, system.light[I_GRN].green);
+  blue(3, system.light[I_GRN].blue);
+  white(3, 0);
+  
 }
 
 void Light::update() {

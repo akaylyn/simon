@@ -17,7 +17,7 @@ class Light {
 
   void begin();
   void update();
-  void perform(colorInstruction &inst);
+  void perform(systemState &system);
 
   private:  
 };
