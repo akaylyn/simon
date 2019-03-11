@@ -1,23 +1,34 @@
 #include "Fire.h"
 
 // lamp 1 is the flame effect
-void lamp1On() { DmxSimple.write(1, 255); }
-void lamp1Off() { DmxSimple.write(1, 0); }
+void startFire() { DmxSimple.write(1, 255); }
+void stopFire() { DmxSimple.write(1, 0); }
 // lamp 2 is the spark igniter
-void lamp2On() { DmxSimple.write(2, 255); }
-void lamp2Off() { DmxSimple.write(2, 0); }
+void startSpark() { DmxSimple.write(2, 255); }
+void stopSpark() { DmxSimple.write(2, 0); }
 
 Metro flameDuration(maxPropaneTime);
+Metro sparkDuration(1000UL);
 
 void Fire::begin() {
   Serial << F("Fire::begin") << endl;
   
-  stop();
+  stopFire();
+  stopSpark();
+}
+
+void Fire::doSparky(unsigned long duration) {
+  sparkDuration.interval(duration);
+  sparkDuration.reset();
+  
+  startSpark();
 }
 
 void Fire::update() {
   // just turn off
-  if( flameDuration.check() ) stop();
+  if( flameDuration.check() ) stopFire();
+  // just turn off
+  if( sparkDuration.check() ) stopSpark();
 }
 
 void Fire::perform(systemState &system) {
@@ -56,7 +67,7 @@ void Fire::perform(systemState &system) {
   flameDuration.reset();
   
   // fire it up.
-  lamp1On();
+  startFire();
   
 /* 
    
@@ -101,7 +112,3 @@ raight propane (DEFAULT) "very rich"
 //  inst.effect = veryRich;
 }
 
-
-void Fire::stop() {
-  lamp1Off();
-}

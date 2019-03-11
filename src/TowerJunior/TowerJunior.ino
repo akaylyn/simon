@@ -14,8 +14,8 @@
 #include <EEPROM.h> // saving and loading radio settings
 // boostrap the tower nodeID to this value (2,3,4,5), overwriting EEPROM.
 // set "BROADCAST" to read EEPROM value
-//#define HARD_SET_NODE_ID_TO JUNIOR
-#define HARD_SET_NODE_ID_TO BROADCAST
+#define HARD_SET_NODE_ID_TO JUNIOR
+//#define HARD_SET_NODE_ID_TO BROADCAST
 #include "Instruction.h"
 
 // perform lighting
@@ -39,6 +39,10 @@ Fire fire;
 #define IDLE_PERIOD_MIN 30UL // ms
 #define IDLE_PERIOD_MAX 1000UL // ms
 
+// fire the sparker on some interval
+#define RELIGHT_PERIOD_MIN 5UL * 60000UL // ms
+#define RELIGHT_PERIOD_MAX 15UL * 60000UL // ms
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -57,8 +61,9 @@ void setup() {
 
   light.begin();
   fire.begin();
+  fire.doSparky(); // good idea at startup.
   
-  // random seed.
+   // random seed.
   randomSeed(analogRead(A3)); // or some other unconected pin
 
   Serial << F("Setup: free RAM: ") << freeRam() << endl;
@@ -107,6 +112,17 @@ void loop() {
     Serial << F("Tower: free RAM: ") << freeRam() << endl;
     // and add some entropy
     idleUpdate.interval(random(IDLE_PERIOD_MIN, IDLE_PERIOD_MAX));
+    idleUpdate.reset();
+  }
+
+  // check for relight
+  static Metro relight(RELIGHT_PERIOD_MIN);
+  if( relight.check() ) {
+    Serial << F("Relight....") << endl;
+    fire.doSparky();
+    // and add some entropy
+    relight.interval(random(RELIGHT_PERIOD_MIN, RELIGHT_PERIOD_MAX));  
+    relight.reset(); 
   }
 
 }

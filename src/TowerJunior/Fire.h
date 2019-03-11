@@ -18,8 +18,7 @@ class Fire {
     void begin();
     void update();
     void perform(systemState &system);
-
-    void stop();
+    void doSparky(unsigned long duration=10000UL);
 
   private:
   
