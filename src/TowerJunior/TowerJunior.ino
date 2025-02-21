@@ -1,5 +1,7 @@
 // Compile for Uno.
 
+// MGD: adding a touch here to confirm my Git-fu is not weak.
+
 // The IDE requires all libraries to be #include’d in the main (.ino) file.  Clutter.
 #include <Streaming.h> // <<-style printing
 #include <Bounce.h> // remote relays
