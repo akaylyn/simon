@@ -35,3 +35,4 @@ tones/orig/*
 
 # mac filesystem
 .DS_Store
+.vscode
