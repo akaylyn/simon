@@ -1,4 +1,4 @@
-// Compile for Uno.
+// Compile for Uno.  Programmer "Atmel ICE (VR)"
 
 // MGD: adding a touch here to confirm my Git-fu is not weak.
 
