@@ -98,7 +98,7 @@ int Sound::playTrack(int track, int gain) {
   // set volume
   wav.trackGain(tr, ga);
   // play in polyphonic mode
-  wav.trackPlaySolo(tr);
+  wav.trackPlayPoly(tr);
 
   Serial << F("Sound::playTrack: track=") << tr << F(" gain=") << ga << endl;
 
