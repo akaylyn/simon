@@ -38,12 +38,12 @@ Light light;
 Fire fire;
 
 // without comms for this duration, run a lighting test pattern
-#define IDLE_PERIOD_MIN 1000UL // ms
-#define IDLE_PERIOD_MAX 10000UL // ms
+#define IDLE_PERIOD_MIN 3000UL // ms
+#define IDLE_PERIOD_MAX 30000UL // ms
 
 // fire the sparker on some interval
-#define RELIGHT_PERIOD_MIN 5UL * 60000UL // ms
-#define RELIGHT_PERIOD_MAX 15UL * 60000UL // ms
+#define RELIGHT_PERIOD_MIN (5UL * 60000UL) // ms
+#define RELIGHT_PERIOD_MAX (15UL * 60000UL) // ms
 
 void setup() {
   // put your setup code here, to run once:
@@ -182,6 +182,5 @@ void idleTestPattern() {
   Serial << endl << F("Idle: color offset ") << c << F(" of ") << N_COLORS << F(".")  << endl;
   light.perform(st);
 
-  c += 1;
-  c = c % N_COLORS;
+  c = (c++) % N_COLORS;
 }
