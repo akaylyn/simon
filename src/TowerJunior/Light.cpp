@@ -1,8 +1,8 @@
 #include "Light.h"
 
-#define FLAME_CHANS 2 // should read "001"; flame is channel 1; sparker is channel 2
+#define FLAME_CHANS 2 // DMX in box should read "001"; flame is channel 1; sparker is channel 2
 
-#define LAMP_CHANS 5 // should read "d003", "d008", "d013", "d018"
+#define LAMP_CHANS 5 // DMX lamps should read "d003", "d008", "d013", "d018"
 // Red:d003, Blue: d008, Yellow: d013, Green:d018 
 #define LAMP_N 4
 

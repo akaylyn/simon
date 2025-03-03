@@ -38,8 +38,8 @@ Light light;
 Fire fire;
 
 // without comms for this duration, run a lighting test pattern
-#define IDLE_PERIOD_MIN 30UL // ms
-#define IDLE_PERIOD_MAX 1000UL // ms
+#define IDLE_PERIOD_MIN 1000UL // ms
+#define IDLE_PERIOD_MAX 10000UL // ms
 
 // fire the sparker on some interval
 #define RELIGHT_PERIOD_MIN 5UL * 60000UL // ms
