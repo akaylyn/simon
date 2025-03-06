@@ -12,281 +12,430 @@
 
 
 // **************************************************************
-/* MGD
 void wavTrigger::start(void) {
 
-  WTSerial.begin(57600);
+uint8_t txbuf[5];
+
+	versionRcvd = false;
+	sysinfoRcvd = false;
+	WTSerial.begin(57600);
+	flush();
+
+	// Request version string
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x05;
+	txbuf[3] = CMD_GET_VERSION;
+	txbuf[4] = EOM;
+	WTSerial.write(txbuf, 5);
+
+	// Request system info
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x05;
+	txbuf[3] = CMD_GET_SYS_INFO;
+	txbuf[4] = EOM;
+	WTSerial.write(txbuf, 5);
 }
-*/
-void wavTrigger::start(Stream *theStream) {
-  // calling routine responsible for setting buadrate
-  WTSerial = theStream;
+
+// **************************************************************
+void wavTrigger::flush(void) {
+
+int i;
+uint8_t dat;
+
+	rxCount = 0;
+	rxLen = 0;
+	rxMsgReady = false;
+	for (i = 0; i < MAX_NUM_VOICES; i++) {
+	  voiceTable[i] = 0xffff;
+	}
+	while(WTSerial.available())
+		dat = WTSerial.read();
+}
+
+
+// **************************************************************
+void wavTrigger::update(void) {
+
+int i;
+uint8_t dat;
+uint8_t voice;
+uint16_t track;
+
+	rxMsgReady = false;
+	while (WTSerial.available() > 0) {
+		dat = WTSerial.read();
+		if ((rxCount == 0) && (dat == SOM1)) {
+			rxCount++;
+		}
+		else if (rxCount == 1) {
+			if (dat == SOM2)
+				rxCount++;
+			else {
+				rxCount = 0;
+				//Serial.print("Bad msg 1\n");
+			}
+		}
+		else if (rxCount == 2) {
+			if (dat <= MAX_MESSAGE_LEN) {
+				rxCount++;
+				rxLen = dat - 1;
+			}
+			else {
+				rxCount = 0;
+				//Serial.print("Bad msg 2\n");
+			}
+		}
+		else if ((rxCount > 2) && (rxCount < rxLen)) {
+			rxMessage[rxCount - 3] = dat;
+			rxCount++;
+		}
+		else if (rxCount == rxLen) {
+			if (dat == EOM)
+				rxMsgReady = true;
+			else {
+				rxCount = 0;
+				//Serial.print("Bad msg 3\n");
+			}
+		}
+		else {
+			rxCount = 0;
+			//Serial.print("Bad msg 4\n");
+		}
+
+		if (rxMsgReady) {
+			switch (rxMessage[0]) {
+
+				case RSP_TRACK_REPORT:
+					track = rxMessage[2];
+					track = (track << 8) + rxMessage[1] + 1;
+					voice = rxMessage[3];
+					if (voice < MAX_NUM_VOICES) {
+						if (rxMessage[4] == 0) {
+							if (track == voiceTable[voice])
+								voiceTable[voice] = 0xffff;
+						}
+						else
+							voiceTable[voice] = track;
+					}
+					// ==========================
+					//Serial.print("Track ");
+					//Serial.print(track);
+					//if (rxMessage[4] == 0)
+					//	Serial.print(" off\n");
+					//else
+					//	Serial.print(" on\n");
+					// ==========================
+				break;
+
+				case RSP_VERSION_STRING:
+					for (i = 0; i < (VERSION_STRING_LEN - 1); i++)
+						version[i] = rxMessage[i + 1];
+					version[VERSION_STRING_LEN - 1] = 0;
+					versionRcvd = true;
+					// ==========================
+					//Serial.write(version);
+					//Serial.write("\n");
+					// ==========================
+				break;
+
+				case RSP_SYSTEM_INFO:
+					numVoices = rxMessage[1];
+					numTracks = rxMessage[3];
+					numTracks = (numTracks << 8) + rxMessage[2];
+					sysinfoRcvd = true;
+					// ==========================
+					///\Serial.print("Sys info received\n");
+					// ==========================
+				break;
+
+			}
+			rxCount = 0;
+			rxLen = 0;
+			rxMsgReady = false;
+
+		} // if (rxMsgReady)
+
+	} // while (WTSerial.available() > 0)
+}
+
+// **************************************************************
+bool wavTrigger::isTrackPlaying(int trk) {
+
+int i;
+bool fResult = false;
+
+	update();
+	for (i = 0; i < MAX_NUM_VOICES; i++) {
+		if (voiceTable[i] == trk)
+			fResult = true;
+	}
+	return fResult;
 }
 
 // **************************************************************
 void wavTrigger::masterGain(int gain) {
 
-byte txbuf[8];
+uint8_t txbuf[7];
 unsigned short vol;
 
-  txbuf[0] = 0xf0;
-  txbuf[1] = 0xaa;
-  txbuf[2] = 0x07;
-  txbuf[3] = CMD_MASTER_VOLUME;
-  vol = (unsigned short)gain;
-  txbuf[4] = (byte)vol;
-  txbuf[5] = (byte)(vol >> 8);
-  txbuf[6] = 0x55;
-// MGD
-  //  WTSerial.write(txbuf, 7);
-  WTSerial->write(txbuf, 7);
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x07;
+	txbuf[3] = CMD_MASTER_VOLUME;
+	vol = (unsigned short)gain;
+	txbuf[4] = (uint8_t)vol;
+	txbuf[5] = (uint8_t)(vol >> 8);
+	txbuf[6] = EOM;
+	WTSerial.write(txbuf, 7);
+}
+
+// **************************************************************
+void wavTrigger::setAmpPwr(bool enable) {
+
+uint8_t txbuf[6];
+
+    txbuf[0] = SOM1;
+    txbuf[1] = SOM2;
+    txbuf[2] = 0x06;
+    txbuf[3] = CMD_AMP_POWER;
+    txbuf[4] = enable;
+    txbuf[5] = EOM;
+    WTSerial.write(txbuf, 6);
+}
+
+// **************************************************************
+void wavTrigger::setReporting(bool enable) {
+
+uint8_t txbuf[6];
+
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x06;
+	txbuf[3] = CMD_SET_REPORTING;
+	txbuf[4] = enable;
+	txbuf[5] = EOM;
+	WTSerial.write(txbuf, 6);
+}
+
+// **************************************************************
+bool wavTrigger::getVersion(char *pDst, int len) {
+
+int i;
+
+	update();
+	if (!versionRcvd) {
+		return false;
+	}
+	for (i = 0; i < (VERSION_STRING_LEN - 1); i++) {
+		if (i >= (len - 1))
+			break;
+		pDst[i] = version[i];
+	}
+	pDst[++i] = 0;
+	return true;
+}
+
+// **************************************************************
+int wavTrigger::getNumTracks(void) {
+
+	update();
+	return numTracks;
 }
 
 // **************************************************************
 void wavTrigger::trackPlaySolo(int trk) {
   
-  trackControl(trk, TRK_PLAY_SOLO);
+	trackControl(trk, TRK_PLAY_SOLO);
+}
+
+// **************************************************************
+void wavTrigger::trackPlaySolo(int trk, bool lock) {
+  
+	trackControl(trk, TRK_PLAY_SOLO, lock);
 }
 
 // **************************************************************
 void wavTrigger::trackPlayPoly(int trk) {
   
-  trackControl(trk, TRK_PLAY_POLY);
+	trackControl(trk, TRK_PLAY_POLY);
+}
+
+// **************************************************************
+void wavTrigger::trackPlayPoly(int trk, bool lock) {
+  
+	trackControl(trk, TRK_PLAY_POLY, lock);
 }
 
 // **************************************************************
 void wavTrigger::trackLoad(int trk) {
   
-  trackControl(trk, TRK_LOAD);
+	trackControl(trk, TRK_LOAD);
+}
+
+// **************************************************************
+void wavTrigger::trackLoad(int trk, bool lock) {
+  
+	trackControl(trk, TRK_LOAD, lock);
 }
 
 // **************************************************************
 void wavTrigger::trackStop(int trk) {
 
-  trackControl(trk, TRK_STOP);
+	trackControl(trk, TRK_STOP);
 }
 
 // **************************************************************
 void wavTrigger::trackPause(int trk) {
 
-  trackControl(trk, TRK_PAUSE);
+	trackControl(trk, TRK_PAUSE);
 }
 
 // **************************************************************
 void wavTrigger::trackResume(int trk) {
 
-  trackControl(trk, TRK_RESUME);
+	trackControl(trk, TRK_RESUME);
 }
 
 // **************************************************************
 void wavTrigger::trackLoop(int trk, bool enable) {
  
-  if (enable)
-    trackControl(trk, TRK_LOOP_ON);
-  else
-    trackControl(trk, TRK_LOOP_OFF);
+	if (enable)
+		trackControl(trk, TRK_LOOP_ON);
+	else
+		trackControl(trk, TRK_LOOP_OFF);
 }
 
 // **************************************************************
 void wavTrigger::trackControl(int trk, int code) {
   
-byte txbuf[8];
+uint8_t txbuf[8];
 
-  txbuf[0] = 0xf0;
-  txbuf[1] = 0xaa;
-  txbuf[2] = 0x08;
-  txbuf[3] = CMD_TRACK_CONTROL;
-  txbuf[4] = (byte)code;
-  txbuf[5] = (byte)trk;
-  txbuf[6] = (byte)(trk >> 8);
-  txbuf[7] = 0x55;
-// MGD
-//  WTSerial.write(txbuf, 8);
-  WTSerial->write(txbuf, 8);
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x08;
+	txbuf[3] = CMD_TRACK_CONTROL;
+	txbuf[4] = (uint8_t)code;
+	txbuf[5] = (uint8_t)trk;
+	txbuf[6] = (uint8_t)(trk >> 8);
+	txbuf[7] = EOM;
+	WTSerial.write(txbuf, 8);
+}
+
+// **************************************************************
+void wavTrigger::trackControl(int trk, int code, bool lock) {
+  
+uint8_t txbuf[9];
+
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x09;
+	txbuf[3] = CMD_TRACK_CONTROL_EX;
+	txbuf[4] = (uint8_t)code;
+	txbuf[5] = (uint8_t)trk;
+	txbuf[6] = (uint8_t)(trk >> 8);
+	txbuf[7] = lock;
+	txbuf[8] = EOM;
+	WTSerial.write(txbuf, 9);
 }
 
 // **************************************************************
 void wavTrigger::stopAllTracks(void) {
 
-byte txbuf[5];
+uint8_t txbuf[5];
 
-  txbuf[0] = 0xf0;
-  txbuf[1] = 0xaa;
-  txbuf[2] = 0x05;
-  txbuf[3] = CMD_STOP_ALL;
-  txbuf[4] = 0x55;
- // MGD
-// WTSerial.write(txbuf, 5);
- WTSerial->write(txbuf, 5);
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x05;
+	txbuf[3] = CMD_STOP_ALL;
+	txbuf[4] = EOM;
+	WTSerial.write(txbuf, 5);
 }
 
 // **************************************************************
 void wavTrigger::resumeAllInSync(void) {
 
-byte txbuf[5];
+uint8_t txbuf[5];
 
-  txbuf[0] = 0xf0;
-  txbuf[1] = 0xaa;
-  txbuf[2] = 0x05;
-  txbuf[3] = CMD_RESUME_ALL_SYNC;
-  txbuf[4] = 0x55;
-// MGD
-//  WTSerial.write(txbuf, 5);
-  WTSerial->write(txbuf, 5);
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x05;
+	txbuf[3] = CMD_RESUME_ALL_SYNC;
+	txbuf[4] = EOM;
+	WTSerial.write(txbuf, 5);
 }
 
 // **************************************************************
 void wavTrigger::trackGain(int trk, int gain) {
 
-byte txbuf[9];
+uint8_t txbuf[9];
 unsigned short vol;
 
-  txbuf[0] = 0xf0;
-  txbuf[1] = 0xaa;
-  txbuf[2] = 0x09;
-  txbuf[3] = CMD_TRACK_VOLUME;
-  txbuf[4] = (byte)trk;
-  txbuf[5] = (byte)(trk >> 8);
-  vol = (unsigned short)gain;
-  txbuf[6] = (byte)vol;
-  txbuf[7] = (byte)(vol >> 8);
-  txbuf[8] = 0x55;
-  // MGD
-//  WTSerial.write(txbuf, 9);
-  WTSerial->write(txbuf, 9);
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x09;
+	txbuf[3] = CMD_TRACK_VOLUME;
+	txbuf[4] = (uint8_t)trk;
+	txbuf[5] = (uint8_t)(trk >> 8);
+	vol = (unsigned short)gain;
+	txbuf[6] = (uint8_t)vol;
+	txbuf[7] = (uint8_t)(vol >> 8);
+	txbuf[8] = EOM;
+	WTSerial.write(txbuf, 9);
 }
 
 // **************************************************************
 void wavTrigger::trackFade(int trk, int gain, int time, bool stopFlag) {
 
-byte txbuf[12];
+uint8_t txbuf[12];
 unsigned short vol;
 
-  txbuf[0] = 0xf0;
-  txbuf[1] = 0xaa;
-  txbuf[2] = 0x0c;
-  txbuf[3] = CMD_TRACK_FADE;
-  txbuf[4] = (byte)trk;
-  txbuf[5] = (byte)(trk >> 8);
-  vol = (unsigned short)gain;
-  txbuf[6] = (byte)vol;
-  txbuf[7] = (byte)(vol >> 8);
-  txbuf[8] = (byte)time;
-  txbuf[9] = (byte)(time >> 8);
-  txbuf[10] = stopFlag;
-  txbuf[11] = 0x55;
-// MGD
-//  WTSerial.write(txbuf, 12);
-  WTSerial->write(txbuf, 12);
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x0c;
+	txbuf[3] = CMD_TRACK_FADE;
+	txbuf[4] = (uint8_t)trk;
+	txbuf[5] = (uint8_t)(trk >> 8);
+	vol = (unsigned short)gain;
+	txbuf[6] = (uint8_t)vol;
+	txbuf[7] = (uint8_t)(vol >> 8);
+	txbuf[8] = (uint8_t)time;
+	txbuf[9] = (uint8_t)(time >> 8);
+	txbuf[10] = stopFlag;
+	txbuf[11] = EOM;
+	WTSerial.write(txbuf, 12);
 }
 
 // **************************************************************
-void wavTrigger::trackCrossFade(int trkFrom, int trkTo, int gain, int time) {
+void wavTrigger::samplerateOffset(int offset) {
 
-byte txbuf[12];
-unsigned short vol;
+uint8_t txbuf[7];
+unsigned short off;
 
-  // Start the To track with -40 dB gain
-  trackGain(trkTo, -40);
-  trackPlayPoly(trkTo);
-
-  // Start a fade-in to the target volume
-  txbuf[0] = 0xf0;
-  txbuf[1] = 0xaa;
-  txbuf[2] = 0x0c;
-  txbuf[3] = CMD_TRACK_FADE;
-  txbuf[4] = (byte)trkTo;
-  txbuf[5] = (byte)(trkTo >> 8);
-  vol = (unsigned short)gain;
-  txbuf[6] = (byte)vol;
-  txbuf[7] = (byte)(vol >> 8);
-  txbuf[8] = (byte)time;
-  txbuf[9] = (byte)(time >> 8);
-  txbuf[10] = 0x00;
-  txbuf[11] = 0x55;
-// MGD
-//  WTSerial.write(txbuf, 12);
-  WTSerial->write(txbuf, 12);
-
-  // Start a fade-out on the From track
-  txbuf[0] = 0xf0;
-  txbuf[1] = 0xaa;
-  txbuf[2] = 0x0c;
-  txbuf[3] = CMD_TRACK_FADE;
-  txbuf[4] = (byte)trkFrom;
-  txbuf[5] = (byte)(trkFrom >> 8);
-  vol = (unsigned short)-40;
-  txbuf[6] = (byte)vol;
-  txbuf[7] = (byte)(vol >> 8);
-  txbuf[8] = (byte)time;
-  txbuf[9] = (byte)(time >> 8);
-  txbuf[10] = 0x01;
-  txbuf[11] = 0x55;
-// MGD
-//  WTSerial.write(txbuf, 12);
-  WTSerial->write(txbuf, 12);
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x07;
+	txbuf[3] = CMD_SAMPLERATE_OFFSET;
+	off = (unsigned short)offset;
+	txbuf[4] = (uint8_t)off;
+	txbuf[5] = (uint8_t)(off >> 8);
+	txbuf[6] = EOM;
+	WTSerial.write(txbuf, 7);
 }
 
-
 // **************************************************************
-// MGD: implement GET_STATUS (Tx) and STATUS (Rx) to return playing track numbers
-// See: http://robertsonics.com/wav-trigger-online-user-guide/
-void wavTrigger::getPlayingTracks(int playingTracks[14]) {
+void wavTrigger::setTriggerBank(int bank) {
 
-	byte txbuf[5];
+uint8_t txbuf[6];
 
-	txbuf[0] = 0xf0; // SOM header byte 1
-	txbuf[1] = 0xaa; // SOM header byte 2
-	txbuf[2] = 0x05; // message length
-	txbuf[3] = CMD_GET_STATUS;
-	txbuf[4] = 0x55; // EOM byte
-	WTSerial->write(txbuf, 5);
-
-	// return message is (SOM1, SOM2, LEN, MSGTYPE, # tracks *2, EOM)
-	const int messageLength = 4+2*14+1;
-	static char rxbuf[messageLength]; // static to preserve malloc()
-
-	// get the message, waiting for message to complete.
-	// baud rate is 57600 kps 8N1, so bitrate is 10/57600 = 0.1736 ms/byte
-	// so, 33 bytes (max message size) should take 5.72 ms.
-	WTSerial->setTimeout(7UL);
-	int rxLen = WTSerial->readBytes(rxbuf, messageLength);
-
-	byte msgLength = rxbuf[2];
-	byte nTracks = (msgLength - 5)/2;
-
-/*
-	Serial.print("wavGPT: rxlen="); Serial.println(rxLen);
-	Serial.print("wavGPT: rxbuf=");
-	for( int i=0; i<rxLen; i++) {
-		Serial.print(rxbuf[i],HEX);
-		Serial.print(' ');
-	}
-	Serial.println(' ');
-
-	Serial.print("wavGPT: nTracks=");
-	Serial.println(nTracks);
-
-	Serial.print("wavGPT: tracks="); 
-*/	
-	// extract playing track numbers
-	for( int tr=0; tr<14; tr++ ) {
-		if( tr >= nTracks ) {
-			playingTracks[tr] = 0; // not playing, so zero out to indicate
-		} else {
-			// LSB, MSB
-			// apparently, track 101 is returned as 100
-			playingTracks[tr] = word(rxbuf[4+tr*2+1], rxbuf[4+tr*2]) +1;
-/*
-			Serial.print("Word from indexes = ");
-			Serial.print(4+tr*2);
-			Serial.print(' ');
-			Serial.print(4+tr*2+1);
-			Serial.print(' ');
-*/
-		}
-//		Serial.println(playingTracks[tr]);
-	}
+	txbuf[0] = SOM1;
+	txbuf[1] = SOM2;
+	txbuf[2] = 0x06;
+	txbuf[3] = CMD_SET_TRIGGER_BANK;
+	txbuf[4] = (uint8_t)bank;
+	txbuf[5] = EOM;
+	WTSerial.write(txbuf, 6);
 }
 
 

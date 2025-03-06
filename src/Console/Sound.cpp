@@ -6,14 +6,15 @@ bool Sound::begin() {
   Serial << "Sound::begin: startup." << endl;
 
   // set up comms at 57600 baud
-  WTSerial.begin(57600);
-  if ( !WTSerial ) {
-    Serial << F("Sound::begin: error setting up WAV board serial.") << endl;
-    return ( false );
-  }
+  // WTSerial.begin(57600);
+  // if ( !WTSerial ) {
+  //   Serial << F("Sound::begin: error setting up WAV board serial.") << endl;
+  //   return ( false );
+  // }
 
   // start the wav board
-  wav.start(&WTSerial);
+  wav.start();
+  delay(10);
 
   // set master gain
   setMasterGain();
@@ -23,10 +24,31 @@ bool Sound::begin() {
 
   // quiet
   stopAll();
+  wav.samplerateOffset(0);
 
   currDrumSet = 0;
 
-  Serial << "Sound::begin: complete." << endl;
+  // enable debugging
+  wav.setReporting(true);
+
+    // Allow time for the WAV Trigger to respond with the version string and
+  //  number of tracks.
+  delay(100); 
+
+  int  gNumTracks;              // Number of tracks on SD card
+  char gWTrigVersion[VERSION_STRING_LEN];    // WAV Trigger version string
+  
+  // If bi-directional communication is wired up, then we should by now be able
+  //  to fetch the version string and number of tracks on the SD card.
+  if (wav.getVersion(gWTrigVersion, VERSION_STRING_LEN)) {
+    Serial << gWTrigVersion << endl;
+    Serial << "Sound: Track Count: " << wav.getNumTracks() << endl;
+  
+  }
+  else
+      Serial.print("WAV Trigger response not available");
+
+  Serial << endl << "Sound::begin: complete." << endl;
   return ( true );
 }
 
@@ -111,7 +133,7 @@ void Sound::crossFadeTrack(int extro, int intro, unsigned long fadeTime) {
   int in = constrain(intro, 1, 999);
 
   // fade, with Stop at the end.  Stop is important, so voices can be freed up.
-  wav.trackCrossFade(ex, in, this->trackGain, fadeTime);
+  wav.trackFade(ex, in, this->trackGain, fadeTime);
 
   Serial << F("Sound::crossFadeTrack track=") << ex << F(" into=") << in << F(" in(ms)=") << fadeTime << endl;
 }
@@ -152,13 +174,15 @@ void Sound::stopFailTone() {
 // Stop all tones track
 void Sound::stopTones() {
   // get the array of currently playing tracks
-  int tr[14];
-  wav.getPlayingTracks(tr);
+  // int tr[14];
+  // wav.getPlayingTracks(tr);
 
-  // loop across and issue a stop command
-  for( byte i=0; i<14; i++ ) {
-    if( tr[i] > 0 && tr[i] <= N_TONES) wav.trackStop(tr[i]);
-  }
+  // // loop across and issue a stop command
+  // for( byte i=0; i<14; i++ ) {
+  //   if( tr[i] > 0 && tr[i] <= N_TONES) wav.trackStop(tr[i]);
+  // }
+
+  wav.stopAllTracks();
 
 //  for( int ti=0; ti<N_TONES; ti++ ) {
 //    // stop
@@ -173,17 +197,18 @@ void Sound::stopTones() {
 // Stop all track
 void Sound::stopAll() {
   // get the array of currently playing tracks
-  int tr[14];
-  wav.getPlayingTracks(tr);
+  // int tr[14];
+  // wav.getPlayingTracks(tr);
 
-  // loop across and issue a stop command
-  for( byte i=0; i<14; i++ ) {
-    if( tr[i] > 0 ) wav.trackStop(tr[i]);
-  }
+  // // loop across and issue a stop command
+  // for( byte i=0; i<14; i++ ) {
+  //   if( tr[i] > 0 ) wav.trackStop(tr[i]);
+  // }
 
   // and, be damned sure
   // stop
   wav.stopAllTracks();
+  wav.flush();
 
 //  Serial << F("Sound::stopAll") << endl;
 }
