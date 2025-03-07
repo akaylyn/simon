@@ -227,6 +227,18 @@ void Sound::setVolume(int track, int gain) {
 //  Serial << F("Sound: volume for track:") << tr << F(" =") << ga << endl;
 }
 
+void Sound::incVolume() {
+  setMasterGain(volume++);
+}
+
+void Sound::decVolume() {
+  setMasterGain(volume--);
+}
+
+int Sound::getCurrentVolume() {
+  return volume;
+}
+
 /*
 // Relevel volume on playing tracks to summed 0dB gain prevent clipping
 void Sound::relevelVol() {

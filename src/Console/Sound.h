@@ -98,6 +98,13 @@ class Sound {
 
     // set volume manually.  THIS IS VERY LIKELY TO CREATE CLIPPING UNLESS YOU KNOW WHAT YOU'RE DOING
     void setVolume(int track, int gain);
+    
+    // Open these up to be used in the configuration mode
+    void setVolume(int level);
+    void incVolume();
+    void decVolume();
+
+    int getCurrentVolume();
 
     int playDrumSound(byte colorIndex);
     // returns the drum set index
@@ -121,6 +128,8 @@ class Sound {
 
     // drum kit set index
     int currDrumSet;
+
+    int volume = MASTER_GAIN;
 
 };
 

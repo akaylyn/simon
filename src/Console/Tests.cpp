@@ -15,6 +15,7 @@ boolean TestModes::update() {
     "Lights Test Mode",
     "Layout Mode",
     "External Mode",
+    "Configuration Mode",
   };
 
   static int currentMode = N_systemMode-1;
@@ -69,6 +70,9 @@ boolean TestModes::update() {
       break;
     case EXTERN:
       externModeLoop(performStartup);
+      break;
+    case CONFIG:
+      configModeLoop(performStartup);
       break;
   }
 
@@ -702,6 +706,61 @@ void TestModes::externModeLoop(boolean performStartup) {
        }
      }
    }
+}
+
+void TestModes::configModeLoop(boolean performStartup){
+  enum configModes{
+    VOLUME,
+    TOUCH,
+    N_ConfigModes,
+  };
+  char *configMode[] = {
+    "Volume Config: Master Gain",
+    "Touch Config",
+  };
+
+  static int currentMode = N_ConfigModes-1;
+
+  if (touch.anyChanged() && touch.anyButtonPressed()) {
+    color pressed = touch.whatPressed();
+
+    if (pressed == I_START) {
+      (++currentMode) %= N_ConfigModes;
+      scoreboard.showMessage(configMode[currentMode]);
+    }
+
+    // Master Volume Configuration
+    if (currentMode == configMode[VOLUME]) {
+      if (pressed == I_LEFT) {
+        sound.decVolume();
+        scoreboard.showMessage2(sound.getCurrentVolume());
+      }
+
+      if (pressed == I_RIGHT) {
+        sound.incVolume();
+        scoreboard.showMessage2(sound.getCurrentVolume());
+      }
+    }
+
+    // Touch Configuration
+    if (currentMode == configMode[TOUCH]) {
+      if (pressed == I_LEFT) {
+
+      }
+  
+      if (pressed == I_RIGHT) {
+  
+      }
+    }
+
+    if (pressed == I_LEFT) {
+
+    }
+
+    if (pressed == I_RIGHT) {
+
+    }
+  }
 }
 
 TestModes testModes;
