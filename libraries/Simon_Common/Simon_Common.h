@@ -141,7 +141,8 @@ enum systemMode {
   LAYOUT,
 
   EXTERN, // for other projects driving Simon
-
+  CONFIG,
+  
   N_systemMode //
 };
 

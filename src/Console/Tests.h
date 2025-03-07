@@ -32,6 +32,7 @@ class TestModes {
     void fireTestModeLoop(boolean performStartup);
     void layoutModeLoop(boolean performStartup);
     void externModeLoop(boolean performStartup);
+    void configModeLoop(boolean performStartup);
 };
 
 extern TestModes testModes;
