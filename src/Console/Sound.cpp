@@ -63,7 +63,7 @@ void Sound::setLeveling(int nTones, int nTracks) {
   // see: https://www.noisemeters.com/apps/db-calculator.asp for the gnarly logarithm mess
   // basically, we're calibrating the tone gain based on the number of tones and tracks currently playing,
   // relative to the total gain that we want out of the system
-  this->toneGain = TONE_GAIN - floor( 10.0*log10(float(nTones) + float(nTracks)*pow(10.0, float(TRACK_GAIN_RELATIVE_TO_TONE)/10.0)) );
+  this->toneGain = this->volume + TONE_GAIN - floor( 10.0*log10(float(nTones) + float(nTracks)*pow(10.0, float(TRACK_GAIN_RELATIVE_TO_TONE)/10.0)));
   this->trackGain = this->toneGain + TRACK_GAIN_RELATIVE_TO_TONE;
 
   Serial << F("Sound::setLeveling: nTones=") << nTones << F(" with gain=") << this->toneGain;
@@ -96,6 +96,8 @@ int Sound::playTrack(int track, int gain) {
   int ga = constrain(gain, -70, 10);
 
   // set volume
+  // akp why are we setting the gain on every play?
+  // what happens if we don't?
   wav.trackGain(tr, ga);
   // play in polyphonic mode
   wav.trackPlayPoly(tr);
@@ -228,11 +230,13 @@ void Sound::setVolume(int track, int gain) {
 }
 
 void Sound::incVolume() {
-  setMasterGain(volume++);
+  volume++;
+  setMasterGain(MASTER_GAIN+volume);
 }
 
 void Sound::decVolume() {
-  setMasterGain(volume--);
+  volume--;
+  setMasterGain(MASTER_GAIN+volume);
 }
 
 int Sound::getCurrentVolume() {

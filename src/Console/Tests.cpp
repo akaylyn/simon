@@ -23,8 +23,8 @@ boolean TestModes::update() {
 
   if( sensor.modeChange() || modeChange ) {
     (++currentMode) %= N_systemMode; // wrap
-
-    //    Serial << "CURRENT MODE: " << currentMode << endl;
+    //currentMode = 8;
+    //Serial << "CURRENT MODE: " << currentMode << endl;
     // Tell the tower's we're in a new mode
     network.send((systemMode)currentMode);
 
@@ -709,41 +709,78 @@ void TestModes::externModeLoop(boolean performStartup) {
 }
 
 void TestModes::configModeLoop(boolean performStartup){
+  static bool hasStartedUp = false;
+  static byte pressed;
+  static char msg[20];
+
   enum configModes{
     VOLUME,
     TOUCH,
     N_ConfigModes,
   };
-  char *configMode[] = {
-    "Volume Config: Master Gain",
+  static char *configMode[] = {
+    "Volume Config",
     "Touch Config",
   };
+  static int currentConfigMode = N_ConfigModes-1;
 
-  static int currentMode = N_ConfigModes-1;
+  if (!hasStartedUp) {
+    sound.setLeveling();
+    hasStartedUp = true;
+  }
 
   if (touch.anyChanged() && touch.anyButtonPressed()) {
-    color pressed = touch.whatPressed();
+    pressed = touch.whatPressed();
+    
 
-    if (pressed == I_START) {
-      (++currentMode) %= N_ConfigModes;
-      scoreboard.showMessage(configMode[currentMode]);
+    if (pressed == I_GRN) {
+      sound.playTrack(BOOP_TRACK);
+      (++currentConfigMode) %= N_ConfigModes;
+      scoreboard.showMessage2(configMode[currentConfigMode]);
     }
 
+    Serial << "Pressed: " << pressed << endl;
+    Serial << "Config Mode: " << configMode[currentConfigMode] << endl;
+    Serial << "currentConfigMode: " << currentConfigMode << endl;    
+
     // Master Volume Configuration
-    if (currentMode == configMode[VOLUME]) {
-      if (pressed == I_LEFT) {
-        sound.decVolume();
-        scoreboard.showMessage2(sound.getCurrentVolume());
+    if (currentConfigMode == VOLUME) {
+      
+      Serial << "volume config" << endl;
+
+      if (pressed == I_RED) {
+        sound.setLeveling(0, 1);
+        sound.playTrack(699);
+        delay(150);
+  
       }
 
-      if (pressed == I_RIGHT) {
+      while (pressed == I_YEL && touch.anyButtonPressed()) {
+        sound.decVolume();
+        Serial << "Volume Down: " << sound.getCurrentVolume() << endl;
+        sprintf(msg, "%d", char(sound.getCurrentVolume()));
+        Serial << msg << endl;
+        scoreboard.showMessage2(msg);
+        sound.setLeveling();
+        sound.playTrack(BOOP_TRACK);
+        delay(150);
+      }
+
+      while (pressed == I_BLU && touch.anyButtonPressed()) {
         sound.incVolume();
-        scoreboard.showMessage2(sound.getCurrentVolume());
+        Serial << "Volume Up: " << sound.getCurrentVolume() << endl;
+        sprintf(msg, "%d", char(sound.getCurrentVolume()));
+        Serial << msg << endl;
+        scoreboard.showMessage2(msg);
+        sound.setLeveling();
+        sound.playTrack(BOOP_TRACK);
+        delay(150);
       }
     }
 
     // Touch Configuration
-    if (currentMode == configMode[TOUCH]) {
+    if (currentConfigMode == configMode[TOUCH]) {
+
       if (pressed == I_LEFT) {
 
       }
@@ -752,16 +789,9 @@ void TestModes::configModeLoop(boolean performStartup){
   
       }
     }
-
-    if (pressed == I_LEFT) {
-
-    }
-
-    if (pressed == I_RIGHT) {
-
-    }
   }
 }
+
 
 TestModes testModes;
 
