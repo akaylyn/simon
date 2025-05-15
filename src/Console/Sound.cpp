@@ -16,8 +16,15 @@ bool Sound::begin() {
   wav.start();
   delay(10);
 
+  // fetch volume from EEPROM
+  getCurrentVolume();
+  
   // set master gain
   setMasterGain();
+
+  // set value from EEPROM
+  // make sure to use EEPROM.end
+  //saveVolume();
 
   // set leveling
   setLeveling();
@@ -239,9 +246,24 @@ void Sound::decVolume() {
   setMasterGain(MASTER_GAIN+volume);
 }
 
+// The volume is an adjustment made to the gain
+// within the leveling function.
+// You can  manually set the gain, but it will always be increased by the volume.
 int Sound::getCurrentVolume() {
+  if (EEPROM.read(EEPROM_CONFIG_GAIN) != 255) {
+    volume = EEPROM.read(EEPROM_CONFIG_GAIN);
+    Serial << "Volume Config: EEPROM Read" << endl;
+  }
   return volume;
 }
+
+// save the current volumem to eeprom
+void Sound::saveCurrentVolume() {
+  EEPROM.update(EEPROM_CONFIG_GAIN, volume);
+  Serial << "Volume Config: EEPROM Write" << endl;
+}
+
+
 
 /*
 // Relevel volume on playing tracks to summed 0dB gain prevent clipping

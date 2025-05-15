@@ -8,6 +8,7 @@
 #define Sound_h
 #include <Arduino.h>
 #include <Streaming.h>
+#include <EEPROM.h>
 
 // communications with WAV module via Serial port
 #include <wavTrigger.h>
@@ -45,6 +46,9 @@ const int trDrum[2] = {710, 725}; // store DRUM in 710-999
 #define FADE_TIME 1000UL // ms it takes from current gain to stop.
 
 #define RANDOM_TRACK 0 // use zero to mean "random", as zero isn't a valid track number.
+
+static const byte EEPROM_CONFIG_GAIN = 109; // 77+32+firebudget (108, 1 byte) (high score uint)
+
 
 // Real Keyboard Jockeys could probably write Sound as extending wavTrigger.
 class Sound {
@@ -105,6 +109,7 @@ class Sound {
     void decVolume();
 
     int getCurrentVolume();
+    void saveCurrentVolume(); // EEPROM
 
     int playDrumSound(byte colorIndex);
     // returns the drum set index
@@ -129,7 +134,7 @@ class Sound {
     // drum kit set index
     int currDrumSet;
 
-    int volume = MASTER_GAIN;
+    int volume = 0;
 
 };
 

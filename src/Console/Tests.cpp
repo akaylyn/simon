@@ -3,10 +3,12 @@
 
 #define MODE_TRACK_OFFSET 699
 
+
+
 // called from the main loop.  return true if we want to head back to playing Simon.
 boolean TestModes::update() {
 
-  char * systemModeNames[] = {
+  const char* systemModeNames[] = {
     "Gameplay Mode",
     "Whiteout Mode",
     "Bongo Mode",
@@ -17,7 +19,6 @@ boolean TestModes::update() {
     "External Mode",
     "Configuration Mode",
   };
-
   static int currentMode = N_systemMode-1;
   static boolean performStartup, modeChange = true;
 
@@ -725,6 +726,7 @@ void TestModes::configModeLoop(boolean performStartup){
   static int currentConfigMode = N_ConfigModes-1;
 
   if (!hasStartedUp) {
+    scoreboard.showMessagePersist("Configuration Mode");
     sound.setLeveling();
     hasStartedUp = true;
   }
@@ -751,8 +753,12 @@ void TestModes::configModeLoop(boolean performStartup){
       if (pressed == I_RED) {
         sound.setLeveling(0, 1);
         sound.playTrack(699);
+        // debugging code to verify the next safe unused index since we didn't use EEMEM
+        //int value = EEPROM.read(109); // 109 is 255, unused
+        //Serial << "EEPROM value: " << value << endl;
+        //EEPROM.update(EEPROM_CONFIG_GAIN, sound.getCurrentVolume());
+        sound.saveCurrentVolume();
         delay(150);
-  
       }
 
       while (pressed == I_YEL && touch.anyButtonPressed()) {
@@ -779,7 +785,7 @@ void TestModes::configModeLoop(boolean performStartup){
     }
 
     // Touch Configuration
-    if (currentConfigMode == configMode[TOUCH]) {
+    if (currentConfigMode == TOUCH) {
 
       if (pressed == I_LEFT) {
 
