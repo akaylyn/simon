@@ -29,9 +29,6 @@ class SimonScoreboard {
     void showMessage(char * msg);
     void showMessage2(char * msg);
 
-    void showMessagePersist(char* msg);
-    void showMessagePersist2(char* msg);
-
   private:
     uint32_t highScore;
     uint32_t currScore;

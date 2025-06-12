@@ -24,7 +24,7 @@ boolean TestModes::update() {
 
   if( sensor.modeChange() || modeChange ) {
     (++currentMode) %= N_systemMode; // wrap
-    //currentMode = 8;
+    //currentMode = 8; // uncomment to jump to config mode
     //Serial << "CURRENT MODE: " << currentMode << endl;
     // Tell the tower's we're in a new mode
     network.send((systemMode)currentMode);
@@ -753,10 +753,6 @@ void TestModes::configModeLoop(boolean performStartup){
       if (pressed == I_RED) {
         sound.setLeveling(0, 1);
         sound.playTrack(699);
-        // debugging code to verify the next safe unused index since we didn't use EEMEM
-        //int value = EEPROM.read(109); // 109 is 255, unused
-        //Serial << "EEPROM value: " << value << endl;
-        //EEPROM.update(EEPROM_CONFIG_GAIN, sound.getCurrentVolume());
         sound.saveCurrentVolume();
         delay(150);
       }

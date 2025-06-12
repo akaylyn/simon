@@ -201,19 +201,4 @@ void SimonScoreboard::showMessage2(char * msg) {
   lcd.print(msg);
 }
 
-void SimonScoreboard::showMessagePersist(char* msg) {
-  lcd.setCursor(0, 0);
-  lcd.print(" ");
-  lcd.print(msg);
-}
-// doesn't work, remove
-void SimonScoreboard::showMessagePersist2(char* msg) {
-  lcd.setCursor(0, 1);
-  // clear previous message on line 2, don't clear line 0
-  lcd.print("                    "); 
-  lcd.print(msg);
-}
-
-
 SimonScoreboard scoreboard;
-
