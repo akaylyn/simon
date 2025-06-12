@@ -201,6 +201,4 @@ void SimonScoreboard::showMessage2(char * msg) {
   lcd.print(msg);
 }
 
-
 SimonScoreboard scoreboard;
-

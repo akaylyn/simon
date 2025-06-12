@@ -3,10 +3,12 @@
 
 #define MODE_TRACK_OFFSET 699
 
+
+
 // called from the main loop.  return true if we want to head back to playing Simon.
 boolean TestModes::update() {
 
-  char * systemModeNames[] = {
+  const char* systemModeNames[] = {
     "Gameplay Mode",
     "Whiteout Mode",
     "Bongo Mode",
@@ -15,15 +17,15 @@ boolean TestModes::update() {
     "Lights Test Mode",
     "Layout Mode",
     "External Mode",
+    "Configuration Mode",
   };
-
   static int currentMode = N_systemMode-1;
   static boolean performStartup, modeChange = true;
 
   if( sensor.modeChange() || modeChange ) {
     (++currentMode) %= N_systemMode; // wrap
-
-    //    Serial << "CURRENT MODE: " << currentMode << endl;
+    //currentMode = 8; // uncomment to jump to config mode
+    //Serial << "CURRENT MODE: " << currentMode << endl;
     // Tell the tower's we're in a new mode
     network.send((systemMode)currentMode);
 
@@ -69,6 +71,9 @@ boolean TestModes::update() {
       break;
     case EXTERN:
       externModeLoop(performStartup);
+      break;
+    case CONFIG:
+      configModeLoop(performStartup);
       break;
   }
 
@@ -703,6 +708,92 @@ void TestModes::externModeLoop(boolean performStartup) {
      }
    }
 }
+
+void TestModes::configModeLoop(boolean performStartup){
+  static bool hasStartedUp = false;
+  static byte pressed;
+  static char msg[20];
+
+  enum configModes{
+    VOLUME,
+    TOUCH,
+    N_ConfigModes,
+  };
+  static char *configMode[] = {
+    "Volume Config",
+    "Touch Config",
+  };
+  static int currentConfigMode = N_ConfigModes-1;
+
+  if (!hasStartedUp) {
+    scoreboard.showMessagePersist("Configuration Mode");
+    sound.setLeveling();
+    hasStartedUp = true;
+  }
+
+  if (touch.anyChanged() && touch.anyButtonPressed()) {
+    pressed = touch.whatPressed();
+    
+
+    if (pressed == I_GRN) {
+      sound.playTrack(BOOP_TRACK);
+      (++currentConfigMode) %= N_ConfigModes;
+      scoreboard.showMessage2(configMode[currentConfigMode]);
+    }
+
+    Serial << "Pressed: " << pressed << endl;
+    Serial << "Config Mode: " << configMode[currentConfigMode] << endl;
+    Serial << "currentConfigMode: " << currentConfigMode << endl;    
+
+    // Master Volume Configuration
+    if (currentConfigMode == VOLUME) {
+      
+      Serial << "volume config" << endl;
+
+      if (pressed == I_RED) {
+        sound.setLeveling(0, 1);
+        sound.playTrack(699);
+        sound.saveCurrentVolume();
+        delay(150);
+      }
+
+      while (pressed == I_YEL && touch.anyButtonPressed()) {
+        sound.decVolume();
+        Serial << "Volume Down: " << sound.getCurrentVolume() << endl;
+        sprintf(msg, "%d", char(sound.getCurrentVolume()));
+        Serial << msg << endl;
+        scoreboard.showMessage2(msg);
+        sound.setLeveling();
+        sound.playTrack(BOOP_TRACK);
+        delay(150);
+      }
+
+      while (pressed == I_BLU && touch.anyButtonPressed()) {
+        sound.incVolume();
+        Serial << "Volume Up: " << sound.getCurrentVolume() << endl;
+        sprintf(msg, "%d", char(sound.getCurrentVolume()));
+        Serial << msg << endl;
+        scoreboard.showMessage2(msg);
+        sound.setLeveling();
+        sound.playTrack(BOOP_TRACK);
+        delay(150);
+      }
+    }
+
+    // Touch Configuration
+    if (currentConfigMode == TOUCH) {
+
+      if (pressed == I_LEFT) {
+
+      }
+  
+      if (pressed == I_RIGHT) {
+  
+      }
+    }
+  }
+}
+
 
 TestModes testModes;
 
