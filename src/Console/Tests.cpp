@@ -726,7 +726,7 @@ void TestModes::configModeLoop(boolean performStartup){
   static int currentConfigMode = N_ConfigModes-1;
 
   if (!hasStartedUp) {
-    scoreboard.showMessagePersist("Configuration Mode");
+    scoreboard.showMessage("Configuration Mode");
     sound.setLeveling();
     hasStartedUp = true;
   }
