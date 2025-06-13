@@ -1,5 +1,6 @@
 #include "Tests.h"
 #include "SimonScoreboard.h"
+#include "TouchConfig.h"
 
 #define MODE_TRACK_OFFSET 699
 
@@ -726,7 +727,7 @@ void TestModes::configModeLoop(boolean performStartup){
   static int currentConfigMode = N_ConfigModes-1;
 
   if (!hasStartedUp) {
-    scoreboard.showMessagePersist("Configuration Mode");
+    scoreboard.showMessage("Configuration Mode");
     sound.setLeveling();
     hasStartedUp = true;
   }
@@ -782,13 +783,25 @@ void TestModes::configModeLoop(boolean performStartup){
 
     // Touch Configuration
     if (currentConfigMode == TOUCH) {
+      // entering this mode will reset to the default config
+      touchConfig.setup();
+      // each of the 3 buttons will allow you to set 3 different config sets
 
-      if (pressed == I_LEFT) {
+      if (pressed == I_RED) {
+        sound.playTrack(BOOP_TRACK);
+        touchConfig.setConfig(1);
+      }
+
+      if (pressed == I_YEL) {
+        sound.playTrack(BOOP_TRACK);
+        touchConfig.setConfig(2);
 
       }
-  
-      if (pressed == I_RIGHT) {
-  
+      
+      if (pressed == I_BLU) {
+        sound.playTrack(BOOP_TRACK);
+        touchConfig.setConfig(3);
+
       }
     }
   }
