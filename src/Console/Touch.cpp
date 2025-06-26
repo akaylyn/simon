@@ -20,6 +20,8 @@ boolean Touch::begin(byte sensorIndex[N_BUTTONS]) {
   Wire.begin();
 
   Serial << F("Touch: Wire begin.") << endl;
+  TouchConfig touchConfig;
+  touchConfig.setup();
 
   boolean mprError = true;
   while( mprError ) {
@@ -74,6 +76,7 @@ boolean Touch::begin(byte sensorIndex[N_BUTTONS]) {
       MPR121.setReleaseThreshold(I_RIGHT, 5);
 
       // initial data update
+      MPR121.applySettings(&touchConfig.config1);
       MPR121.updateAll();
       Serial << F("Touch: MPR121 data update.") << endl;
 
